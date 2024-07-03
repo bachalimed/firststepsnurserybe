@@ -3,8 +3,8 @@
 
 const allowedOrigins = [
     'http://localhost:3000',
-    'https://www.dandrepairshop.com',
-    'https://dandrepairshop.com'
+    'https://firststepsnursery.com',
+    'https://www.firststepsnursery.com'
 ]
 
 module.exports = allowedOrigins
