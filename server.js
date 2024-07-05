@@ -28,10 +28,10 @@ app.use(cookieParser())
 app.use('/', express.static(path.join(__dirname, 'public')))
 
 app.use('/', require('./routes/root'))
-app.use('/users', require('./routes/userRoutes'))
-app.use('/notes', require('./routes/noteRoutes'))
+app.use('/admin/users', require('./routes/userRoutes'))//this will decide which request is used from front end
+//app.use('/notes', require('./routes/noteRoutes'))
 
-
+app.use('/students/studentsParents/parents', require('./routes/parentRoutes'))
 
 app.all('*', (req,res)=>{
     res.status(404)
@@ -47,8 +47,8 @@ app.all('*', (req,res)=>{
 app.use(errorHandler)
 
 mongoose.connection.once('open', () => {
-    console.log('Connected to MongoDB')
-    app.listen(PORT, () => console.log(`Server running on port ${PORT}`))
+    console.log('\x1b[36m%s\x1b[0m','Connected to MongoDB')
+    app.listen(PORT, () => console.log('\x1b[36m%s\x1b[0m',`Server running on port ${PORT}`))
 })
 
 mongoose.connection.on('error', err => {
