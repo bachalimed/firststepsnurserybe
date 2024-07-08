@@ -22,7 +22,7 @@ const getAllParents = asyncHandler(async (req, res) => {
 })
 
 //----------------------------------------------------------------------------------
-//@desc Create new parent, check how to save user and parent from the same form
+//@desc Create new parent, check how to save user and parent from the same form, check if year is same as current before rejecting duplicate
 //@route POST /students/studentsParents/parents
 //@access Private
 //first we save the studentsm then user then parent
@@ -44,19 +44,24 @@ const createNewParent = asyncHandler(async (req, res) => {
         return res.status(400).json({ message: 'All fields are required' })//400 : bad request
     }
     
-    // Check for duplicate username
+    // Check for duplicate userFullName
+    const duplicateName = await User.findOne({userFullName }).lean().exec()//because we re receiving only one response from mongoose
+    const duplicateDob = await User.findOne({userDob }).lean().exec()//because we re receiving only one response from mongoose
+
+    if (duplicateName&&duplicateDob) {//we will only save the parent and update the user to be done later
+
+        return res.status(409).json({ message: 'Duplicate Full name and DOB' })
+    }
+
+
+    // Check for duplicate username/ if the user has no isParent we will update only the parent isParent and create it
     const duplicate = await User.findOne({username }).lean().exec()//because we re receiving only one response from mongoose
 
     if (duplicate) {
         return res.status(409).json({ message: 'Duplicate username' })
     }
 
-    // Check for duplicate userFullName
-    const duplicateName = await User.findOne({userFullName }).lean().exec()//because we re receiving only one response from mongoose
-
-    if (duplicateName) {
-        return res.status(409).json({ message: 'Duplicate Full name' })
-    }
+    
     
     // Hash password 
     const hashedPwd = await bcrypt.hash(password, 10) // salt roundsm we will implement it laterm normally password is without''
@@ -76,8 +81,7 @@ const parent = await Parent.create(parentObject)
         // res.status(201).json({ message: `New user ${username} created` })
   
            // Create and store new user 
-                const createdParent = await Parent.findOne({partner }).lean()
-                const isParent = createdParent._id
+                const isParent = parent._id
                 const userObject = { userFullName, username, "password" :hashedPwd, accessToken,  isParent, isEmployee, userDob, userIsActive, userRoles, userPhoto, userAddress, userContact  }//construct new user to be stored
 
         const user = await User.create(userObject)

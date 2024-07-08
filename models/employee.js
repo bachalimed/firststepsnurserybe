@@ -1,22 +1,11 @@
 const mongoose = require('mongoose')
 
-const employeeSchema = new mongoose.Schema({
-    employeeId: {
-        type: mongoose.ObjectId ,
-        required: true,
-        index: true,
-        unique: true
-    },
-    employeeJoinDate: {
+const employeesSchema = new mongoose.Schema({
+   emloyeeJoinDate: {
         type: Date,
         required: true
     },
-    employeeRole: [{
-        type: String,
-        default: "Employee",
-        required: true,
-        index: true
-    }],
+   
     employeeDocuments: [{
         type: String,
         required: false
@@ -27,15 +16,12 @@ const employeeSchema = new mongoose.Schema({
         assessmentComment:{type: String},
         assessmentScore:{type: Number}}],
     employeeDepartureDate:{
-        type: Date,
-        required: false
-    },
+        type: Date},
     employeeWorkHistory:[{
         from:{
             type: Date,
             required: true},
-        to:{type: Date,
-            required: true}
+        to:{type: Date}
         }],
     employeeContractType:{
         type: String,
@@ -48,10 +34,10 @@ const employeeSchema = new mongoose.Schema({
     employeePayment:{
         type: String,
         required: true
-    },
+    }
 
 })
 
-module.exports = mongoose.model('Employee', userSchema)
+module.exports = mongoose.model('Employee', employeesSchema)
 
 

@@ -32,6 +32,7 @@ app.use('/admin/users', require('./routes/userRoutes'))//this will decide which 
 //app.use('/notes', require('./routes/noteRoutes'))
 
 app.use('/students/studentsParents/parents', require('./routes/parentRoutes'))
+app.use('/hr/employees', require('./routes/employeeRoutes'))
 
 app.all('*', (req,res)=>{
     res.status(404)
