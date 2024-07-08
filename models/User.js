@@ -1,28 +1,28 @@
 const mongoose = require('mongoose')
 
 const usersSchema = new mongoose.Schema({
-	
-	
+	//id is already assigned automatically by mongo
+	userFullName:{
 	userFirstName:{type: String, required:true, index: true},
-    userMiddleName: {type: String, required:true, index: true},
-    userLastName: {type: String, required:true, index: true}, 
-	username: {type: String, required:true, index: true, unique: true},
+    userMiddleName: {type: String, index: true},
+    userLastName: {type: String, required:true, index: true}}, 
+	username: {type: String, index: true, unique: true},
 	password: {type: String, required:true, index: true},
-	accessToken: {type: String, required:false, index: true},
+	accessToken: {type: String, index: true},
 	isParent:{
-		type: String ,
+		type: String} ,
 		// type: mongoose.ObjectId ,
-		required:false},
 	isEmployee:{
 		type: String ,
 		// type: mongoose.ObjectId ,
-		required:false},
+		},
 	userDob:{
 		type: Date,
 		required:true},
 	userIsActive:{
 		type: Boolean,
-		required:true},
+		required:true,
+		default:true},
 	userRoles:[{
 		type: String,
 		required: true,
@@ -34,15 +34,12 @@ const usersSchema = new mongoose.Schema({
 		format:{type: String}	
 		},
 	userAddress: {
-		house:{
-			type: String,
-			required:true},
+		house:{type: String},
 		street:{
 			type: String,
 			required:true},
-		area:{
-			type: String,
-			required:true},
+		area:{type: String},
+		postCode:{type: String},
 		city:{
 			type: String,
 			required:true}	

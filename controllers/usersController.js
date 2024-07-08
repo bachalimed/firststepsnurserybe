@@ -1,5 +1,6 @@
 const User = require('../models/User')
-//const Note = require('../models/Note')//we might need the note module in this controller
+const Parent = require('../models/Parent')//we might need the parent module in this controller
+//const Employee = require('../models/Employee')//we might need the employee module in this controller
 const asyncHandler = require('express-async-handler')//instead of using try catch
 const bcrypt = require('bcrypt') //to hash passwords before saving them
 const mongoose = require('mongoose')
@@ -15,7 +16,6 @@ const getAllUsers = asyncHandler(async (req, res) => {
     if (!users?.length) {
         return res.status(400).json({ message: 'No userss found' })
     }
-
     res.json(users)
 })
 
@@ -24,10 +24,10 @@ const getAllUsers = asyncHandler(async (req, res) => {
 // @route POST /admin/users
 // @access Private
 const createNewUser = asyncHandler(async (req, res) => {
-    const { userFirstName, userMiddleName, userLastName, username, password, accessToken, IsParent, IsEmployee, userDob, userIsActive, userRoles, userPhoto, userAddress, userContact  } = req.body//this will come from front end we put all the fields o fthe collection here
+    const { userFullName, username, password, accessToken, IsParent, IsEmployee, userDob, userIsActive, userRoles, userPhoto, userAddress, userContact  } = req.body//this will come from front end we put all the fields o fthe collection here
 
     //Confirm data is present in the request with all required fields
-    if (!userFirstName ||!userLastName  || !username ||!userDob ||!password ||!userContact || !Array.isArray(userRoles) || !userRoles.length) {
+    if (!userFullName || !username ||!userDob ||!password ||!userContact || !Array.isArray(userRoles) || !userRoles.length) {
         return res.status(400).json({ message: 'All fields are required' })//400 : bad request
     }
     
@@ -38,10 +38,19 @@ const createNewUser = asyncHandler(async (req, res) => {
         return res.status(409).json({ message: 'Duplicate username' })
     }
 
+    // Check for duplicate userFullName
+    const duplicateName = await User.findOne({userFullName }).lean().exec()//because we re receiving only one response from mongoose
+
+    if (duplicateName) {
+        return res.status(409).json({ message: 'Duplicate Full name' })
+    }
+    
+
+
     // Hash password 
     const hashedPwd = await bcrypt.hash(password, 10) // salt roundsm we will implement it laterm normally password is without''
     
-    const userObject = { userFirstName, userMiddleName, userLastName, username, "password" :hashedPwd, accessToken,  IsParent, IsEmployee, userDob, userIsActive, userRoles, userPhoto, userAddress, userContact  }//construct new user to be stored
+    const userObject = { userFullName, username, "password" :hashedPwd, accessToken,  IsParent, IsEmployee, userDob, userIsActive, userRoles, userPhoto, userAddress, userContact  }//construct new user to be stored
 
     // Create and store new user 
     const user = await User.create(userObject)
@@ -52,12 +61,19 @@ const createNewUser = asyncHandler(async (req, res) => {
         res.status(400).json({ message: 'Invalid user data received' })
     }
 })
+//internalCreateNew User to be used by other controllers
+
+
+
+
+
+
 
 // @desc Update a user
 // @route PATCH /admin/users
 // @access Private
 const updateUser = asyncHandler(async (req, res) => {
-    const { id, userFirstName, userMiddleName, userLastName, username, password, accessToken, isParent, isEmployee, userDob, userIsActive, userRoles, userPhoto, userAddress, userContact  } = req.body
+    const { id, userFullName, username, password, accessToken, isParent, isEmployee, userDob, userIsActive, userRoles, userPhoto, userAddress, userContact  } = req.body
 
     // Confirm data 
     if (!id || !username || !Array.isArray(userRoles) || !userRoles.length || typeof userIsActive !== 'boolean') {
@@ -79,9 +95,7 @@ const updateUser = asyncHandler(async (req, res) => {
         return res.status(409).json({ message: 'Duplicate username' })
     }
 
-    user.userFirstName = userFirstName//it will only allow updating properties that are already existant in the model
-    user.userMiddleName = userMiddleName
-    user.userLastName = userLastName
+    user.userFullName = userFullName//it will only allow updating properties that are already existant in the model
     user.username = username
     user.userRoles = userRoles
     user.accessToken = accessToken
@@ -136,9 +150,16 @@ const deleteUser = asyncHandler(async (req, res) => {
     res.json(reply)
 })
 
+
+
+
+
+
+
 module.exports = {
     getAllUsers,
     createNewUser,
     updateUser,
     deleteUser
+    
 }
