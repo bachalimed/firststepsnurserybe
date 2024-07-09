@@ -1,61 +1,48 @@
 const mongoose = require('mongoose')
 
 
+
+
 const studentsSchema = new mongoose.Schema({
 	//id is already assigned automatically by mongo
-	userFullName:{
-	userFirstName:{type: String, required:true, index: true},
-    userMiddleName: {type: String, index: true},
-    userLastName: {type: String, required:true, index: true}}, 
-	username: {type: String, index: true, unique: true},
-	password: {type: String, required:true, index: true},
-	accessToken: {type: String, index: true},
-	isParent:{
-		type: String} ,
-		// type: mongoose.ObjectId ,
-	isEmployee:{
-		type: String ,
-		// type: mongoose.ObjectId ,
-		},
-	userDob:{
-		type: Date,
-		required:true},
-	userIsActive:{
-		type: Boolean,
-		required:true,
-		default:true},
-	userRoles:[{
-		type: String,
-		required: true,
-		index: true}],
-	userPhoto: {
+	studentName:{
+		firstName:{type: String, required:true, index: true},
+		middleName: {type: String, index: true},
+		lastName: {type: String, required:true, index: true}}, 
+	studentDob:{type: Date, required:true},
+	studentSex: {type: String, required:true},
+	studentIsActive: {type: Boolean, index: true},
+	studentYear: {type: String, index: true},
+	studentPhoto: {
 		label:{type: String},
 		location:{type: String},
 		size:{type: Number},
 		format:{type: String}	
 		},
-	userAddress: {
-		house:{type: String},
-		street:{
-			type: String,
-			required:true},
-		area:{type: String},
-		postCode:{type: String},
-		city:{
-			type: String,
-			required:true}	
-		},
-	userContact: {
-		primaryPhone:{
-			type: Number,
-			required:true},
-		secondaryPhone:{
-			type: Number,
-			required:true},
-		email:{
-			type: String,
-			required:true}}
-	
+	studentParent:{
+		studentMother:{type: String, index: true},
+		studentFather:{type: String, index: true}},
+	studentContact:{
+		fatherPhone:{type: Number},
+		motherPhone:{type: Number}},
+	studentJointFamily:{type: Boolean},
+	studentGardien:[
+        {gardienFirstName:{type: String, index: true},
+            gardienMiddleName:{type: String, index: true},
+            gardienlastName:{type: String, index: true},
+            gardienPhone:{type: Number}}],
+	studentEducation:[
+		{schoolyear:{type: String},
+		attendedSchool:{type: String, index: true},
+		note:{type: String, index: true}}],
+		
+	lastModified:{
+		date:{type: Date},
+		operator:{type: String, index: true}},
+	studentDocuments:[
+		{id: {type: String}}],
+	admissions:[
+			{schoolYear:{type: String}, admission:{type: String}}],
 	})
 
 module.exports = mongoose.model('students', studentsSchema)

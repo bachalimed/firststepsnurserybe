@@ -231,7 +231,7 @@ const deleteEmployee = asyncHandler(async (req, res) => {//uses parent id
     //if user is also an parent, delete only the employee collection and keep user
     if(user.isParent){
         const result1 = await employee.deleteOne()
-        const reply = `employee ${result1.id} deleted`
+        const reply = `employee ${employee.id} deleted`
        res.json(reply)
     } else{
 
@@ -243,7 +243,7 @@ const deleteEmployee = asyncHandler(async (req, res) => {//uses parent id
 
 			  res.json(reply)
 		}
-
+        
 })
 module.exports = {
     getAllEmployees,
