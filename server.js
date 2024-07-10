@@ -30,10 +30,10 @@ app.use('/', express.static(path.join(__dirname, 'public')))
 app.use('/', require('./routes/root'))
 app.use('/admin/users', require('./routes/userRoutes'))//this will decide which request is used from front end
 //app.use('/notes', require('./routes/noteRoutes'))
-
 app.use('/students/studentsParents/parents', require('./routes/parentRoutes'))
 app.use('/students/studentsParents/students', require('./routes/studentRoutes'))
 app.use('/hr/employees', require('./routes/employeeRoutes'))
+app.use('/desk/tasks', require('./routes/taskRoutes'))
 
 app.all('*', (req,res)=>{
     res.status(404)

@@ -69,97 +69,92 @@ const createNewStudent = asyncHandler(async (req, res) => {
 
 
 
-// // @desc Update a user
-// // @route PATCH 'students/studentsParents/students
-// // @access Private
-// const updateUser = asyncHandler(async (req, res) => {
-//     const { id, userFullName, username, password, accessToken, isParent, isEmployee, userDob, userIsActive, userRoles, userPhoto, userAddress, userContact  } = req.body
+// @desc Update a student
+// @route PATCH 'students/studentsParents/students
+// @access Private
+const updateStudent = asyncHandler(async (req, res) => {
+    const { id, studentName, studentDob,  studentSex, studentIsActive, studentYear, studentPhoto, studentParent,
+        studentContact, studentJointFamily, studentGardien, studentEducation, lastModified, studentDocuments, 
+        admissions  } = req.body
 
-//     // Confirm data 
-//     if (!id || !username || !Array.isArray(userRoles) || !userRoles.length || typeof userIsActive !== 'boolean') {
-//         return res.status(400).json({ message: 'All fields except password are required' })
-//     }
+    // Confirm data 
+    if (!studentName || !studentDob ||!studentSex ||!studentYear ||!Array.isArray(studentEducation) || !studentEducation.length) {
+        return res.status(400).json({ message: 'All fields except required' })
+    }
 
-//     // Does the user exist to update?
-//     const user = await User.findById(id).exec()//we did not lean becausse we need the save method attached to the response
+    // Does the student exist to update?
+    const student = await Student.findById(id).exec()//we did not lean becausse we need the save method attached to the response
 
-//     if (!user) {
-//         return res.status(400).json({ message: 'User not found' })
-//     }
+    if (!student) {
+        return res.status(400).json({ message: 'Student not found' })
+    }
 
-//     // Check for duplicate 
-//     const duplicate = await User.findOne({ username }).lean().exec()
+    // Check for duplicate 
+    const duplicate = await Student.findOne({ studentName }).lean().exec()
 
-//     // Allow updates to the original user 
-//     if (duplicate && duplicate?._id.toString() !== id) {
-//         return res.status(409).json({ message: 'Duplicate username' })
-//     }
+    // Allow updates to the original user 
+    if (duplicate && duplicate?._id.toString() !== id) {
+        return res.status(409).json({ message: 'Duplicate name' })
+    }
 
-//     user.userFullName = userFullName//it will only allow updating properties that are already existant in the model
-//     user.username = username
-//     user.userRoles = userRoles
-//     user.accessToken = accessToken
-//     user.isParent = isParent
-//     user.isEmployee = isEmployee
-//     user.userDob = userDob
-//     user.userIsActive = userIsActive
-//     user.userRoles = userRoles
-//     user.userPhoto = userPhoto
-//     user.userAddress =userAddress
-//     user.userContact =userContact
+    student.studentName = studentName//it will only allow updating properties that are already existant in the model
+    student.studentDob = studentDob
+    student.studentSex = studentSex
+    student.studentIsActive = studentIsActive
+    student.studentYear = studentYear
+    student.studentPhoto = studentPhoto
+    student.studentParent = studentParent
+    student.studentContact = studentContact
+    student.studentJointFamily = studentJointFamily
+    student.studentGardien = studentGardien
+    student.studentEducation = studentEducation
+    student.lastModified = lastModified
+    student.studentDocuments = studentDocuments
+    student.admissions = admissions
+   
+    const updatedStudent = await student.save()//save method received when we did not include lean
 
-//     if (password) {//only if the password is requested to be updated
-//         // Hash password 
-//         user.password = await bcrypt.hash(password, 10) // salt rounds 
-//     }
+    res.json({ message: `student ${updatedStudent.studentName.firstName+" "+updatedStudent.studentName.middleName+" "+updatedStudent.studentName.lastName}, updated` })
+})
+//--------------------------------------------------------------------------------------1   
+// @desc Delete a student
+// @route DELETE 'students/studentsParents/students
+// @access Private
+const deleteStudent = asyncHandler(async (req, res) => {
+    const { id } = req.body
 
-//     const updatedUser = await user.save()//save method received when we did not include lean
+    // Confirm data
+    if (!id) {
+        return res.status(400).json({ message: 'Student ID Required' })
+    }
 
-//     res.json({ message: `${updatedUser.username} updated` })
-// })
-// //--------------------------------------------------------------------------------------1   
-// // @desc Delete a user
-// // @route DELETE 'students/studentsParents/students
-// // @access Private
-// const deleteUser = asyncHandler(async (req, res) => {
-//     const { id } = req.body
-
-//     // Confirm data
-//     if (!id) {
-//         return res.status(400).json({ message: 'User ID Required' })
-//     }
-
-//     // Does the user still have assigned notes?
-//     // const note = await Note.findOne({ user: id }).lean().exec()
-//     // if (note) {
-//     //     return res.status(400).json({ message: 'User has assigned notes' })
-//     // }
-
-
-//     // Does the user exist to delete?
-//     const user = await User.findById(id).exec()
-
-//     if (!user) {
-//         return res.status(400).json({ message: 'User not found' })
-//     }
-
-//     const result = await user.deleteOne()
-
-//     const reply = `Username ${result.username} with ID ${result._id} deleted`
-
-//     res.json(reply)
-// })
+    // Does the user still have assigned notes?
+    // const note = await Note.findOne({ user: id }).lean().exec()
+    // if (note) {
+    //     return res.status(400).json({ message: 'User has assigned notes' })
+    // }
 
 
+    // Does the user exist to delete?
+    const student = await Student.findById(id).exec()
 
+    if (!student) {
+        return res.status(400).json({ message: 'Student not found' })
+    }
 
+    const result = await student.deleteOne()
+
+    const reply = `student ${student.studentName.firstName+" "+student.studentName.middleName+" "+student.studentName.lastName}, with ID ${result._id} deleted`
+
+    res.json(reply)
+})
 
 
 
 module.exports = {
     getAllStudents,
     createNewStudent,
-    // updateStudent,
-    // deleteStudent
+    updateStudent,
+    deleteStudent
     
 }

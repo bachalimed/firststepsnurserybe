@@ -44,6 +44,5 @@ const studentsSchema = new mongoose.Schema({
 	admissions:[
 			{schoolYear:{type: String}, admission:{type: String}}],
 	})
-
 module.exports = mongoose.model('students', studentsSchema)
 
