@@ -56,100 +56,89 @@ const createNewTask = asyncHandler(async (req, res) => {
         res.status(400).json({ message: 'Invalid task data received' })
     }
 })
-//internalcontroller :CreateNew User to be used by other controllers??
 
 
 
 
+// @desc Update a task
+// @route PATCH 'desk/tasks
+// @access Private
+const updateTask = asyncHandler(async (req, res) => {
+    const { id, taskCreationDate, taskPriority, taskSubject, taskDescription, taskCreator, taskReference,  taskDueDate,
+        taskResponsible, taskAction, taskState, taskCompletionDate, lastModified, taskYear  } = req.body
 
+    // Confirm data 
+    if (!taskCreationDate ||!taskPriority ||! taskSubject ||! taskDescription ||! taskCreator 
+        ||! taskDueDate||! taskResponsible||! taskState||! lastModified.operator||! taskYear) {
+        return res.status(400).json({ message: 'All mandatory fields required' })
+    }
 
+    // Does the task exist to update?
+    const task = await Task.findById(id).exec()//we did not lean becausse we need the save method attached to the response
 
-// // @desc Update a student
-// // @route PATCH 'students/studentsParents/students
-// // @access Private
-// const updateStudent = asyncHandler(async (req, res) => {
-//     const { id, studentName, studentDob,  studentSex, studentIsActive, studentYear, studentPhoto, studentParent,
-//         studentContact, studentJointFamily, studentGardien, studentEducation, lastModified, studentDocuments, 
-//         admissions  } = req.body
+    if (!task) {
+        return res.status(400).json({ message: 'Task not found' })
+    }
 
-//     // Confirm data 
-//     if (!studentName || !studentDob ||!studentSex ||!studentYear ||!Array.isArray(studentEducation) || !studentEducation.length) {
-//         return res.status(400).json({ message: 'All fields except required' })
-//     }
+    // Check for duplicate 
+    const duplicate = await Task.findOne({ taskSubject }).lean().exec()
 
-//     // Does the student exist to update?
-//     const student = await Student.findById(id).exec()//we did not lean becausse we need the save method attached to the response
+    // Allow updates to the original user 
+    if (duplicate && duplicate?._id.toString() !== id) {
+        return res.status(409).json({ message: 'Duplicate task' })
+    }
 
-//     if (!student) {
-//         return res.status(400).json({ message: 'Student not found' })
-//     }
+    task.taskCreationDate = taskCreationDate//it will only allow updating properties that are already existant in the model
+    task.taskPriority = taskPriority
+    task.taskSubject = taskSubject
+    task.taskDescription = taskDescription
+    task.taskCreator = taskCreator
+    task.taskReference = taskReference
+    task.taskDueDate = taskDueDate
+    task.taskResponsible = taskResponsible
+    task.taskAction = taskAction
+    task.taskState = taskState
+    task.taskCompletionDate = taskCompletionDate
+    task.lastModified = lastModified
+    task.taskYear = taskYear
+    
+    
+    const updatedTask = await task.save()//save method received when we did not include lean
 
-//     // Check for duplicate 
-//     const duplicate = await Student.findOne({ studentName }).lean().exec()
+    res.json({ message: `task: ${updatedTask.taskSubject}, updated` })
+})
+//--------------------------------------------------------------------------------------1   
+// @desc Delete a student
+// @route DELETE 'students/studentsParents/students
+// @access Private
+const deleteTask = asyncHandler(async (req, res) => {
+    const { id } = req.body
 
-//     // Allow updates to the original user 
-//     if (duplicate && duplicate?._id.toString() !== id) {
-//         return res.status(409).json({ message: 'Duplicate name' })
-//     }
+    // Confirm data
+    if (!id) {
+        return res.status(400).json({ message: 'Task ID Required' })
+    }
 
-//     student.studentName = studentName//it will only allow updating properties that are already existant in the model
-//     student.studentDob = studentDob
-//     student.studentSex = studentSex
-//     student.studentIsActive = studentIsActive
-//     student.studentYear = studentYear
-//     student.studentPhoto = studentPhoto
-//     student.studentParent = studentParent
-//     student.studentContact = studentContact
-//     student.studentJointFamily = studentJointFamily
-//     student.studentGardien = studentGardien
-//     student.studentEducation = studentEducation
-//     student.lastModified = lastModified
-//     student.studentDocuments = studentDocuments
-//     student.admissions = admissions
-   
-//     const updatedStudent = await student.save()//save method received when we did not include lean
+    // Does the user exist to delete?
+    const task = await Task.findById(id).exec()
 
-//     res.json({ message: `student ${updatedStudent.studentName.firstName+" "+updatedStudent.studentName.middleName+" "+updatedStudent.studentName.lastName}, updated` })
-// })
-// //--------------------------------------------------------------------------------------1   
-// // @desc Delete a student
-// // @route DELETE 'students/studentsParents/students
-// // @access Private
-// const deleteStudent = asyncHandler(async (req, res) => {
-//     const { id } = req.body
+    if (!task) {
+        return res.status(400).json({ message: 'Task not found' })
+    }
 
-//     // Confirm data
-//     if (!id) {
-//         return res.status(400).json({ message: 'Student ID Required' })
-//     }
+    const result = await task.deleteOne()
 
-//     // Does the user still have assigned notes?
-//     // const note = await Note.findOne({ user: id }).lean().exec()
-//     // if (note) {
-//     //     return res.status(400).json({ message: 'User has assigned notes' })
-//     // }
+    const reply = `task ${task.taskSubject}, with ID ${task._id}, deleted`
 
-
-//     // Does the user exist to delete?
-//     const student = await Student.findById(id).exec()
-
-//     if (!student) {
-//         return res.status(400).json({ message: 'Student not found' })
-//     }
-
-//     const result = await student.deleteOne()
-
-//     const reply = `student ${student.studentName.firstName+" "+student.studentName.middleName+" "+student.studentName.lastName}, with ID ${result._id} deleted`
-
-//     res.json(reply)
-// })
+    res.json(reply)
+})
 
 
 
 module.exports = {
     getAllTasks,
     createNewTask,
-//     updateTask,
-//     deleteTask
-    
+    updateTask,
+    deleteTask
+ 
 }
