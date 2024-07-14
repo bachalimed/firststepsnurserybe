@@ -8,7 +8,7 @@ const tasksSchema = new mongoose.Schema({
 	taskPriority: {type: String, required:true,index: true},
 	taskSubject: {type: String, required:true, index: true},
 	taskDescription: {type: String, required:true, index: true},
-	taskCreator: {type: String, required:true,index: true},
+	taskCreator: {type: mongoose.Schema.Types.ObjectId, required:true,index: true},
 	taskReference: {type: String, index: true},
 	taskDueDate: {type: Date, required:true, index: true},
 	taskResponsible: {type: String, required:true, index: true},
@@ -22,7 +22,7 @@ const tasksSchema = new mongoose.Schema({
 	taskCompletionDate: {type: Date, index: true},
 	lastModified: {
 		date: {type: Date},
-		operator: {type: String, required:true, index: true}},
+		operator: {type: mongoose.Schema.Types.ObjectId, required:true, index: true}},
 	taskYear:{type: String, required:true, index: true}
 
 	})

@@ -10,10 +10,10 @@ const usersSchema = new mongoose.Schema({
 	password: {type: String, required:true, index: true},
 	accessToken: {type: String, index: true},
 	isParent:{
-		type: String} ,
+		type: mongoose.Schema.Types.ObjectId} ,
 		// type: mongoose.ObjectId ,
 	isEmployee:{
-		type: String ,
+		type: mongoose.Schema.Types.ObjectId ,
 		// type: mongoose.ObjectId ,
 		},
 	userDob:{
@@ -56,6 +56,5 @@ const usersSchema = new mongoose.Schema({
 			required:true}}
 	
 	})
-
 module.exports = mongoose.model('users', usersSchema)
 

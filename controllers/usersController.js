@@ -6,7 +6,7 @@ const bcrypt = require('bcrypt') //to hash passwords before saving them
 const mongoose = require('mongoose')
 
 // @desc Get all users
-// @route GET /admin/users              ??how to modify this route to admin/users??
+// @route GET /admin/users              ??how to modify this route to admin/users is in serve.js and userRoutes
 // @access Private // later we will establish authorisations
 const getAllUsers = asyncHandler(async (req, res) => {
     // Get all users from MongoDB
@@ -24,7 +24,7 @@ const getAllUsers = asyncHandler(async (req, res) => {
 // @route POST /admin/users
 // @access Private
 const createNewUser = asyncHandler(async (req, res) => {
-    const { userFullName, username, password, accessToken, IsParent, IsEmployee, userDob, userIsActive, userRoles, userPhoto, userAddress, userContact  } = req.body//this will come from front end we put all the fields o fthe collection here
+    const { userFullName, username, password, accessToken, isParent, isEmployee, userDob, userIsActive, userRoles, userPhoto, userAddress, userContact  } = req.body//this will come from front end we put all the fields o fthe collection here
 
     //Confirm data is present in the request with all required fields
     if (!userFullName || !username ||!userDob ||!password ||!userContact || !Array.isArray(userRoles) || !userRoles.length) {
@@ -50,7 +50,7 @@ const createNewUser = asyncHandler(async (req, res) => {
     // Hash password 
     const hashedPwd = await bcrypt.hash(password, 10) // salt roundsm we will implement it laterm normally password is without''
     
-    const userObject = { userFullName, username, "password" :hashedPwd, accessToken,  IsParent, IsEmployee, userDob, userIsActive, userRoles, userPhoto, userAddress, userContact  }//construct new user to be stored
+    const userObject = { userFullName, username, "password" :hashedPwd, accessToken,  isParent, isEmployee, userDob, userIsActive, userRoles, userPhoto, userAddress, userContact  }//construct new user to be stored
 
     // Create and store new user 
     const user = await User.create(userObject)

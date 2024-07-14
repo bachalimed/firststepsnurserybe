@@ -14,7 +14,7 @@ const getAllTasks = asyncHandler(async (req, res) => {
 
     // If no students 
     if (!tasks?.length) {
-        return res.status(400).json({ message: 'No taskss found' })
+        return res.status(400).json({ message: 'No taskss found from task controller with love' })
     }
     res.json(tasks)
 })

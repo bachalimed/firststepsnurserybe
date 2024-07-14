@@ -14,7 +14,7 @@ const parentsSchema = new mongoose.Schema({
             index:true}
     }],
     partner: {
-        type: String,
+        type: mongoose.Schema.Types.ObjectId,
         index:true}
 })
 

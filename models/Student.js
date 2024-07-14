@@ -20,8 +20,8 @@ const studentsSchema = new mongoose.Schema({
 		format:{type: String}	
 		},
 	studentParent:{
-		studentMother:{type: String, index: true},
-		studentFather:{type: String, index: true}},
+		studentMother:{type: mongoose.Schema.Types.ObjectId, index: true},
+		studentFather:{type: mongoose.Schema.Types.ObjectId, index: true}},
 	studentContact:{
 		fatherPhone:{type: Number},
 		motherPhone:{type: Number}},

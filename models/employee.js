@@ -5,7 +5,7 @@ const employeesSchema = new mongoose.Schema({
         type: Date,
         required: true
     },
-   
+
     employeeDocuments: [{
         type: String,
         required: false
