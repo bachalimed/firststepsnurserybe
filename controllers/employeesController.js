@@ -110,8 +110,8 @@ const employee = await Employee.create(employeeObject)
 
 
 
-// @desc Update a parent, we will retrieve all information from user and parent and update and save in both collections
-// @route PATCH /students/studentsParents/parents
+// @desc Update a employee, we will retrieve all information from user and parent and update and save in both collections
+// @route PATCH /hr/employees
 // @access Private
 const updateEmployee = asyncHandler(async (req, res) => {
     const { id, userFullName, username, password, accessToken, isParent, isEmployee, userDob, userIsActive, userRoles, userPhoto, userAddress, userContact, 
@@ -200,7 +200,7 @@ const updateEmployee = asyncHandler(async (req, res) => {
 
 //--------------------------------------------------------------------------------------1   
 // @desc Delete a parent, if no isEmployee, then delete the user orelse delete only parent and keep its user, if students are active dont delete
-// @route DELETE /students/studentsParents/parents
+// @route DELETE /hr/employees
 // @access Private
 const deleteEmployee = asyncHandler(async (req, res) => {//uses parent id
     const { id } = req.body

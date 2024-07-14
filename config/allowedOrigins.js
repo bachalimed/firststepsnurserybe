@@ -6,5 +6,4 @@ const allowedOrigins = [
     'https://firststepsnursery.com',
     'https://www.firststepsnursery.com'
 ]
-
 module.exports = allowedOrigins

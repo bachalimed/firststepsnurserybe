@@ -9,7 +9,7 @@ const parentsSchema = new mongoose.Schema({
     },
     child: [{
         id:{
-            type: String ,
+            type: mongoose.Schema.Types.ObjectId ,
             required: true,
             index:true}
     }],
