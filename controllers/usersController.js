@@ -21,15 +21,16 @@ const getAllUsers = asyncHandler(async (req, res) => {
 
 //----------------------------------------------------------------------------------
 // @desc Create new user
-// @route POST /admin/users
+// @route POST /admin/usersManagement
 // @access Private
 const createNewUser = asyncHandler(async (req, res) => {
-    const { userFullName, username, password, accessToken, isParent, isEmployee, userDob, userIsActive, userRoles, userPhoto, userAddress, userContact  } = req.body//this will come from front end we put all the fields o fthe collection here
+    const { userFullName, username, password,  isParent, isEmployee, userDob, userIsActive, userRoles, userPhoto, userAddress, userContact  } = req.body//this will come from front end we put all the fields o fthe collection here
 
     //Confirm data is present in the request with all required fields
     if (!userFullName || !username ||!userDob ||!password ||!userContact || !Array.isArray(userRoles) || !userRoles.length) {
-        return res.status(400).json({ message: 'All fields are required' })//400 : bad request
+        return res.status(400).json({ message: 'All fields are requiredd' })//400 : bad request
     }
+
     
     // Check for duplicate username
     const duplicate = await User.findOne({username }).lean().exec()//because we re receiving only one response from mongoose
@@ -50,7 +51,7 @@ const createNewUser = asyncHandler(async (req, res) => {
     // Hash password 
     const hashedPwd = await bcrypt.hash(password, 10) // salt roundsm we will implement it laterm normally password is without''
     
-    const userObject = { userFullName, username, "password" :hashedPwd, accessToken,  isParent, isEmployee, userDob, userIsActive, userRoles, userPhoto, userAddress, userContact  }//construct new user to be stored
+    const userObject = { userFullName, username, "password" :hashedPwd,   isParent, isEmployee, userDob, userIsActive, userRoles, userPhoto, userAddress, userContact  }//construct new user to be stored
 
     // Create and store new user 
     const user = await User.create(userObject)
@@ -70,7 +71,7 @@ const createNewUser = asyncHandler(async (req, res) => {
 
 
 // @desc Update a user
-// @route PATCH /admin/users
+// @route PATCH /admin/usersManagement
 // @access Private
 const updateUser = asyncHandler(async (req, res) => {
     const { id, userFullName, username, password, accessToken, isParent, isEmployee, userDob, userIsActive, userRoles, userPhoto, userAddress, userContact  } = req.body
@@ -119,7 +120,7 @@ const updateUser = asyncHandler(async (req, res) => {
 })
 //--------------------------------------------------------------------------------------1   
 // @desc Delete a user
-// @route DELETE /admin/users
+// @route DELETE /admin/usersManagement
 // @access Private
 const deleteUser = asyncHandler(async (req, res) => {
     const { id } = req.body

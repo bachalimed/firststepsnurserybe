@@ -243,7 +243,7 @@ const deleteEmployee = asyncHandler(async (req, res) => {//uses parent id
 
 			  res.json(reply)
 		}
-        
+    
 })
 module.exports = {
     getAllEmployees,
