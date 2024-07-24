@@ -49,8 +49,8 @@ const usersSchema = new mongoose.Schema({
 			type: Number,
 			required:true},
 		secondaryPhone:{
-			type: Number,
-			required:true},
+			type: Number
+			},
 		email:{
 			type: String,
 			required:true}}

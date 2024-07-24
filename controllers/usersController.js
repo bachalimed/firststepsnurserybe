@@ -34,7 +34,7 @@ const createNewUser = asyncHandler(async (req, res) => {
         return res.status(400).json({ message: 'All fields are requiredd' })//400 : bad request
     }
 
-    console.log(userFullName, username, password, isParent, isEmployee,  userDob, userIsActive, userRoles, userPhoto, userAddress, userContact )
+    //console.log(userFullName, username, password, isParent, isEmployee,  userDob, userIsActive, userRoles, userPhoto, userAddress, userContact )
     // Check for duplicate username
     const duplicate = await User.findOne({username }).lean().exec()//because we re receiving only one response from mongoose
 
