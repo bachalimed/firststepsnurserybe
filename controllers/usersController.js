@@ -1,9 +1,12 @@
 const User = require('../models/User')
 const Parent = require('../models/Parent')//we might need the parent module in this controller
-//const Employee = require('../models/Employee')//we might need the employee module in this controller
+const Employee = require('../models/Employee')//we might need the employee module in this controller
 const asyncHandler = require('express-async-handler')//instead of using try catch
 const bcrypt = require('bcrypt') //to hash passwords before saving them
 const mongoose = require('mongoose')
+
+
+
 
 // @desc Get all users
 // @route GET /admin/users              ??how to modify this route to admin/users is in serve.js and userRoutes
@@ -21,17 +24,17 @@ const getAllUsers = asyncHandler(async (req, res) => {
 
 //----------------------------------------------------------------------------------
 // @desc Create new user
-// @route POST /admin/usersManagement
+// @route POST /admin/usersManagement/newUser
 // @access Private
 const createNewUser = asyncHandler(async (req, res) => {
-    const { userFullName, username, password,  isParent, isEmployee, userDob, userIsActive, userRoles, userPhoto, userAddress, userContact  } = req.body//this will come from front end we put all the fields o fthe collection here
+    const { userFullName, username, password,   userDob, isParent, isEmployee, userIsActive, userRoles, userPhoto, userAddress, userContact  } = req.body//this will come from front end we put all the fields o fthe collection here
 
     //Confirm data is present in the request with all required fields
-    if (!userFullName || !username ||!userDob ||!password ||!userContact || !Array.isArray(userRoles) || !userRoles.length) {
+    if (!userFullName || !username ||!userDob ||!password ||!userContact.primaryPhone || !Array.isArray(userRoles) || !userRoles.length) {
         return res.status(400).json({ message: 'All fields are requiredd' })//400 : bad request
     }
 
-    
+    console.log(userFullName, username, password, isParent, isEmployee,  userDob, userIsActive, userRoles, userPhoto, userAddress, userContact )
     // Check for duplicate username
     const duplicate = await User.findOne({username }).lean().exec()//because we re receiving only one response from mongoose
 
@@ -46,6 +49,16 @@ const createNewUser = asyncHandler(async (req, res) => {
         return res.status(409).json({ message: 'Duplicate Full name' })
     }
     
+//check the related parent or employee id from the DB
+
+// const userAlsoParent=  userRoles.includes('Parent')
+// const userAlsoEmployee=  userRoles.includes(!'Parent') && userRoles.length!==0
+// if (userAlsoParent){
+
+
+// }
+
+
 
 
     // Hash password 
