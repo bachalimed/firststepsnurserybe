@@ -1,5 +1,6 @@
 const mongoose = require('mongoose')
 
+
 const usersSchema = new mongoose.Schema({
 	//id is already assigned automatically by mongo
 	userFullName:{

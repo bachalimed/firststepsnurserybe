@@ -4,7 +4,7 @@ const jwt = require('jsonwebtoken')
 const asyncHandler = require('express-async-handler')
 
 // @desc Login
-// @route POST /auth
+// @route POST /auth after the root url
 // @access Public
 const login = asyncHandler(async (req, res) => {
     const { username, password } = req.body//we expect a username and password to come in the login request
@@ -22,6 +22,7 @@ const login = asyncHandler(async (req, res) => {
     const match = await bcrypt.compare(password, foundUser.password)
 
     if (!match) return res.status(401).json({ message: 'Unauthorized password not matching' })
+
 //create access token
     const accessToken = jwt.sign(
         {
@@ -44,10 +45,10 @@ const login = asyncHandler(async (req, res) => {
     res.cookie('jwt', refreshToken, {
         httpOnly: true, //accessible only by web server 
         secure: true, //https
-        sameSite: 'None', //cross-site cookie 
+        sameSite: 'None', //cross-site cookie if we host front and backend in separate sites
         maxAge: 7 * 24 * 60 * 60 * 1000 //cookie expiry 1week here: better set to match rT of 7days
     })
-
+    
     // Send accessToken containing username and roles 
     res.json({ accessToken })
 })
@@ -58,7 +59,7 @@ const login = asyncHandler(async (req, res) => {
 const refresh = (req, res) => {
     const cookies = req.cookies
 
-    if (!cookies?.jwt) return res.status(401).json({ message: 'Unauthorized' })
+    if (!cookies?.jwt) return res.status(401).json({ message: 'Unauthorized, no cookie found' })
 
     const refreshToken = cookies.jwt
 

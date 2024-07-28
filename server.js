@@ -28,7 +28,7 @@ app.use(cookieParser())
 app.use('/', express.static(path.join(__dirname, 'public')))
 
 app.use('/', require('./routes/root'))
-app.use('/auth/', require('./routes/authRoutes'))
+app.use('/auth', require('./routes/authRoutes'))
 app.use('/admin/usersManagement/', require('./routes/userRoutes'))//this will decide which request is used from front end
 app.use('/admin/usersManagement/newUser/', require('./routes/userRoutes'))//this will decide which request is used from front end
 app.use('/admin/usersManagement/users/', require('./routes/userRoutes'))//this will decide which request is used from front end
