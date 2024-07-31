@@ -18,5 +18,5 @@ const parentsSchema = new mongoose.Schema({
         index:true}
 })
 
-module.exports = mongoose.model('Parents', parentsSchema)
+module.exports = mongoose.model('Parent', parentsSchema,'parents')
 

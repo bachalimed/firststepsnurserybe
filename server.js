@@ -26,14 +26,12 @@ app.use(express.json())
 app.use(cookieParser())
 
 app.use('/', express.static(path.join(__dirname, 'public')))
-
 app.use('/', require('./routes/root'))
 app.use('/auth', require('./routes/authRoutes'))
 app.use('/admin/usersManagement/', require('./routes/userRoutes'))//this will decide which request is used from front end
 app.use('/admin/usersManagement/newUser/', require('./routes/userRoutes'))//this will decide which request is used from front end
 app.use('/admin/usersManagement/users/', require('./routes/userRoutes'))//this will decide which request is used from front end
 app.use('/admin/usersManagement/:id/', require('./routes/userRoutes'))//this will decide which request is used from front end
-
 //app.use('/notes', require('./routes/noteRoutes'))
 app.use('/students/studentsParent/', require('./routes/parentRoutes'))//no need to specify each sub url to get the requests working
 app.use('/students/studentsParents/parents/', require('./routes/parentRoutes'))
@@ -42,7 +40,6 @@ app.use('/students/studentsParents/newStudent/', require('./routes/studentRoutes
 app.use('/hr/employees', require('./routes/employeeRoutes'))
 app.use('/desk/tasks', require('./routes/taskRoutes'))
 app.use('/settings/academicsSet/academicYears', require('./routes/academicYearRoutes'))
-
 
 app.all('*', (req,res)=>{
     res.status(404)

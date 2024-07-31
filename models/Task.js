@@ -26,5 +26,5 @@ const tasksSchema = new mongoose.Schema({
 	taskYear:{type: String, required:true, index: true}
 
 	})
-module.exports = mongoose.model('tasks', tasksSchema)
+module.exports = mongoose.model('Task', tasksSchema, 'tasks')
 

@@ -38,6 +38,6 @@ const employeesSchema = new mongoose.Schema({
 
 })
 
-module.exports = mongoose.model('Employee', employeesSchema)
+module.exports = mongoose.model('Employee', employeesSchema,'employees')
 
 
