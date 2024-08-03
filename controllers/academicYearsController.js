@@ -4,21 +4,30 @@ const AcademicYear = require('../models/AcademicYear')
 const asyncHandler = require('express-async-handler')//instead of using try catch
 
 const mongoose = require('mongoose')
-
+const { setCurrentAcademicYear } = require('../middleware/setCurrentAcademicYear')
 // @desc Get all academicYears
 // @route GET /admin/academicYears              ??how to modify this route to admin/academicYears is in serve.js and academicYearRoutes
 // @access Private // later we will establish authorisations
 const getAllAcademicYears = asyncHandler(async (req, res) => {
     // Get all academicYears from MongoDB
-    const academicYears = await AcademicYear.find().lean()//this will not return  other extra data(lean)
+    const academicYearsold = await AcademicYear.find().lean()//this will not return  other extra data(lean)
 
     // If no academicYears 
-    if (!academicYears?.length) {
+    if (!academicYearsold?.length) {
         return res.status(400).json({ message: 'No academicYearss found' })
     }
-    res.json(academicYears)
-})
 
+    //here we  specify which is the current year by comparing, will not save the current in the DB
+    try {
+        await setCurrentAcademicYear()
+        // we need the updated data after current year is set
+        const academicYears = await AcademicYear.find().lean()
+        res.status(200).json(academicYears)
+      } catch (error) {
+        res.status(500).send('Error setting the current academic year.')
+      }
+     
+})
 
 //----------------------------------------------------------------------------------
 // @desc Create new academicYear
