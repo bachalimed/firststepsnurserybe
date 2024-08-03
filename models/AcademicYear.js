@@ -12,4 +12,3 @@ const academicYearsSchema = new mongoose.Schema({
 	
 	})
 module.exports = mongoose.model('AcademicYear', academicYearsSchema,'academicYears')//the thrid is the name that will be used in the mongo collection
-
