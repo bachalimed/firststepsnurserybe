@@ -5,6 +5,7 @@ const asyncHandler = require('express-async-handler')//instead of using try catc
 
 const mongoose = require('mongoose')
 const { setCurrentAcademicYear } = require('../middleware/setCurrentAcademicYear')
+
 // @desc Get all academicYears
 // @route GET /admin/academicYears              ??how to modify this route to admin/academicYears is in serve.js and academicYearRoutes
 // @access Private // later we will establish authorisations
@@ -19,11 +20,10 @@ const getAllAcademicYears = asyncHandler(async (req, res) => {
 
     //here we  specify which is the current year by comparing, will not save the current in the DB
     else{
-        const academicYears = await setCurrentAcademicYear(academicYearsold)// this will the return the updated list already
+         const currentAcademicYear = await setCurrentAcademicYear()// this will the return the updated list already
         
-        //const academicYears = await AcademicYear.find().lean()
-
-
+        const academicYears = await AcademicYear.find().lean()
+        //const response = [academicYears, currentAcademicYear]
 
         res.status(200).json(academicYears)
     //   } catch (error) {

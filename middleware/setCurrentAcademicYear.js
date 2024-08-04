@@ -2,7 +2,7 @@
 const mongoose = require('mongoose')
 const AcademicYear = require('../models/AcademicYear') // Adjust the path to your model
 
-const setCurrentAcademicYear = async (academicYearsOldList) => {
+const setCurrentAcademicYear = async () => {
     const now = new Date()
     const currentYear = now.getFullYear()
     let currentAcademicYear = null
@@ -16,8 +16,8 @@ const setCurrentAcademicYear = async (academicYearsOldList) => {
     
     
     // Find the academic year that falls within this date range
-   // if(academicYearsOldList.length){
-    const currentAcademicYear = await academicYearsOldList.findOne({
+  //  if(academicYearsOldList?.length){
+    const currentAcademicYear = await AcademicYear.findOne({
         yearStart: { $lte: endDate },
         yearEnd: { $gte: startDate }
         
@@ -35,17 +35,15 @@ const setCurrentAcademicYear = async (academicYearsOldList) => {
 
 
       console.log(`Academic Year "${currentAcademicYear.title}" is set as the current year.`)
-      const  academicYearsNewList = await AcademicYear.find().lean()
+      //const  academicYearsNewList = await AcademicYear.find().lean()
     } else {
       console.log('No academic year found within the specified date range.')
     }
   } catch (error) {
     console.error('Error setting the current academic year:', error)
   }
-  //this is added to return an updated list
-//   const updatedYears = 
-//   return 
-return academicYearsNewList
+
+return currentAcademicYear
 }
 
 module.exports = { setCurrentAcademicYear }
