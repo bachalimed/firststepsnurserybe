@@ -18,13 +18,16 @@ const getAllAcademicYears = asyncHandler(async (req, res) => {
     }
 
     //here we  specify which is the current year by comparing, will not save the current in the DB
-    try {
-        await setCurrentAcademicYear()
-        // we need the updated data after current year is set
-        const academicYears = await AcademicYear.find().lean()
+    else{
+        const academicYears = await setCurrentAcademicYear(academicYearsold)// this will the return the updated list already
+        
+        //const academicYears = await AcademicYear.find().lean()
+
+
+
         res.status(200).json(academicYears)
-      } catch (error) {
-        res.status(500).send('Error setting the current academic year.')
+    //   } catch (error) {
+    //     res.status(500).send('Error setting the current academic year.')
       }
      
 })
