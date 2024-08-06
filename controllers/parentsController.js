@@ -221,7 +221,7 @@ const deleteParent = asyncHandler(async (req, res) => {//uses parent id
 
          const result1 = await parent.deleteOne()
         	const result2 = await user.deleteOne()
-			console.log(result2)
+			//console.log(result2)
 
         	const reply = `Username ${user.username} deleted, parent ${user.userFullName.userFirstName + " " + user.userFullName.userMiddleName+ " "+ user.userFullName.userLastName} deleted`
 

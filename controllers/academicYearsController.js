@@ -22,10 +22,10 @@ const getAllAcademicYears = asyncHandler(async (req, res) => {
     else{
          const currentAcademicYear = await setCurrentAcademicYear()// this will the return the updated list already
         
-        const academicYears = await AcademicYear.find().lean()
+        const academicYearsList = await AcademicYear.find().lean()//this will be sent to front end
         //const response = [academicYears, currentAcademicYear]
 
-        res.status(200).json(academicYears)
+        res.status(200).json(academicYearsList)
     //   } catch (error) {
     //     res.status(500).send('Error setting the current academic year.')
       }
