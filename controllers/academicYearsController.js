@@ -4,43 +4,38 @@ const AcademicYear = require('../models/AcademicYear')
 const asyncHandler = require('express-async-handler')//instead of using try catch
 
 const mongoose = require('mongoose')
-const { setCurrentAcademicYear } = require('../middleware/setCurrentAcademicYear')
+
 
 // @desc Get all academicYears
-// @route GET /admin/academicYears              ??how to modify this route to admin/academicYears is in serve.js and academicYearRoutes
+// @route GET '/settings/academicsSet/academicYears/'            ??how to modify this route to admin/academicYears is in serve.js and academicYearRoutes
 // @access Private // later we will establish authorisations
 const getAllAcademicYears = asyncHandler(async (req, res) => {
     // Get all academicYears from MongoDB
-    const academicYearsold = await AcademicYear.find().lean()//this will not return  other extra data(lean)
+    const academicYears = await AcademicYear.find().lean()//this will not return  other extra data(lean)
 
     // If no academicYears 
-    if (!academicYearsold?.length) {
+    if (!academicYears?.length) {
         return res.status(400).json({ message: 'No academicYearss found' })
     }
-
-    //here we  specify which is the current year by comparing, will not save the current in the DB
     else{
-         const currentAcademicYear = await setCurrentAcademicYear()// this will the return the updated list already
-        
-        const academicYearsList = await AcademicYear.find().lean()//this will be sent to front end
-        //const response = [academicYears, currentAcademicYear]
-
-        res.status(200).json(academicYearsList)
-    //   } catch (error) {
-    //     res.status(500).send('Error setting the current academic year.')
+         res.status(200).json(
+            {academicYears,
+            total:academicYears.length})
+         console.log('returned academicYears')
+   
       }
      
 })
 
 //----------------------------------------------------------------------------------
 // @desc Create new academicYear
-// @route POST /admin/academicYears
+// @route POST '/settings/academicsSet/academicYears/'
 // @access Private
 const createNewAcademicYear = asyncHandler(async (req, res) => {
-    const { title, yearStart, yearEnd, currentYear, academicYearCreator} = req.body//this will come from front end we put all the fields o fthe collection here
+    const { title, yearStart, yearEnd, academicYearCreator} = req.body//this will come from front end we put all the fields o fthe collection here
 
     //Confirm data is present in the request with all required fields
-    if (!title || !yearStart ||!yearEnd ||!currentYear ||!academicYearCreator ) {
+    if (!title || !yearStart ||!yearEnd  ||!academicYearCreator ) {
         return res.status(400).json({ message: 'All fields are required' })//400 : bad request
     }
     
@@ -52,7 +47,7 @@ const createNewAcademicYear = asyncHandler(async (req, res) => {
     }
     
 
-    const academicYearObject = { title, yearStart, yearEnd, currentYear, academicYearCreator  }//construct new academicYear to be stored
+    const academicYearObject = { title, yearStart, yearEnd,  academicYearCreator  }//construct new academicYear to be stored
 
     // Create and store new academicYear 
     const academicYear = await AcademicYear.create(academicYearObject)
@@ -69,13 +64,13 @@ const createNewAcademicYear = asyncHandler(async (req, res) => {
 
 
 // @desc Update a academicYear
-// @route PATCH /admin/academicYears
+// @route PATCH '/settings/academicsSet/academicYears/'
 // @access Private
 const updateAcademicYear = asyncHandler(async (req, res) => {
-    const { id, title, yearStart, yearEnd, currentYear, academicYearCreator  } = req.body
+    const { id, title, yearStart, yearEnd, academicYearCreator  } = req.body
 
     // Confirm data 
-    if (!id || !title || !yearStart|| !yearEnd || !currentYear || !academicYearCreator) {
+    if (!id || !title || !yearStart|| !yearEnd || !academicYearCreator) {
         return res.status(400).json({ message: 'All fields  are required' })
     }
 
@@ -97,7 +92,7 @@ const updateAcademicYear = asyncHandler(async (req, res) => {
     academicYear.title = title//it will only allow updating properties that are already existant in the model
     academicYear.yearStart = yearStart
     academicYear.yearEnd = yearEnd
-    academicYear.currentYear = currentYear
+   
     academicYear.academicYearCreator = academicYearCreator
    
 
@@ -107,7 +102,7 @@ const updateAcademicYear = asyncHandler(async (req, res) => {
 })
 //--------------------------------------------------------------------------------------1   
 // @desc Delete a academicYear
-// @route DELETE /admin/academicYears
+// @route DELETE '/settings/academicsSet/academicYears/'
 // @access Private
 const deleteAcademicYear = asyncHandler(async (req, res) => {
     const { id } = req.body

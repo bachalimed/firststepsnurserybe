@@ -7,7 +7,7 @@ const academicYearsSchema = new mongoose.Schema({
 	title: {type: String, required:true, index: true},
 	yearStart: {type: Date, required:true,index: true},
 	yearEnd: {type: Date, required:true, index: true},
-	currentYear: {type: Boolean,  index: true},
+	
 	academicYearCreator: {type: mongoose.Schema.Types.ObjectId, required:true,index: true}
 	
 	})
