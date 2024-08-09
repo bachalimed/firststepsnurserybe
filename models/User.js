@@ -28,6 +28,10 @@ const usersSchema = new mongoose.Schema({
 		type: String,
 		required: true,
 		index: true}],
+	userAllowedActions:[{
+		type: String,
+		required: true,
+	}],
 	userPhoto: {
 		label:{type: String},
 		location:{type: String},

@@ -27,7 +27,7 @@ const getAllUsers = asyncHandler(async (req, res) => {
 // @route POST /admin/usersManagement/newUser
 // @access Private
 const createNewUser = asyncHandler(async (req, res) => {
-    const { userFullName, username, password,   userDob, isParent, isEmployee, userIsActive, userRoles, userPhoto, userAddress, userContact  } = req.body//this will come from front end we put all the fields o fthe collection here
+    const { userFullName, username, password, userAllowedActions,   userDob, isParent, isEmployee, userIsActive, userRoles, userPhoto, userAddress, userContact  } = req.body//this will come from front end we put all the fields o fthe collection here
 
     //Confirm data is present in the request with all required fields
     if (!userFullName || !username ||!userDob ||!password ||!userContact.primaryPhone || !Array.isArray(userRoles) || !userRoles.length) {
@@ -64,7 +64,7 @@ const createNewUser = asyncHandler(async (req, res) => {
     // Hash password 
     const hashedPwd = await bcrypt.hash(password, 10) // salt roundsm we will implement it laterm normally password is without''
     
-    const userObject = { userFullName, username, "password" :hashedPwd,   isParent, isEmployee, userDob, userIsActive, userRoles, userPhoto, userAddress, userContact  }//construct new user to be stored
+    const userObject = { userFullName, username, "password" :hashedPwd, userAllowedActions,   isParent, isEmployee, userDob, userIsActive, userRoles, userPhoto, userAddress, userContact  }//construct new user to be stored
 
     // Create and store new user 
     const user = await User.create(userObject)
@@ -87,7 +87,7 @@ const createNewUser = asyncHandler(async (req, res) => {
 // @route PATCH /admin/usersManagement
 // @access Private
 const updateUser = asyncHandler(async (req, res) => {
-    const { id, userFullName, username, password, accessToken, isParent, isEmployee, userDob, userIsActive, userRoles, userPhoto, userAddress, userContact  } = req.body
+    const { id, userFullName, username, password, accessToken,userAllowedActions, isParent, isEmployee, userDob, userIsActive, userRoles, userPhoto, userAddress, userContact  } = req.body
 
     // Confirm data 
     if (!id || !username || !Array.isArray(userRoles) || !userRoles.length || typeof userIsActive !== 'boolean') {
@@ -112,6 +112,7 @@ const updateUser = asyncHandler(async (req, res) => {
     user.userFullName = userFullName//it will only allow updating properties that are already existant in the model
     user.username = username
     user.userRoles = userRoles
+    user.userAllowedActions = userAllowedActions
     user.accessToken = accessToken
     user.isParent = isParent
     user.isEmployee = isEmployee
