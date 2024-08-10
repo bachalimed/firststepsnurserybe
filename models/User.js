@@ -32,12 +32,9 @@ const usersSchema = new mongoose.Schema({
 		type: String,
 		required: true,
 	}],
-	userPhoto: {
-		label:{type: String},
-		location:{type: String},
-		size:{type: Number},
-		format:{type: String}	
-		},
+	userPhoto:{type: String},
+	userPhotoLabel:{type: String},
+	userPhotoFormat:{type: String},
 	userAddress: {
 		house:{type: String},
 		street:{

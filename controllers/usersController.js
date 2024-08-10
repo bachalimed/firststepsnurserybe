@@ -8,6 +8,7 @@ const mongoose = require('mongoose')
 
 
 
+
 // @desc Get all users
 // @route GET /admin/users              ??how to modify this route to admin/users is in serve.js and userRoutes
 // @access Private // later we will establish authorisations
@@ -27,7 +28,12 @@ const getAllUsers = asyncHandler(async (req, res) => {
 // @route POST /admin/usersManagement/newUser
 // @access Private
 const createNewUser = asyncHandler(async (req, res) => {
-    const { userFullName, username, password, userAllowedActions,   userDob, isParent, isEmployee, userIsActive, userRoles, userPhoto, userAddress, userContact  } = req.body//this will come from front end we put all the fields o fthe collection here
+       
+    
+    //deconstrucing the  req body into variabled and file c alled userPhoto
+    const userPhoto = req.file ? req.file.path : null
+
+    const { userFullName, username, password, userAllowedActions,   userDob, isParent, isEmployee, userIsActive, userRoles,  userPhotoLabel, userPhotoFormat, userAddress, userContact  } = req.body//this will come from front end we put all the fields o fthe collection here
 
     //Confirm data is present in the request with all required fields
     if (!userFullName || !username ||!userDob ||!password ||!userContact.primaryPhone || !Array.isArray(userRoles) || !userRoles.length) {
@@ -64,7 +70,7 @@ const createNewUser = asyncHandler(async (req, res) => {
     // Hash password 
     const hashedPwd = await bcrypt.hash(password, 10) // salt roundsm we will implement it laterm normally password is without''
     
-    const userObject = { userFullName, username, "password" :hashedPwd, userAllowedActions,   isParent, isEmployee, userDob, userIsActive, userRoles, userPhoto, userAddress, userContact  }//construct new user to be stored
+    const userObject = { userFullName, username, "password" :hashedPwd, userAllowedActions,   isParent, isEmployee, userDob, userIsActive, userRoles, userPhoto, userPhotoLabel, userPhotoFormat, userAddress, userContact  }//construct new user to be stored
 
     // Create and store new user 
     const user = await User.create(userObject)
@@ -75,8 +81,6 @@ const createNewUser = asyncHandler(async (req, res) => {
         res.status(400).json({ message: 'Invalid user data received' })
     }
 })
-//internalCreateNew User to be used by other controllers
-
 
 
 
@@ -86,8 +90,8 @@ const createNewUser = asyncHandler(async (req, res) => {
 // @desc Update a user
 // @route PATCH /admin/usersManagement
 // @access Private
-const updateUser = asyncHandler(async (req, res) => {
-    const { id, userFullName, username, password, accessToken,userAllowedActions, isParent, isEmployee, userDob, userIsActive, userRoles, userPhoto, userAddress, userContact  } = req.body
+const updateUser = asyncHandler(async (req, res) => {//need te delete old photo??
+    const { id, userFullName, username, password, accessToken,userAllowedActions, isParent, isEmployee, userDob, userIsActive, userRoles, userPhoto, userPhotoLabel, userPhotoFormat, userAddress, userContact  } = req.body
 
     // Confirm data 
     if (!id || !username || !Array.isArray(userRoles) || !userRoles.length || typeof userIsActive !== 'boolean') {
@@ -120,6 +124,8 @@ const updateUser = asyncHandler(async (req, res) => {
     user.userIsActive = userIsActive
     user.userRoles = userRoles
     user.userPhoto = userPhoto
+    user.userPhotoLabel = userPhotoLabel
+    user.userPhotoFormat = userPhotoFormat
     user.userAddress =userAddress
     user.userContact =userContact
 
