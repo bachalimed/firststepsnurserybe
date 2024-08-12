@@ -33,8 +33,8 @@ const usersSchema = new mongoose.Schema({
 		required: true,
 	}],
 	userPhoto:{type: String},
-	userPhotoLabel:{type: String},
-	userPhotoFormat:{type: String},
+	// userPhotoLabel:{type: String},
+	// userPhotoFormat:{type: String},
 	userAddress: {
 		house:{type: String},
 		street:{

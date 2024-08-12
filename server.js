@@ -29,10 +29,10 @@ app.use('/', express.static(path.join(__dirname, 'public')))
 app.use('/', require('./routes/root'))
 app.use('/auth', require('./routes/authRoutes'))
 //app.use('/admin/usersManagement/', require('./routes/userRoutes'))//this was hidden for testing, was visible and working
-//app.use('/admin/usersManagement/newUser/', require('./routes/userRoutes'))//this was hidden becasue we used storage routes, will decide which request is used from front end this was removed becasue we user storageroute to handle new user
+app.use('/admin/usersManagement/photos/', require('./routes/photoStorageRoutes'))//will try to access user controller toupdate the photo
 app.use('/admin/usersManagement/users/', require('./routes/userRoutes'))//this will decide which request is used from front end
 app.use('/admin/usersManagement/:id/', require('./routes/userRoutes'))//this will decide which request is used from front end
-app.use('/admin/usersManagement/photos/newUser/', require('./routes/photoStorageRoutes'))//check if the path photos is the correct one in storage ROutes
+app.use('/admin/usersManagement/newUser/', require('./routes/userRoutes'))//check if the path photos is the correct one in storage ROutes
 //app.use('/notes', require('./routes/noteRoutes'))
 app.use('/students/studentsParent/', require('./routes/parentRoutes'))//no need to specify each sub url to get the requests working
 app.use('/students/studentsParents/parents/', require('./routes/parentRoutes'))
@@ -40,6 +40,7 @@ app.use('/students/studentsParents/students/', require('./routes/studentRoutes')
 app.use('/students/studentsParents/newStudent/', require('./routes/studentRoutes'))
 app.use('/hr/employees', require('./routes/employeeRoutes'))
 app.use('/desk/tasks', require('./routes/taskRoutes'))
+// app.use('/desk/tasks/myTasks', require('./routes/taskRoutes') )
 app.use('/settings/academicsSet/academicYears/', require('./routes/academicYearRoutes'))
 
 

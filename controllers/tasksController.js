@@ -18,6 +18,26 @@ const getAllTasks = asyncHandler(async (req, res) => {
     }
     res.json(tasks)
 })
+// // @desc getTasksByUSerId
+// // @route GET 'desk/tasks/myTasks with userID passed in the body of the query             
+// // @access Private // later we will establish authorisations
+// const getTasksByUSerId = asyncHandler(async (req, res) => {
+//     // Get all  from MongoDB
+//     const{userId}=req.bodyconsole.log(userId)
+//     const tasks = await Task.find().lean()//this will not return the extra data(lean)
+
+//     // If no students 
+//     if (!tasks?.length) {
+//         return res.status(400).json({ message: 'No taskss found from task controller with love' })
+//     }
+//     res.json(tasks)
+// })
+
+
+
+
+
+
 
 
 //----------------------------------------------------------------------------------

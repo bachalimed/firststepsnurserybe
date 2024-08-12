@@ -30,10 +30,7 @@ const getAllUsers = asyncHandler(async (req, res) => {
 const createNewUser = asyncHandler(async (req, res) => {
        
     
-    //deconstrucing the  req body into variabled and file c alled userPhoto
-    const userPhoto = req.file ? req.file.path : null
-
-    const { userFullName, username, password, userAllowedActions,   userDob, isParent, isEmployee, userIsActive, userRoles,  userPhotoLabel, userPhotoFormat, userAddress, userContact  } = req.body//this will come from front end we put all the fields o fthe collection here
+        const { userFullName, username, password, userAllowedActions,   userDob, isParent, isEmployee, userIsActive, userRoles,   userAddress, userContact  } = req.body//this will come from front end we put all the fields o fthe collection here
 
     //Confirm data is present in the request with all required fields
     if (!userFullName || !username ||!userDob ||!password ||!userContact.primaryPhone || !Array.isArray(userRoles) || !userRoles.length) {
@@ -91,7 +88,7 @@ const createNewUser = asyncHandler(async (req, res) => {
 // @route PATCH /admin/usersManagement
 // @access Private
 const updateUser = asyncHandler(async (req, res) => {//need te delete old photo??
-    const { id, userFullName, username, password, accessToken,userAllowedActions, isParent, isEmployee, userDob, userIsActive, userRoles, userPhoto, userPhotoLabel, userPhotoFormat, userAddress, userContact  } = req.body
+    const { id, userFullName, username, password, accessToken,userAllowedActions, isParent, isEmployee, userDob, userIsActive, userRoles, userAddress, userContact  } = req.body
 
     // Confirm data 
     if (!id || !username || !Array.isArray(userRoles) || !userRoles.length || typeof userIsActive !== 'boolean') {
@@ -123,9 +120,9 @@ const updateUser = asyncHandler(async (req, res) => {//need te delete old photo?
     user.userDob = userDob
     user.userIsActive = userIsActive
     user.userRoles = userRoles
-    user.userPhoto = userPhoto
-    user.userPhotoLabel = userPhotoLabel
-    user.userPhotoFormat = userPhotoFormat
+    // user.userPhoto = userPhoto
+    // user.userPhotoLabel = userPhotoLabel
+    // user.userPhotoFormat = userPhotoFormat
     user.userAddress =userAddress
     user.userContact =userContact
 

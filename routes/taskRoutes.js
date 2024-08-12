@@ -8,6 +8,7 @@ router.use(verifyJWT)//this will apply to all task route because route.use is in
 
 router.route('/')//this '/' is now  'desk/tasks' because in server.js the route is already admin/users
     .get(tasksController.getAllTasks)
+    // .get(tasksController.getTasksByUSerId)
     .post(tasksController.createNewTask)
     .patch(tasksController.updateTask)
     .delete(tasksController.deleteTask)

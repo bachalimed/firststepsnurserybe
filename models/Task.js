@@ -11,13 +11,12 @@ const tasksSchema = new mongoose.Schema({
 	taskCreator: {type: mongoose.Schema.Types.ObjectId, required:true,index: true},
 	taskReference: {type: String, index: true},
 	taskDueDate: {type: Date, required:true, index: true},
-	taskResponsible: {type: String, required:true, index: true},
+	taskResponsible: {type: mongoose.Schema.Types.ObjectId, required:true,index: true},
 	taskAction:{
 		actionDate: {type: Date,  index: true},
 		actionDescription: {type: String,  index: true},
 		actionReference: {type: String},
-		actionResponsible: {type: String, index: true},
-		actionResult:{type: String, index: true},}, 
+		actionResult:{type: String, index: true}}, 
 	taskState:{type: String, required:true, index: true},
 	taskCompletionDate: {type: Date, index: true},
 	lastModified: {
