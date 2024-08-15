@@ -12,7 +12,7 @@ const photoStorage = multer.diskStorage({
         cb(null, `${Date.now()}-${file.originalname}`);
     }
 });
-console.log('in the photstorage router now')
+
 const upload = multer({ photoStorage });
 
 router.post('newUser/', upload.single('userPhoto'), usersController.createNewUser)//this '/' is now  'usersManagemnt/newUSer because we are inrtercepting the user controller see the server.js

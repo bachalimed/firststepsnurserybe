@@ -1,7 +1,7 @@
 const mongoose = require('mongoose')
 
 
-const tasksSchema = new mongoose.Schema({
+const taskSchema = new mongoose.Schema({
 	//id is already assigned automatically by mongo
 	
 	taskCreationDate: {type: Date, required:true, index: true},
@@ -25,5 +25,5 @@ const tasksSchema = new mongoose.Schema({
 	taskYear:{type: String, required:true, index: true}
 
 	})
-module.exports = mongoose.model('Task', tasksSchema, 'tasks')
+module.exports = mongoose.model('Task', taskSchema, 'tasks')
 

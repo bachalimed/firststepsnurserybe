@@ -30,7 +30,7 @@ const getAllUsers = asyncHandler(async (req, res) => {
 const createNewUser = asyncHandler(async (req, res) => {
        
     
-        const { userFullName, username, password, userAllowedActions,   userDob, isParent, isEmployee, userIsActive, userRoles,   userAddress, userContact  } = req.body//this will come from front end we put all the fields o fthe collection here
+        const { userFullName, username, password, userAllowedActions,   userDob, isParent, isEmployee,userPhoto, userIsActive, userRoles,   userAddress, userContact  } = req.body//this will come from front end we put all the fields o fthe collection here
 
     //Confirm data is present in the request with all required fields
     if (!userFullName || !username ||!userDob ||!password ||!userContact.primaryPhone || !Array.isArray(userRoles) || !userRoles.length) {
@@ -67,7 +67,7 @@ const createNewUser = asyncHandler(async (req, res) => {
     // Hash password 
     const hashedPwd = await bcrypt.hash(password, 10) // salt roundsm we will implement it laterm normally password is without''
     
-    const userObject = { userFullName, username, "password" :hashedPwd, userAllowedActions,   isParent, isEmployee, userDob, userIsActive, userRoles, userPhoto, userPhotoLabel, userPhotoFormat, userAddress, userContact  }//construct new user to be stored
+    const userObject = { userFullName, username, "password" :hashedPwd, userAllowedActions,   isParent, isEmployee, userDob, userIsActive, userRoles, userPhoto, userAddress, userContact  }//construct new user to be stored
 
     // Create and store new user 
     const user = await User.create(userObject)

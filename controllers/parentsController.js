@@ -1,24 +1,65 @@
 const Parent = require('../models/Parent')
 const User = require('../models/User')//we might need the user controller with this model
-
+const Student = require ('../models/Student')
 // const studentController = require ('../controllers/studentsController')
 // const Student = require ('../models/Student')
 const asyncHandler = require('express-async-handler')//instead of using try catch
 const bcrypt = require('bcrypt') //to hash passwords before saving them
 const mongoose = require('mongoose')
 
+
+//will find a user for each aparent and attach parent to the user
+const findAttachUsersToParents = async (parents) => {
+    
+    const ParentsList = []
+    if (parents) {
+        // const users = await User.find({ isParent: { $exists: true, $ne: null } });
+        // const users2 = await User.find({ isParent: '66be308ab56faa4450991460' });
+// console.log('debug',users, users2);
+           
+            await Promise.all(parents.map(async (eachParent) => {
+    //console.log('id found',eachParent._id)
+             const user = await User.findOne({ isParent: eachParent._id })
+            //  console.log('user found',user)
+            if (user) {
+                // Attach the parent object to the user object
+                // await user.populate('isParent') 
+                // console.log('user after adding parent profiel',user)
+                // console.log('Type of foundUsers:', typeof foundUsers)
+                eachParent.userProfile = user
+            // console.log('Is array:', Array.isArray(foundUsers));
+                  ParentsList.push(eachParent)
+                //console.log('usrs in controller from parents', eachParent)
+                
+            }}))
+        
+        }
+        return ParentsList
+}
+
+
 // @desc Get all parents
 // @route GET /students/studentsParents/parents              
 // @access Private // later we will establish authorisations
 const getAllParents = asyncHandler(async (req, res) => {
     // Get all parents from MongoDB
-    const parents = await Parent.find().lean()
-
+    const parents = await Parent.find().populate('children').populate('partner').lean()
+    
+    // const parents = await Parent.find().lean()
+//console.log('parents in controller',parents)
     // If no users 
-    if (!parents?.length) {
-        return res.status(400).json({ message: 'No parentss found' })
-    }
-    res.json(parents)
+     if (!parents?.length) {
+        return res.status(400).json({ message: 'No parents found' })
+     }
+
+     if (parents){
+      //  find the users that corresponds to the parents
+      const usersAndParents  = await findAttachUsersToParents(parents)
+        //console.log(usersAndParents)
+
+
+    res.status(200).json(usersAndParents)}
+   
 })
 
 //----------------------------------------------------------------------------------
@@ -27,16 +68,16 @@ const getAllParents = asyncHandler(async (req, res) => {
 //@access Private
 //first we save the studentsm then user then parent
 const createNewParent = asyncHandler(async (req, res) => {
-    const { userFullName, username, password, accessToken, isEmployee, userDob, userIsActive, userRoles, userPhoto, userAddress, userContact, parentYear, child, partner } = req.body//this will come from front end we put all the fields ofthe collection here
+    const { userFullName, username, password, accessToken, isEmployee, userDob, userIsActive, userRoles, userPhoto, userAddress, userContact, parentYear, children, partner } = req.body//this will come from front end we put all the fields ofthe collection here
 
     //Confirm data for parent is present in the request with all required fields, data for user will be checked by the user controller
-    if ( !parentYear ||!child  ) {
+    if ( !parentYear ||!children  ) {
         return res.status(400).json({ message: 'All fields are required' })//400 : bad request
     }
     // Check for duplicate parent by checking duplicate children
-    const duplicateChild = await Parent.findOne({ child: child }).lean().exec()
+    const duplicateChild = await Parent.findOne({ children: children }).lean().exec()
     if (duplicateChild) {
-        return res.status(409).json({ message: `Duplicate child found:${child} ` })//get the child name from student collection
+        return res.status(409).json({ message: `Duplicate child found:${children} ` })//get the child name from student collection
     }
     
     //Confirm data is present in the request with all required fields
@@ -71,7 +112,7 @@ const createNewParent = asyncHandler(async (req, res) => {
     //get the user Id to store it with parent
     //const createdUserId = await User.findOne({username }).lean()/////////////////////
     ///const parentUserId= createdUserId._id/////////
-    const parentObject = { parentYear, child, partner }//construct new parent to be stored
+    const parentObject = { parentYear, children, partner }//construct new parent to be stored
   
 //  store new parent 
 const parent = await Parent.create(parentObject)
@@ -108,7 +149,7 @@ const parent = await Parent.create(parentObject)
 // @route PATCH /students/studentsParents/parents
 // @access Private
 const updateParent = asyncHandler(async (req, res) => {
-    const { id, userFullName, username, password, accessToken, isParent, isEmployee, userDob, userIsActive, userRoles, userPhoto, userAddress, userContact,parentYear, child, partner  } = req.body
+    const { id, userFullName, username, password, accessToken, isParent, isEmployee, userDob, userIsActive, userRoles, userPhoto, userAddress, userContact,parentYear, children, partner  } = req.body
 
     // Confirm data 
     if (!id || !username || !Array.isArray(userRoles) || !userRoles.length || typeof userIsActive !== 'boolean') {
@@ -147,7 +188,7 @@ const updateParent = asyncHandler(async (req, res) => {
     user.userAddress =userAddress
     user.userContact =userContact
     parent.parentYear=parentYear
-    parent.child=child
+    parent.children=children
     parent.partner=partner
 
     if (password) {//only if the password is requested to be updated
@@ -229,6 +270,10 @@ const deleteParent = asyncHandler(async (req, res) => {//uses parent id
 		}
 
 })
+
+
+
+
 module.exports = {
     getAllParents,
     createNewParent,

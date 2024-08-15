@@ -5,7 +5,7 @@ const verifyJWT= require('../middleware/verifyJWT')
 
 
 router.use(verifyJWT)
-console.log('in the routes of user now')
+
 
 router.route('/')//this '/' is now  '/admin/userManag' t because in server.js the route is already admin/users
     .get(usersController.getAllUsers)

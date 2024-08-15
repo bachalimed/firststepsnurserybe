@@ -3,7 +3,7 @@ const mongoose = require('mongoose')
 
 
 
-const studentsSchema = new mongoose.Schema({
+const studentSchema = new mongoose.Schema({
 	//id is already assigned automatically by mongo
 	studentName:{
 		firstName:{type: String, required:true, index: true},
@@ -19,9 +19,9 @@ const studentsSchema = new mongoose.Schema({
 		size:{type: Number},
 		format:{type: String}	
 		},
-	studentParent:{
-		studentMother:{type: mongoose.Schema.Types.ObjectId, index: true},
-		studentFather:{type: mongoose.Schema.Types.ObjectId, index: true}},
+	
+	studentMother:{type: mongoose.Schema.Types.ObjectId, index: true, ref:'Parent'},
+	studentFather:{type: mongoose.Schema.Types.ObjectId, index: true, ref:'Parent'},
 	studentContact:{
 		fatherPhone:{type: Number},
 		motherPhone:{type: Number}},
@@ -44,5 +44,5 @@ const studentsSchema = new mongoose.Schema({
 	admissions:[
 			{schoolYear:{type: String}, admission:{type: String}}],
 	})
-module.exports = mongoose.model('Student', studentsSchema,'students')
+module.exports = mongoose.model('Student', studentSchema,'students')
 

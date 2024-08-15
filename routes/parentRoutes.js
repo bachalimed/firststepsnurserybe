@@ -2,6 +2,7 @@ const express = require('express')
 const router = express.Router()
 const parentsController = require('../controllers/parentsController')
 const verifyJWT= require('../middleware/verifyJWT')
+const Parent = require ('../models/Parent')
 
 
 router.use(verifyJWT)

@@ -1,6 +1,7 @@
 const mongoose = require('mongoose')
+const User = require ('./User')
 
-const employeesSchema = new mongoose.Schema({
+const employeeSchema = new mongoose.Schema({
    emloyeeJoinDate: {
         type: Date,
         required: true
@@ -37,7 +38,7 @@ const employeesSchema = new mongoose.Schema({
     }
 
 })
+module.exports = mongoose.model('Employee', employeeSchema,'employees')
 
-module.exports = mongoose.model('Employee', employeesSchema,'employees')
 
 

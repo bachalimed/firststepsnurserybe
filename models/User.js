@@ -1,7 +1,7 @@
 const mongoose = require('mongoose')
 
 
-const usersSchema = new mongoose.Schema({
+const userSchema = new mongoose.Schema({
 	//id is already assigned automatically by mongo
 	userFullName:{
 	userFirstName:{type: String, required:true, index: true},
@@ -11,11 +11,13 @@ const usersSchema = new mongoose.Schema({
 	password: {type: String, required:true, index: true},
 	accessToken: {type: String, index: true},
 	isParent:{
-		type: mongoose.Schema.Types.ObjectId} ,
-		// type: mongoose.ObjectId ,
+		type: mongoose.Schema.Types.ObjectId ,
+		ref:'Parent'},
+		
 	isEmployee:{
 		type: mongoose.Schema.Types.ObjectId ,
-		// type: mongoose.ObjectId ,
+		ref:'Employee'
+		
 		},
 	userDob:{
 		type: Date,
@@ -55,8 +57,8 @@ const usersSchema = new mongoose.Schema({
 			},
 		email:{
 			type: String,
-			required:true}}
+			}}
 	
 	})
-module.exports = mongoose.model('User', usersSchema,'users')
+module.exports = mongoose.model('User', userSchema,'users')
 
