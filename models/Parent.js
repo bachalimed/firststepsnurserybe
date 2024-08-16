@@ -11,7 +11,7 @@ const parentSchema = new mongoose.Schema({
     children: [
         {type: mongoose.Schema.Types.ObjectId ,
             ref:'Student',//this is added to refernce student model revisit
-        required: true,
+        
          index:true}
     ],
     partner: {

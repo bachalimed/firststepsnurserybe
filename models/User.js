@@ -11,23 +11,23 @@ const userSchema = new mongoose.Schema({
 	password: {type: String, required:true, index: true},
 	accessToken: {type: String, index: true},
 	isParent:{
-		type: mongoose.Schema.Types.ObjectId ,
+		type: mongoose.Schema.Types.ObjectId,
 		ref:'Parent'},
 		
 	isEmployee:{
-		type: mongoose.Schema.Types.ObjectId ,
+		type: mongoose.Schema.Types.ObjectId,
 		ref:'Employee'
 		
 		},
 	userDob:{
 		type: Date,
-		required:true},
+		},
 	userSex:{
 		type: String,
 		required:true},
 	userIsActive:{
 		type: Boolean,
-		required:true,
+		
 		default:true},
 	userRoles:[{
 		type: String,
@@ -43,18 +43,18 @@ const userSchema = new mongoose.Schema({
 	userAddress: {
 		house:{type: String},
 		street:{
-			type: String,
-			required:true},
+			type: String
+			},
 		area:{type: String},
 		postCode:{type: String},
 		city:{
 			type: String,
-			required:true}	
+			}	
 		},
 	userContact: {
 		primaryPhone:{
 			type: Number,
-			required:true},
+			},
 		secondaryPhone:{
 			type: Number
 			},
