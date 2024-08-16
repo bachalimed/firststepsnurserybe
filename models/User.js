@@ -22,6 +22,9 @@ const userSchema = new mongoose.Schema({
 	userDob:{
 		type: Date,
 		required:true},
+	userSex:{
+		type: String,
+		required:true},
 	userIsActive:{
 		type: Boolean,
 		required:true,
