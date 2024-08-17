@@ -7,7 +7,7 @@ const userSchema = new mongoose.Schema({
 	userFirstName:{type: String, required:true, index: true},
     userMiddleName: {type: String, index: true},
     userLastName: {type: String, required:true, index: true}}, 
-	username: {type: String, index: true, unique: true},
+	username: {type: String, required:true, index: true, unique: true},
 	password: {type: String, required:true, index: true},
 	accessToken: {type: String, index: true},
 	isParent:{
@@ -21,6 +21,7 @@ const userSchema = new mongoose.Schema({
 		},
 	userDob:{
 		type: Date,
+		required:true,
 		},
 	userSex:{
 		type: String,
@@ -35,7 +36,7 @@ const userSchema = new mongoose.Schema({
 		index: true}],
 	userAllowedActions:[{
 		type: String,
-		required: true,
+		
 	}],
 	userPhoto:{type: String},
 	// userPhotoLabel:{type: String},

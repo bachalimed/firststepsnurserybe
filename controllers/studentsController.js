@@ -10,10 +10,14 @@ const mongoose = require('mongoose')
 // @access Private // later we will establish authorisations
 const getAllStudents = asyncHandler(async (req, res) => {
     // Get all students from MongoDB
+    
+    //const {selectedYear} = req.query||'*'
+    //console.log(selectedYear, "sleected year inback")
+    //const students = await Student.find({ studentYear: selectedYear }).lean()//this will not return the extra data(lean)
     const students = await Student.find().lean()//this will not return the extra data(lean)
-
+    console.log('returned res', students)
     // If no students 
-    if (!students?.length) {
+    if (!students?.length===0) {
         return res.status(400).json({ message: 'No studentss found' })
     }
     res.json(students)
