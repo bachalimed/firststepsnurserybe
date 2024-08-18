@@ -2,8 +2,10 @@
 const Student = require('../models/Student')//we might need the parent module in this controller
 //const Employee = require('../models/Employee')//we might need the employee module in this controller
 const asyncHandler = require('express-async-handler')//instead of using try catch
-
+const useSelectedAcademicYear = require ('../middleware/setCurrentAcademicYear')
 const mongoose = require('mongoose')
+
+
 
 // @desc Get all students
 // @route GET 'students/studentsParents/students             
@@ -11,16 +13,26 @@ const mongoose = require('mongoose')
 const getAllStudents = asyncHandler(async (req, res) => {
     // Get all students from MongoDB
     
-    //const {selectedYear} = req.query||'*'
+    
+    if(req.query){
+    const {selectedYear} = req.query//maybe replace the conditionals with the current year that we get  from middleware
     //console.log(selectedYear, "sleected year inback")
-    //const students = await Student.find({ studentYear: selectedYear }).lean()//this will not return the extra data(lean)
-    const students = await Student.find().lean()//this will not return the extra data(lean)
-    console.log('returned res', students)
-    // If no students 
+    const students = await Student.find({ studentYear: selectedYear }).lean()//this will not return the extra data(lean)
     if (!students?.length===0) {
         return res.status(400).json({ message: 'No studentss found' })
     }
     res.json(students)
+    }else {
+    const students = await Student.find().lean()//this will not return the extra data(lean)
+    if (!students?.length===0) {
+        return res.status(400).json({ message: 'No studentss found' })
+    }
+    console.log('returned res', students)
+    res.json(students)}
+
+    // If no students 
+   
+    //res.json(students)
 })
 
 //----------------------------------------------------------------------------------
