@@ -16,9 +16,9 @@ const getAllStudents = asyncHandler(async (req, res) => {
     if(req.query.selectedYear){
     const {selectedYear} = req.query//maybe replace the conditionals with the current year that we get  from middleware
     //console.log(selectedYear, "sleected year inback")
-    const students = await Student.find({ studentYear: selectedYear }).lean()//this will not return the extra data(lean)
+    const students = await Student.find({ studentYears:{$elemMatch:{academicYear: selectedYear }}}).lean()//this will not return the extra data(lean)
     //const students = await Student.find({ studentYear: '2023/2024' }).lean()//this will not return the extra data(lean)
-    console.log('with year select')
+    console.log('with year select', students)
     if (!students?.length===0) {
         return res.status(400).json({ message: 'No studentss found' })
     }

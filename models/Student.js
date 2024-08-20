@@ -12,31 +12,39 @@ const studentSchema = new mongoose.Schema({
 	studentDob:{type: Date, required:true},
 	studentSex: {type: String, required:true},
 	studentIsActive: {type: Boolean, index: true},
-	studentYear: {type: String, index: true},
-	studentPhoto: {type: String},
-		
-	
 	studentMother:{type: mongoose.Schema.Types.ObjectId, index: true, ref:'Parent'},
 	studentFather:{type: mongoose.Schema.Types.ObjectId, index: true, ref:'Parent'},
 	studentJointFamily:{type: Boolean},
+	studentYears: [{academicYear: {type: String, index: true}}],
 	studentGardien:[
-        {gardienFirstName:{type: String, index: true},
+		{academicYear:{type: String, index: true},
+		gardienFirstName:{type: String, index: true},
 		gardienMiddleName:{type: String, index: true},
 		gardienLastName:{type: String, index: true},
 		gardienRelation:{type: String, index: true},
 		gardienPhone:{type: Number}}],
-	studentEducation:[
-		{schoolyear:{type: String},
+	studentDocuments:[{
+		academicYear:{type: String, index: true},
+		id: {type: mongoose.Schema.Types.ObjectId, index: true, ref:''},
+		}],
+	
+	studentPhoto:[{
+		academicYear:{type: String, index: true},
+		photoId: {type: mongoose.Schema.Types.ObjectId, index: true, ref:''},
+		}],
+	studentEducation:[{
+		academicYear:{type: String, index: true},
 		attendedSchool:{type: mongoose.Schema.Types.ObjectId, index: true, ref:''},
-		note:{type: String, index: true}}],
-		
+		note:{type: String, index: true}
+	}],		
 	lastModified:{
 		date:{type: Date},
 		operator:{type: String, index: true}},
-	studentDocuments:[
-		{id: {type: mongoose.Schema.Types.ObjectId, index: true, ref:''}}],
-	admissions:[
-			{schoolYear:{type: String}, admission:{type: mongoose.Schema.Types.ObjectId, index: true, ref:''}}],
-	})
+		
+	studentAdmissions:[{
+		academicYear:{type: String, index: true},
+		admission: {type: mongoose.Schema.Types.ObjectId, index: true, ref:''}}]
+	}
+	)
 module.exports = mongoose.model('Student', studentSchema,'students')
 
