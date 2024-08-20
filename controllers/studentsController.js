@@ -13,17 +13,31 @@ const mongoose = require('mongoose')
 const getAllStudents = asyncHandler(async (req, res) => {
     // Get all students from MongoDB
     
-    
-    if(req.query){
+    if(req.query.selectedYear){
     const {selectedYear} = req.query//maybe replace the conditionals with the current year that we get  from middleware
     //console.log(selectedYear, "sleected year inback")
     const students = await Student.find({ studentYear: selectedYear }).lean()//this will not return the extra data(lean)
+    //const students = await Student.find({ studentYear: '2023/2024' }).lean()//this will not return the extra data(lean)
+    console.log('with year select')
     if (!students?.length===0) {
         return res.status(400).json({ message: 'No studentss found' })
     }
+    console.log('returned res', students)
     res.json(students)
+    }else if(req.query.id){
+        const {id} = req.query
+        const student = await Student.find({ _id: id }).lean()//this will not return the extra data(lean)
+    
+    console.log('with id  select')
+    if (!student?.length===0) {
+        return res.status(400).json({ message: 'No studentss found' })
+    }
+    console.log('returned res', student)
+    res.json(student)
+
     }else {
     const students = await Student.find().lean()//this will not return the extra data(lean)
+    console.log('with no select')
     if (!students?.length===0) {
         return res.status(400).json({ message: 'No studentss found' })
     }
@@ -34,6 +48,7 @@ const getAllStudents = asyncHandler(async (req, res) => {
    
     //res.json(students)
 })
+
 
 //----------------------------------------------------------------------------------
 // @desc Create new user
@@ -171,6 +186,7 @@ module.exports = {
     getAllStudents,
     createNewStudent,
     updateStudent,
-    deleteStudent
+    deleteStudent,
+    
     
 }
