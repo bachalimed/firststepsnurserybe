@@ -16,20 +16,31 @@ const getAllStudents = asyncHandler(async (req, res) => {
     if(req.query.selectedYear){
     const {selectedYear} = req.query//maybe replace the conditionals with the current year that we get  from middleware
     //console.log(selectedYear, "sleected year inback")
-    const students = await Student.find({ studentYears:{$elemMatch:{academicYear: selectedYear }}}).lean()//this will not return the extra data(lean)
-    //const students = await Student.find({ studentYear: '2023/2024' }).lean()//this will not return the extra data(lean)
-    console.log('with year select', students)
-    if (!students?.length===0) {
-        return res.status(400).json({ message: 'No studentss found' })
+    //will retrive all teh students
+    if (selectedYear === 'all'){
+        const students = await Student.find().populate('studentMother').populate('studentFather').lean()
+        if (!students?.length) {
+            return res.status(400).json({ message: 'No studentss found' })
+        }else{
+        console.log('returned res', students)
+        res.json(students)}
     }
-    console.log('returned res', students)
-    res.json(students)
+    //will retrieve only the selcted year
+            const students = await Student.find({ studentYears:{$elemMatch:{academicYear: selectedYear }}}).populate('studentMother').populate('studentFather').lean()//this will not return the extra data(lean)
+            //const students = await Student.find({ studentYear: '2023/2024' }).lean()//this will not return the extra data(lean)
+            console.log('with year select',selectedYear,  students)
+            if (!students?.length) {
+                return res.status(400).json({ message: 'No studentss found' })
+            }else{
+            console.log('returned res', students)
+            res.json(students)}
+    //will retreive according to the id
     }else if(req.query.id){
         const {id} = req.query
-        const student = await Student.find({ _id: id }).lean()//this will not return the extra data(lean)
+        const student = await Student.find({ _id: id }).populate('studentMother').populate('studentFather').lean()//this will not return the extra data(lean)
     
     console.log('with id  select')
-    if (!student?.length===0) {
+    if (!student?.length) {
         return res.status(400).json({ message: 'No studentss found' })
     }
     console.log('returned res', student)
@@ -38,7 +49,7 @@ const getAllStudents = asyncHandler(async (req, res) => {
     }else {
     const students = await Student.find().lean()//this will not return the extra data(lean)
     console.log('with no select')
-    if (!students?.length===0) {
+    if (!students?.length) {
         return res.status(400).json({ message: 'No studentss found' })
     }
     console.log('returned res', students)

@@ -12,7 +12,7 @@ const mongoose = require('mongoose')
 const findAttachUsersToParents = async (parents) => {
     
     const ParentsList = []
-    if (parents) {
+    if (parents?.length) {
         // const users = await User.find({ isParent: { $exists: true, $ne: null } });
         // const users2 = await User.find({ isParent: '66be308ab56faa4450991460' });
 // console.log('debug',users, users2);
@@ -42,24 +42,51 @@ const findAttachUsersToParents = async (parents) => {
 // @route GET /students/studentsParents/parents              
 // @access Private // later we will establish authorisations
 const getAllParents = asyncHandler(async (req, res) => {
-    // Get all parents from MongoDB
-    const parents = await Parent.find().populate('children').populate('partner').lean()
-    
-    // const parents = await Parent.find().lean()
-//console.log('parents in controller',parents)
-    // If no users 
-     if (!parents?.length) {
+    // Get all parents from MongoDB according to the params
+    if(req.query.selectedYear){
+        const {selectedYear} = req.query
+        console.log('selectedYear', selectedYear)
+        const parents = await Parent.find({parentYears:{$elemMatch:{academicYear:selectedYear}}}).populate('children').populate('partner').lean()
+        console.log('parents', parents)
+    // If no parents found 
+        if (!parents?.length) {
+            return res.status(400).json({ message: 'No parents found' })
+        }
+        if (parents){
+            //  find the users that corresponds to the parents
+            const usersAndParents  = await findAttachUsersToParents(parents)
+            //console.log(usersAndParents)
+            res.status(200).json(usersAndParents)
+        }
+
+    }else if(req.query.id){
+        const {id} = req.query
+        const parents = await Parent.find({_id:id}).populate('children').populate('partner').lean()
+        if (!parents?.length) {
+            return res.status(400).json({ message: 'No parents found' })
+        }
+        if (parents){
+            //  find the users that corresponds to the parents
+            const usersAndParents  = await findAttachUsersToParents(parents)
+              //console.log(usersAndParents)
+          res.status(200).json(usersAndParents)
+        }
+
+    }else{
+        console.log('helllllllow')
+        //console.log('parents in controller',parents)
+        const parents = await Parent.find().populate('children').populate('partner').lean()
+        if (!parents?.length) {
         return res.status(400).json({ message: 'No parents found' })
-     }
-
-     if (parents){
-      //  find the users that corresponds to the parents
-      const usersAndParents  = await findAttachUsersToParents(parents)
-        //console.log(usersAndParents)
-
-
-    res.status(200).json(usersAndParents)}
-   
+        }
+        if (parents){
+            //  find the users that corresponds to the parents
+            const usersAndParents  = await findAttachUsersToParents(parents)
+          //console.log(usersAndParents)
+            res.status(200).json(usersAndParents)
+        }
+    
+    }
 })
 
 //----------------------------------------------------------------------------------

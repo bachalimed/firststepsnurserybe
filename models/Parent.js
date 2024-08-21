@@ -4,10 +4,7 @@ const User = require ('./User')
 const parentSchema = new mongoose.Schema({
    
   
-    parentYear: {
-        type: String,
-        required: true
-    },
+    parentYears:  [{academicYear: {type: String, index: true}}],
     children: [
         {type: mongoose.Schema.Types.ObjectId ,
             ref:'Student',//this is added to refernce student model revisit
