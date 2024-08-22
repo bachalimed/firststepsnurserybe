@@ -8,7 +8,7 @@ const academicYearSchema = new mongoose.Schema({
 	yearStart: {type: Date, required:true,index: true},
 	yearEnd: {type: Date, required:true, index: true},
 	
-	academicYearCreator: {type: mongoose.Schema.Types.ObjectId, required:true,index: true}
+	academicYearCreator: {type: mongoose.Schema.Types.ObjectId, required:true,index: true, ref:'User'}
 	
 	})
 module.exports = mongoose.model('AcademicYear', academicYearSchema,'academicYears')//the thrid is the name that will be used in the mongo collection

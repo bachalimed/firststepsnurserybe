@@ -38,11 +38,12 @@ app.use('/admin/usersManagement/newUser/', require('./routes/userRoutes'))//chec
 app.use('/students/studentsParents/parents/', require('./routes/parentRoutes'))
 app.use('/students/studentsParents/students/', require('./routes/studentRoutes'))
 
-app.use('/students/studentsParents/newStudent/', require('./routes/studentRoutes'))
+
 app.use('/hr/employees', require('./routes/employeeRoutes'))
 app.use('/desk/tasks', require('./routes/taskRoutes'))
 // app.use('/desk/tasks/myTasks', require('./routes/taskRoutes') )
 app.use('/settings/academicsSet/academicYears/', require('./routes/academicYearRoutes'))
+app.use('/settings/academicsSet/attendedSchools/', require('./routes/attendedSchoolRoutes'))
 
 
 

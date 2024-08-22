@@ -33,8 +33,8 @@ const studentSchema = new mongoose.Schema({
 		photoId: {type: mongoose.Schema.Types.ObjectId, index: true, ref:''},
 		}],
 	studentEducation:[{
-		academicYear:{type: String, index: true},
-		attendedSchool:{type: mongoose.Schema.Types.ObjectId, index: true, ref:''},
+		educationYear:{type: String, index: true},
+		attendedSchool:{type: mongoose.Schema.Types.ObjectId, index: true, ref:'AttendedSchool'},
 		note:{type: String, index: true}
 	}],		
 	lastModified:{

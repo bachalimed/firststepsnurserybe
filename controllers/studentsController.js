@@ -22,37 +22,37 @@ const getAllStudents = asyncHandler(async (req, res) => {
         if (!students?.length) {
             return res.status(400).json({ message: 'No studentss found' })
         }else{
-        console.log('returned res', students)
+        //console.log('returned res', students)
         res.json(students)}
     }
     //will retrieve only the selcted year
             const students = await Student.find({ studentYears:{$elemMatch:{academicYear: selectedYear }}}).populate('studentMother').populate('studentFather').lean()//this will not return the extra data(lean)
             //const students = await Student.find({ studentYear: '2023/2024' }).lean()//this will not return the extra data(lean)
-            console.log('with year select',selectedYear,  students)
+            //console.log('with year select',selectedYear,  students)
             if (!students?.length) {
                 return res.status(400).json({ message: 'No studentss found' })
             }else{
-            console.log('returned res', students)
+            //console.log('returned res', students)
             res.json(students)}
     //will retreive according to the id
     }else if(req.query.id){
         const {id} = req.query
         const student = await Student.find({ _id: id }).populate('studentMother').populate('studentFather').lean()//this will not return the extra data(lean)
     
-    console.log('with id  select')
+    //console.log('with id  select')
     if (!student?.length) {
         return res.status(400).json({ message: 'No studentss found' })
     }
-    console.log('returned res', student)
+    //console.log('returned res', student)
     res.json(student)
 
     }else {
     const students = await Student.find().lean()//this will not return the extra data(lean)
-    console.log('with no select')
+    //console.log('with no select')
     if (!students?.length) {
         return res.status(400).json({ message: 'No studentss found' })
     }
-    console.log('returned res', students)
+    //console.log('returned res', students)
     res.json(students)}
 
     // If no students 
@@ -66,12 +66,14 @@ const getAllStudents = asyncHandler(async (req, res) => {
 // @route POST 'students/studentsParents/students
 // @access Private
 const createNewStudent = asyncHandler(async (req, res) => {
-    const { studentName, studentDob,  studentSex, studentIsActive, studentYear, studentPhoto, studentParent,
+    const { studentName, studentDob,  studentSex, studentIsActive, studentYears, studentPhoto, studentParent,
          studentContact, studentJointFamily, studentGardien, studentEducation, lastModified, studentDocuments, 
          admissions   } = req.body//this will come from front end we put all the fields o fthe collection here
-
+console.log(studentName, studentDob,  studentSex, studentIsActive, studentYears, studentPhoto, studentParent,
+    studentContact, studentJointFamily, studentGardien, studentEducation, lastModified, studentDocuments, 
+    admissions)
     //Confirm data is present in the request with all required fields
-    if (!studentName || !studentDob ||!studentSex ||!studentYear ||!Array.isArray(studentEducation) || !studentEducation.length) {
+    if (!studentName || !studentDob ||!studentSex ||!studentYears ) {
         return res.status(400).json({ message: 'All fields are required' })//400 : bad request
     }
     
@@ -84,13 +86,13 @@ const createNewStudent = asyncHandler(async (req, res) => {
 
     // Check for duplicate userFullName
     const duplicateFamily = await Student.findOne({studentParent }).lean().exec()//because we re receiving only one response from mongoose
-
-    if (duplicateFamily) {
-        return res.status(409).json({ message: 'Duplicate parents found' })
-    }
+// no need to check parents because we will create students and create parents and then attach student to parents
+    // if (duplicateFamily) {
+    //     return res.status(409).json({ message: 'Duplicate parents found' })
+    // }
     
     
-    const studentObject = { studentName, studentDob,  studentSex, studentIsActive, studentYear, studentPhoto, studentParent,
+    const studentObject = { studentName, studentDob,  studentSex, studentIsActive, studentYears, studentPhoto, studentParent,
         studentContact, studentJointFamily, studentGardien, studentEducation, lastModified, studentDocuments, 
         admissions }//construct new student to be stored
 
