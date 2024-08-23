@@ -1,0 +1,186 @@
+// const User = require('../models/User')
+const StudentDocument = require('../models/StudentDocument')
+//const Employee = require('../models/Employee')//we might need the employee module in this controller
+const asyncHandler = require('express-async-handler')//instead of using try catch
+
+const mongoose = require('mongoose')
+
+// @desc Get all studentDocuments
+// @route GET 'desk/studentDocuments             
+// @access Private // later we will establish authorisations
+const getAllStudentDocuments = asyncHandler(async (req, res) => {
+    // Get all schools from MongoDB
+    const studentDocuments = await StudentDocument.find().lean()//this will not return the extra data(lean)
+    // If no students 
+    console.log(studentDocuments)
+    if (!studentDocuments?.length) {
+        return res.status(400).json({ message: 'No studentDocuments found from studentDocuments controller with love' })
+    }
+    res.json(studentDocuments)
+})
+// // @desc getStudentDocumentsByUSerId
+// // @route GET 'desk/studentDocuments/myStudentDocuments with userID passed in the body of the query             
+// // @access Private // later we will establish authorisations
+// const getStudentDocumentsByUSerId = asyncHandler(async (req, res) => {
+//     // Get all  from MongoDB
+//     const{userId}=req.bodyconsole.log(userId)
+//     const studentDocuments = await StudentDocuments.find().lean()//this will not return the extra data(lean)
+
+//     // If no students 
+//     if (!studentDocuments?.length) {
+//         return res.status(400).json({ message: 'No studentDocuments found from studentDocuments controller with love' })
+//     }
+//     res.json(studentDocuments)
+// })
+
+
+
+
+
+
+
+
+// //----------------------------------------------------------------------------------
+// // @desc Create new studentDocuments
+// // @route POST 'students/studentsParents//studentDocuments
+// // @access Private
+// const createNewStudentDocument = asyncHandler(async (req, res) => {
+//     const { documents, documentsAcademicYear} = req.body//this will come from front end we put all the fields o fthe collection here
+
+//     //Confirm data is present in the request with all required fields
+        
+//         if (!documentsAcademicYear ||!Array.isArray(documents) ||documents?.length===0 ) {
+//         return res.status(400).json({ message: 'All mandatory fields are required' })//400 : bad request
+//     }
+    
+//     // Check for duplicate username
+//     const duplicate = await StudentDocuments.findOne({documentsAcademicYear }).lean().exec()//because we re receiving only one response from mongoose
+
+//     if (duplicate) {
+//         return res.status(409).json({ message: `Duplicate academicYear: ${duplicate.documentsAcademicYear}, found` })
+//     }
+  
+    
+//     const studentDocumentsObject = { documents, documentsAcademicYear}//construct new studentDocuments to be stored
+
+//     // Create and store new studentDocuments 
+//     const studentDocuments = await StudentDocuments.create(studentDocumentsObject)
+
+//     if (studentDocuments) { //if created 
+//         res.status(201).json({ message: `New studentDocuments for : ${studentDocuments.documentsAcademicYear}, created` })
+//     } else {
+//         res.status(400).json({ message: 'Invalid studentDocuments data received' })
+//     }
+// })
+
+
+
+// Route to handle file upload
+const createNewStudentDocument = asyncHandler(async (req, res) => {
+ console.log('here now')
+ try {
+    const { documents } = req.body; // You might need to parse JSON depending on how the data is sent
+
+    const files = req.files;
+
+    const documentEntries = documents.map((doc, index) => ({
+      studentId: doc.studentId,
+      studentDocumentYear: doc.studentDocumentYear,
+      studentDocumentReference: doc.documentReference,
+      studentDocumentLabel: doc.documentLabel,
+      studentDocumentLocation: files[index].path,
+    }));
+
+    await StudentDocument.insertMany(documentEntries);
+
+    res.status(201).json({ message: 'Documents uploaded successfully.' });
+  } catch (error) {
+    res.status(500).json({ message: 'Error uploading documents.' });
+  }
+});
+
+
+
+
+// @desc Update a studentDocuments
+// @route PATCH 'desk/studentDocuments
+// @access Private
+const updateStudentDocument = asyncHandler(async (req, res) => {
+    const { id, studentDocumentsCreationDate, studentDocumentsPriority, studentDocumentsubject, studentDocumentsDescription, studentDocumentsCreator, studentDocumentsReference,  studentDocumentsDueDate,
+        studentDocumentsResponsible, studentDocumentsAction, studentDocumentstate, studentDocumentsCompletionDate, lastModified, studentDocumentsYear  } = req.body
+
+    // Confirm data 
+    if (!studentDocumentsCreationDate ||!studentDocumentsPriority ||! studentDocumentsubject ||! studentDocumentsDescription ||! studentDocumentsCreator 
+        ||! studentDocumentsDueDate||! studentDocumentsResponsible||! studentDocumentstate||! lastModified.operator||! studentDocumentsYear) {
+        return res.status(400).json({ message: 'All mandatory fields required' })
+    }
+
+    // Does the studentDocuments exist to update?
+    const studentDocuments = await StudentDocuments.findById(id).exec()//we did not lean becausse we need the save method attached to the response
+
+    if (!studentDocuments) {
+        return res.status(400).json({ message: 'StudentDocuments not found' })
+    }
+
+    // Check for duplicate 
+    const duplicate = await StudentDocuments.findOne({ studentDocumentsubject }).lean().exec()
+
+    // Allow updates to the original user 
+    if (duplicate && duplicate?._id.toString() !== id) {
+        return res.status(409).json({ message: 'Duplicate studentDocuments' })
+    }
+
+    studentDocuments.studentDocumentsCreationDate = studentDocumentsCreationDate//it will only allow updating properties that are already existant in the model
+    studentDocuments.studentDocumentsPriority = studentDocumentsPriority
+    studentDocuments.studentDocumentsubject = studentDocumentsubject
+    studentDocuments.studentDocumentsDescription = studentDocumentsDescription
+    studentDocuments.studentDocumentsCreator = studentDocumentsCreator
+    studentDocuments.studentDocumentsReference = studentDocumentsReference
+    studentDocuments.studentDocumentsDueDate = studentDocumentsDueDate
+    studentDocuments.studentDocumentsResponsible = studentDocumentsResponsible
+    studentDocuments.studentDocumentsAction = studentDocumentsAction
+    studentDocuments.studentDocumentstate = studentDocumentstate
+    studentDocuments.studentDocumentsCompletionDate = studentDocumentsCompletionDate
+    studentDocuments.lastModified = lastModified
+    studentDocuments.studentDocumentsYear = studentDocumentsYear
+    
+    
+    const updatedStudentDocuments = await studentDocuments.save()//save method received when we did not include lean
+
+    res.json({ message: `studentDocuments: ${updatedStudentDocuments.studentDocumentsubject}, updated` })
+})
+//--------------------------------------------------------------------------------------1   
+// @desc Delete a student
+// @route DELETE 'students/studentsParents/students
+// @access Private
+const deleteStudentDocument = asyncHandler(async (req, res) => {
+    const { id } = req.body
+
+    // Confirm data
+    if (!id) {
+        return res.status(400).json({ message: 'StudentDocuments ID Required' })
+    }
+
+    // Does the user exist to delete?
+    const studentDocuments = await StudentDocuments.findById(id).exec()
+
+    if (!studentDocuments) {
+        return res.status(400).json({ message: 'StudentDocuments not found' })
+    }
+
+    const result = await studentDocuments.deleteOne()
+
+    const reply = `studentDocuments ${studentDocuments.studentDocumentsubject}, with ID ${studentDocuments._id}, deleted`
+
+    res.json(reply)
+})
+
+
+
+module.exports = {
+    getAllStudentDocuments,
+    createNewStudentDocument,
+    updateStudentDocument,
+    deleteStudentDocument
+ 
+}

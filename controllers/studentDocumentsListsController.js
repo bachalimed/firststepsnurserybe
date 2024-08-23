@@ -12,7 +12,7 @@ const getAllStudentDocumentsLists = asyncHandler(async (req, res) => {
     // Get all schools from MongoDB
     const studentDocumentsLists = await StudentDocumentsList.find().lean()//this will not return the extra data(lean)
     // If no students 
-    console.log(studentDocumentsLists)
+    //console.log(studentDocumentsLists)
     if (!studentDocumentsLists?.length) {
         return res.status(400).json({ message: 'No studentDocumentsLists found from studentDocumentsList controller with love' })
     }

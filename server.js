@@ -37,6 +37,7 @@ app.use('/admin/usersManagement/newUser/', require('./routes/userRoutes'))//chec
 //app.use('/students/studentsParent/', require('./routes/parentRoutes'))//no need to specify each sub url to get the requests working
 app.use('/students/studentsParents/parents/', require('./routes/parentRoutes'))
 app.use('/students/studentsParents/students/', require('./routes/studentRoutes'))
+app.use('/students/studentsParents/studentDocuments/', require('./routes/studentDocumentsRoutes'))
 
 
 app.use('/hr/employees', require('./routes/employeeRoutes'))
