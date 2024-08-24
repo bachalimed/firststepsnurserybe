@@ -9,13 +9,13 @@ const StudentDocument = require('../models/StudentDocument')
 
 
 const verifyJWT= require('../middleware/verifyJWT')
-console.log('here nowwwwwww')
+//console.log('here nowwwwwww')
 
 router.use(verifyJWT)
 
 router.route('/')//this '/' is not root path but the complementary to previous route
     .get(studentDocumentsController.getAllStudentDocuments)
-    //.post('/upload',upload.array('documents'), studentDocumentsController.createNewStudentDocument)
+    .post(upload.single('file'), studentDocumentsController.createNewStudentDocument)
     .patch(studentDocumentsController.updateStudentDocument)
     .delete(studentDocumentsController.deleteStudentDocument)
 

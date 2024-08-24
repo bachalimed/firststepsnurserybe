@@ -1,5 +1,7 @@
 // const User = require('../models/User')
 const StudentDocument = require('../models/StudentDocument')
+const StudentDocumentsList = require('../models/StudentDocumentsList')
+
 //const Employee = require('../models/Employee')//we might need the employee module in this controller
 const asyncHandler = require('express-async-handler')//instead of using try catch
 
@@ -9,15 +11,41 @@ const mongoose = require('mongoose')
 // @route GET 'desk/studentDocuments             
 // @access Private // later we will establish authorisations
 const getAllStudentDocuments = asyncHandler(async (req, res) => {
-    // Get all schools from MongoDB
-    const studentDocuments = await StudentDocument.find().lean()//this will not return the extra data(lean)
-    // If no students 
-    console.log(studentDocuments)
-    if (!studentDocuments?.length) {
-        return res.status(400).json({ message: 'No studentDocuments found from studentDocuments controller with love' })
+
+     
+    if(req.query.studentId&&req.query.year){ 
+        //console.log('showing request query params',req.query.studentId,req.query.year)
+        const {studentId, year}= req.query
+       
+    try {
+        // Fetch student documents based on studentId and year
+        const studentDocuments = await StudentDocument.find({
+          studentId: studentId,
+          studentDocumentYear: year
+        }).lean();
+  
+        // Fetch documents list based on year
+        const studentDocumentsList = await StudentDocumentsList.find({
+          documentsAcademicYear: year
+        }).lean();
+  
+        // Check if documents are found and send response
+        if (studentDocuments.length || studentDocumentsList.length) {
+          const responseData = { studentDocuments, studentDocumentsList };
+          return res.json(responseData);
+        }
+  
+        // If no documents found
+        return res.status(404).json({ message: 'No student documents found' });
+      } catch (error) {
+        console.error('Error fetching documents:', error);
+        return res.status(500).json({ message: 'Error fetching documents' });
+      }
+    } else {
+      // Handle case where query parameters are missing
+      return res.status(400).json({ message: 'studentId and year query parameters are required' });
     }
-    res.json(studentDocuments)
-})
+  });
 // // @desc getStudentDocumentsByUSerId
 // // @route GET 'desk/studentDocuments/myStudentDocuments with userID passed in the body of the query             
 // // @access Private // later we will establish authorisations
@@ -77,29 +105,37 @@ const getAllStudentDocuments = asyncHandler(async (req, res) => {
 
 // Route to handle file upload
 const createNewStudentDocument = asyncHandler(async (req, res) => {
- console.log('here now')
+ console.log('here at the controller now')
  try {
-    const { documents } = req.body; // You might need to parse JSON depending on how the data is sent
+     console.log('Body:', req.body);
+     console.log('Files:', req.files);
+     const { studentId, studentDocumentYear, studentDocumentReference, studentDocumentLabel } = req.body;
+     const file = req.file
+    // Validate required fields
+    if (!studentId || !studentDocumentYear || !studentDocumentReference || !file) {
+        return res.status(400).json({ message: 'Missing required fields.' });
+    }
+    if (!file) {
+        return res.status(400).json({ message: 'File is required.' });
+    }
 
-    const files = req.files;
+    // Save document entry to the database
+    const document = new StudentDocument({
+        studentId,
+        studentDocumentYear,
+        studentDocumentReference,
+        studentDocumentLabel,
+        file: file.path, // Save the file path
+    });
 
-    const documentEntries = documents.map((doc, index) => ({
-      studentId: doc.studentId,
-      studentDocumentYear: doc.studentDocumentYear,
-      studentDocumentReference: doc.documentReference,
-      studentDocumentLabel: doc.documentLabel,
-      studentDocumentLocation: files[index].path,
-    }));
+    await document.save()
 
-    await StudentDocument.insertMany(documentEntries);
-
-    res.status(201).json({ message: 'Documents uploaded successfully.' });
-  } catch (error) {
-    res.status(500).json({ message: 'Error uploading documents.' });
-  }
-});
-
-
+    res.status(201).json({ message: 'Document uploaded successfully.' });
+    } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Error uploading document.' });
+    }
+    });
 
 
 // @desc Update a studentDocuments

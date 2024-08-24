@@ -21,7 +21,7 @@ const getAllAcademicYears = asyncHandler(async (req, res) => {
          res.status(200).json(
             {academicYears,
             total:academicYears.length})
-         console.log('returned academicYears')
+         //console.log('returned academicYears')
    
       }
      
