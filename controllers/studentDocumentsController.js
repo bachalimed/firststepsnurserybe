@@ -1,6 +1,9 @@
 // const User = require('../models/User')
 const StudentDocument = require('../models/StudentDocument')
 const StudentDocumentsList = require('../models/StudentDocumentsList')
+const path = require('path');
+const fs = require('fs');
+
 
 //const Employee = require('../models/Employee')//we might need the employee module in this controller
 const asyncHandler = require('express-async-handler')//instead of using try catch
@@ -12,7 +15,7 @@ const mongoose = require('mongoose')
 // @access Private // later we will establish authorisations
 const getAllStudentDocuments = asyncHandler(async (req, res) => {
 
-     
+     console.log('now get studetn by year&id')
     if(req.query.studentId&&req.query.year){ 
         //console.log('showing request query params',req.query.studentId,req.query.year)
         const {studentId, year}= req.query
@@ -22,7 +25,7 @@ const getAllStudentDocuments = asyncHandler(async (req, res) => {
         const studentDocuments = await StudentDocument.find({
           studentId: studentId,
           studentDocumentYear: year
-        }).lean();
+        }).lean()
   
         // Fetch documents list based on year
         const studentDocumentsList = await StudentDocumentsList.find({
@@ -45,7 +48,52 @@ const getAllStudentDocuments = asyncHandler(async (req, res) => {
       // Handle case where query parameters are missing
       return res.status(400).json({ message: 'studentId and year query parameters are required' });
     }
-  });
+  })
+
+  const getFileById = asyncHandler(async (req, res) => {
+    const { id } = req.params
+console.log('now in the controller to get by doc id', req.params)
+    if (!id) {
+        return res.status(400).json({ message: 'Missing required parameters: id' });
+    }
+
+    const document = await StudentDocument.findOne({ _id: id}).lean();
+
+    if (!document) {
+        return res.status(404).json({ message: 'Document not found' });
+    }
+    console.log( document.file)
+
+    if (fs.existsSync(document.file)) {
+        res.sendFile(document.file, (err) => {
+            if (err) {
+                console.error('Error sending file:', err);
+                res.status(500).send('Error sending file');
+            }
+        });
+    } else {
+        res.status(404).json({ message: 'File not found' });
+    }
+
+})
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 // // @desc getStudentDocumentsByUSerId
 // // @route GET 'desk/studentDocuments/myStudentDocuments with userID passed in the body of the query             
 // // @access Private // later we will establish authorisations
@@ -217,6 +265,7 @@ module.exports = {
     getAllStudentDocuments,
     createNewStudentDocument,
     updateStudentDocument,
-    deleteStudentDocument
+    deleteStudentDocument,
+    getFileById,
  
 }
