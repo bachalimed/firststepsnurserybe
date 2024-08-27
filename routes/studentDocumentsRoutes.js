@@ -15,13 +15,14 @@ const verifyJWT= require('../middleware/verifyJWT')
 router.use(verifyJWT)
 router.route('/:id')//this '/' is not root path but the complementary to previous route
 .get(studentDocumentsController.getFileById)
+.delete(studentDocumentsController.deleteStudentDocument)
 module.exports = router
 
 router.route('/')//this '/' is not root path but the complementary to previous route
 .get(studentDocumentsController.getAllStudentDocuments)
 .post(upload.single('file'), studentDocumentsController.createNewStudentDocument)
 .patch(studentDocumentsController.updateStudentDocument)
-.delete(studentDocumentsController.deleteStudentDocument)
+
 
 module.exports = router
 

@@ -54,8 +54,8 @@ const getAllStudentDocuments = asyncHandler(async (req, res) => {
 
 
   const getFileById = asyncHandler(async (req, res) => {
-    const { id } = req.params
-console.log('now in the controller to get by doc id', req.params)
+    try {const { id } = req.params
+console.log('now in the controller to get by doc id', id)
     if (!id) {
         return res.status(400).json({ message: 'Missing required parameters: id' });
     }
@@ -74,19 +74,21 @@ console.log('now in the controller to get by doc id', req.params)
 
    
     
-    // Determine the correct content type
-    const mimeType = mime.lookup(filePath) || 'application/octet-stream';
-    res.setHeader('Content-Type', mimeType);
+        // Determine the correct content type
+        const mimeType = mime.lookup(filePath) || 'application/octet-stream';
+        res.setHeader('Content-Type', mimeType);
 
-    // Send the file
-    res.download(path.resolve(filePath), (err) => {
-        if (err) {
-            console.error('Error sending file:', err);
-            res.status(500).send('Error sending file');
-        }
-    });
-
-
+         // Send the file for download
+         res.download(filePath, (err) => {
+            if (err) {
+                console.error('Error sending file:', err);
+                res.status(500).send('Error sending file');
+            }
+        });
+    } catch (err) {
+        console.error('Error sending file:', err);
+        res.status(500).send('Error sending file');
+    }
 });
 
 
@@ -179,6 +181,11 @@ const createNewStudentDocument = asyncHandler(async (req, res) => {
         return res.status(400).json({ message: 'File is required.' });
     }
 
+    //ensure no other document with the same reference is already saved
+    const duplicate = await  StudentDocument.findOne({studentDocumentReference:studentDocumentReference,studentDocumentYear:studentDocumentYear }).lean().exec()
+    if (duplicate) {
+        return res.status(409).json({ message: 'Duplicate Document type found ' })
+    }
     // Save document entry to the database
     const document = new StudentDocument({
         studentId,
@@ -212,14 +219,14 @@ const updateStudentDocument = asyncHandler(async (req, res) => {
     }
 
     // Does the studentDocuments exist to update?
-    const studentDocuments = await StudentDocuments.findById(id).exec()//we did not lean becausse we need the save method attached to the response
+    const studentDocuments = await StudentDocument.findById(id).exec()//we did not lean becausse we need the save method attached to the response
 
     if (!studentDocuments) {
         return res.status(400).json({ message: 'StudentDocuments not found' })
     }
 
     // Check for duplicate 
-    const duplicate = await StudentDocuments.findOne({ studentDocumentsubject }).lean().exec()
+    const duplicate = await StudentDocument.findOne({ studentDocumentsubject }).lean().exec()
 
     // Allow updates to the original user 
     if (duplicate && duplicate?._id.toString() !== id) {
@@ -250,26 +257,37 @@ const updateStudentDocument = asyncHandler(async (req, res) => {
 // @route DELETE 'students/studentsParents/students
 // @access Private
 const deleteStudentDocument = asyncHandler(async (req, res) => {
-    const { id } = req.body
+    try {
+        const { id } = req.params;
+        console.log('iddddd',id)
+        if (!id) {
+            return res.status(400).json({ message: 'Missing required parameter: id' });
+        }
 
-    // Confirm data
-    if (!id) {
-        return res.status(400).json({ message: 'StudentDocuments ID Required' })
+        // Find the document to be deleted
+        const foundDocument = await StudentDocument.findById(id).exec();
+        
+        if (!foundDocument) {
+            return res.status(404).json({ message: 'Student Document not found' });
+        }
+
+        // Optionally delete the file from the filesystem if necessary
+        if (fs.existsSync(foundDocument.file)) {
+            fs.unlinkSync(foundDocument.file);
+        }
+
+        // Delete the document from the database
+        await StudentDocument.deleteOne({ _id: id });
+
+        // Respond with success message
+        const reply = `Student Document with ID ${id} and file ${foundDocument.file} deleted`;
+        res.json({ message: reply });
+        
+    } catch (err) {
+        console.error('Error deleting document:', err);
+        res.status(500).json({ message: 'Error deleting document' });
     }
-
-    // Does the user exist to delete?
-    const studentDocuments = await StudentDocuments.findById(id).exec()
-
-    if (!studentDocuments) {
-        return res.status(400).json({ message: 'StudentDocuments not found' })
-    }
-
-    const result = await studentDocuments.deleteOne()
-
-    const reply = `studentDocuments ${studentDocuments.studentDocumentsubject}, with ID ${studentDocuments._id}, deleted`
-
-    res.json(reply)
-})
+});
 
 
 
