@@ -50,6 +50,28 @@ const getAllStudentDocuments = asyncHandler(async (req, res) => {
     }
   })
 
+
+
+  const getMimeType = (filePath) => {
+    const extname = path.extname(filePath).toLowerCase();
+    const mimeTypes = {
+        '.pdf': 'application/pdf',
+        '.jpg': 'image/jpeg',
+        '.jpeg': 'image/jpeg',
+        '.png': 'image/png',
+        '.gif': 'image/gif',
+        '.txt': 'text/plain',
+        '.doc': 'application/msword',
+        '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        // Add other MIME types as needed
+    };
+
+    return mimeTypes[extname] || 'application/octet-stream';
+};
+
+
+
+
   const getFileById = asyncHandler(async (req, res) => {
     const { id } = req.params
 console.log('now in the controller to get by doc id', req.params)
@@ -62,20 +84,29 @@ console.log('now in the controller to get by doc id', req.params)
     if (!document) {
         return res.status(404).json({ message: 'Document not found' });
     }
-    console.log( document.file)
+   
+    const filePath = document.file;
 
-    if (fs.existsSync(document.file)) {
-        res.sendFile(document.file, (err) => {
-            if (err) {
-                console.error('Error sending file:', err);
-                res.status(500).send('Error sending file');
-            }
-        });
-    } else {
-        res.status(404).json({ message: 'File not found' });
+    if (!fs.existsSync(filePath)) {
+        return res.status(404).json({ message: 'File not found' });
     }
 
-})
+    // Determine MIME type based on file extension
+    const mimeType = getMimeType(filePath);
+
+    // Set Content-Type header
+    res.setHeader('Content-Type', mimeType);
+    
+    // Send the file
+    res.sendFile(path.resolve(filePath), (err) => {
+        if (err) {
+            console.error('Error sending file:', err);
+            res.status(500).send('Error sending file');
+        }
+    });
+
+
+});
 
 
 

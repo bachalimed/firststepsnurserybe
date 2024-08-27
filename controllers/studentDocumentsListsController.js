@@ -18,6 +18,7 @@ const getAllStudentDocumentsLists = asyncHandler(async (req, res) => {
     }
     res.json(studentDocumentsLists)
 })
+
 // // @desc getStudentDocumentsListByUSerId
 // // @route GET 'desk/studentDocumentsList/myStudentDocumentsList with userID passed in the body of the query             
 // // @access Private // later we will establish authorisations
