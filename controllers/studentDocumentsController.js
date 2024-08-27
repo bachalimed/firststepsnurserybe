@@ -273,6 +273,7 @@ const deleteStudentDocument = asyncHandler(async (req, res) => {
 
         // Optionally delete the file from the filesystem if necessary
         if (fs.existsSync(foundDocument.file)) {
+            console.log('deleting', foundDocument.file)
             fs.unlinkSync(foundDocument.file);
         }
 
