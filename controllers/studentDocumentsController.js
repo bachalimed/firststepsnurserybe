@@ -3,7 +3,7 @@ const StudentDocument = require('../models/StudentDocument')
 const StudentDocumentsList = require('../models/StudentDocumentsList')
 const path = require('path');
 const fs = require('fs');
-
+const mime = require('mime-types');
 
 //const Employee = require('../models/Employee')//we might need the employee module in this controller
 const asyncHandler = require('express-async-handler')//instead of using try catch
@@ -52,25 +52,6 @@ const getAllStudentDocuments = asyncHandler(async (req, res) => {
 
 
 
-  const getMimeType = (filePath) => {
-    const extname = path.extname(filePath).toLowerCase();
-    const mimeTypes = {
-        '.pdf': 'application/pdf',
-        '.jpg': 'image/jpeg',
-        '.jpeg': 'image/jpeg',
-        '.png': 'image/png',
-        '.gif': 'image/gif',
-        '.txt': 'text/plain',
-        '.doc': 'application/msword',
-        '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-        // Add other MIME types as needed
-    };
-
-    return mimeTypes[extname] || 'application/octet-stream';
-};
-
-
-
 
   const getFileById = asyncHandler(async (req, res) => {
     const { id } = req.params
@@ -91,14 +72,14 @@ console.log('now in the controller to get by doc id', req.params)
         return res.status(404).json({ message: 'File not found' });
     }
 
-    // Determine MIME type based on file extension
-    const mimeType = getMimeType(filePath);
-
-    // Set Content-Type header
-    res.setHeader('Content-Type', mimeType);
+   
     
+    // Determine the correct content type
+    const mimeType = mime.lookup(filePath) || 'application/octet-stream';
+    res.setHeader('Content-Type', mimeType);
+
     // Send the file
-    res.sendFile(path.resolve(filePath), (err) => {
+    res.download(path.resolve(filePath), (err) => {
         if (err) {
             console.error('Error sending file:', err);
             res.status(500).send('Error sending file');
