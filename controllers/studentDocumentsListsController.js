@@ -12,7 +12,7 @@ const getAllStudentDocumentsLists = asyncHandler(async (req, res) => {
     // Get all schools from MongoDB
     const studentDocumentsLists = await StudentDocumentsList.find().lean()//this will not return the extra data(lean)
     // If no students 
-    //console.log(studentDocumentsLists)
+    console.log(studentDocumentsLists)
     if (!studentDocumentsLists?.length) {
         return res.status(400).json({ message: 'No studentDocumentsLists found from studentDocumentsList controller with love' })
     }
@@ -61,18 +61,20 @@ const createNewStudentDocumentsList = asyncHandler(async (req, res) => {
         return res.status(409).json({ message: `Duplicate academicYear: ${duplicate.documentsAcademicYear}, found` })
     }
   
-    
-    const studentDocumentsListObject = { documentsList, documentsAcademicYear}//construct new studentDocumentsList to be stored
+       // Add ObjectId to each document in the documentsList
+       const documentsWithIds = documentsList.map(doc => ({ ...doc, documentReference: new mongoose.Types.ObjectId() }))
+    // Construct the studentDocumentsList object with the updated documentsList
+    const studentDocumentsListObject = { documentsList: documentsWithIds, documentsAcademicYear };
 
-    // Create and store new studentDocumentsList 
-    const studentDocumentsList = await StudentDocumentsList.create(studentDocumentsListObject)
+    // Create and store the new studentDocumentsList
+    const studentDocumentsList = await StudentDocumentsList.create(studentDocumentsListObject);
 
-    if (studentDocumentsList) { //if created 
-        res.status(201).json({ message: `New studentDocumentsList for : ${studentDocumentsList.documentsAcademicYear}, created` })
+    if (studentDocumentsList) {
+        res.status(201).json({ message: `New studentDocumentsList for ${studentDocumentsList.documentsAcademicYear} created` });
     } else {
-        res.status(400).json({ message: 'Invalid studentDocumentsList data received' })
+        res.status(400).json({ message: 'Invalid studentDocumentsList data received' });
     }
-})
+});
 
 
 
@@ -81,49 +83,31 @@ const createNewStudentDocumentsList = asyncHandler(async (req, res) => {
 // @route PATCH 'desk/studentDocumentsList
 // @access Private
 const updateStudentDocumentsList = asyncHandler(async (req, res) => {
-    const { id, studentDocumentsListCreationDate, studentDocumentsListPriority, studentDocumentsListubject, studentDocumentsListDescription, studentDocumentsListCreator, studentDocumentsListReference,  studentDocumentsListDueDate,
-        studentDocumentsListResponsible, studentDocumentsListAction, studentDocumentsListtate, studentDocumentsListCompletionDate, lastModified, studentDocumentsListYear  } = req.body
+    const { id, documentsList, documentsAcademicYear } = req.body;
 
-    // Confirm data 
-    if (!studentDocumentsListCreationDate ||!studentDocumentsListPriority ||! studentDocumentsListubject ||! studentDocumentsListDescription ||! studentDocumentsListCreator 
-        ||! studentDocumentsListDueDate||! studentDocumentsListResponsible||! studentDocumentsListtate||! lastModified.operator||! studentDocumentsListYear) {
-        return res.status(400).json({ message: 'All mandatory fields required' })
+    if (!documentsAcademicYear || !Array.isArray(documentsList) || documentsList.length === 0) {
+        return res.status(400).json({ message: 'All mandatory fields are required' });
     }
-
-    // Does the studentDocumentsList exist to update?
-    const studentDocumentsList = await StudentDocumentsList.findById(id).exec()//we did not lean becausse we need the save method attached to the response
-
-    if (!studentDocumentsList) {
-        return res.status(400).json({ message: 'StudentDocumentsList not found' })
-    }
-
-    // Check for duplicate 
-    const duplicate = await StudentDocumentsList.findOne({ studentDocumentsListubject }).lean().exec()
-
-    // Allow updates to the original user 
-    if (duplicate && duplicate?._id.toString() !== id) {
-        return res.status(409).json({ message: 'Duplicate studentDocumentsList' })
-    }
-
-    studentDocumentsList.studentDocumentsListCreationDate = studentDocumentsListCreationDate//it will only allow updating properties that are already existant in the model
-    studentDocumentsList.studentDocumentsListPriority = studentDocumentsListPriority
-    studentDocumentsList.studentDocumentsListubject = studentDocumentsListubject
-    studentDocumentsList.studentDocumentsListDescription = studentDocumentsListDescription
-    studentDocumentsList.studentDocumentsListCreator = studentDocumentsListCreator
-    studentDocumentsList.studentDocumentsListReference = studentDocumentsListReference
-    studentDocumentsList.studentDocumentsListDueDate = studentDocumentsListDueDate
-    studentDocumentsList.studentDocumentsListResponsible = studentDocumentsListResponsible
-    studentDocumentsList.studentDocumentsListAction = studentDocumentsListAction
-    studentDocumentsList.studentDocumentsListtate = studentDocumentsListtate
-    studentDocumentsList.studentDocumentsListCompletionDate = studentDocumentsListCompletionDate
-    studentDocumentsList.lastModified = lastModified
-    studentDocumentsList.studentDocumentsListYear = studentDocumentsListYear
     
-    
-    const updatedStudentDocumentsList = await studentDocumentsList.save()//save method received when we did not include lean
+    // Does the studentDocumentList exist to update?
+    const listToUpdate = await StudentDocumentsList.findById(id).exec();
 
-    res.json({ message: `studentDocumentsList: ${updatedStudentDocumentsList.studentDocumentsListubject}, updated` })
-})
+    if (!listToUpdate) {
+        return res.status(400).json({ message: 'No StudentDocumentsList found to update' });
+    }
+
+    listToUpdate.documentsList = documentsList
+    listToUpdate.documentsAcademicYear = documentsAcademicYear
+
+    const updatedStudentDocumentsList = await listToUpdate.save()
+
+    res.json({ message: `StudentDocumentsList updated successfully`, updatedStudentDocumentsList });
+});
+
+
+
+
+
 //--------------------------------------------------------------------------------------1   
 // @desc Delete a student
 // @route DELETE 'students/studentsParents/students
