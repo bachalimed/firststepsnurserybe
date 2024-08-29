@@ -34,12 +34,29 @@ const getAllStudentDocuments = asyncHandler(async (req, res) => {
   
         // Check if documents are found and send response
         if (studentDocuments.length || studentDocumentsList.length) {
-          const responseData = { studentDocuments, studentDocumentsList };
+            //console.log('studentDocuments',studentDocuments,'studentDocumentsList',studentDocumentsList)
+            const listing =studentDocumentsList[0].documentsList
+            
+            responseData = listing.map(item => {
+                
+                //Find the document in the studentDocuments array that matches the documentReference
+                const matchingDocument = studentDocuments.find(doc => {
+                    //console.log('Checking:', doc.studentDocumentReference.toString(), 'against', item.documentReference.toString());
+                    return doc.studentDocumentReference.toString() === item.documentReference.toString()
+                });
+                //Return a new object with the documentUploaded and studentDocumentId keys added if the reference exists
+                //console.log(matchingDocument,'matchingdoc')
+                return {
+                    ...item,
+                    documentUploaded: !!matchingDocument, // true if matchingDocument is found, false otherwise
+                    studentDocumentId: matchingDocument ? matchingDocument._id : null, // Add studentDocumentId if found, otherwise null
+                };
+            });
+            console.log('responseData',responseData)
           return res.json(responseData);
         }
-  
-        // If no documents found
-        return res.status(404).json({ message: 'No student documents found' });
+        // If no documents found we return an empty array toallow user to upload from table
+        return res.json([]);
       } catch (error) {
         console.error('Error fetching documents:', error);
         return res.status(500).json({ message: 'Error fetching documents' });
@@ -169,8 +186,8 @@ console.log('now in the controller to get by doc id', id)
 const createNewStudentDocument = asyncHandler(async (req, res) => {
  console.log('here at the controller now')
  try {
-     console.log('Body:', req.body);
-     console.log('Files:', req.files);
+     //console.log('Body:', req.body);
+     //console.log('Files:', req.files);
      const { studentId, studentDocumentYear, studentDocumentReference, studentDocumentLabel } = req.body;
      const file = req.file
     // Validate required fields
@@ -252,16 +269,18 @@ const updateStudentDocument = asyncHandler(async (req, res) => {
 
     res.json({ message: `studentDocuments: ${updatedStudentDocuments.studentDocumentsubject}, updated` })
 })
-//--------------------------------------------------------------------------------------1   
+//---------------------------------------------------------------------------------------1   
 // @desc Delete a student
 // @route DELETE 'students/studentsParents/students
 // @access Private
 const deleteStudentDocument = asyncHandler(async (req, res) => {
     try {
-        const { id } = req.params;
-        console.log('iddddd',id)
+        const  id  = req.body.id;
+        //console.log('this is teh request' , req)
+       
+        
         if (!id) {
-            return res.status(400).json({ message: 'Missing required parameter: id' });
+            return res.status(400).json({ message: 'Missing required parameter: id ' });
         }
 
         // Find the document to be deleted
