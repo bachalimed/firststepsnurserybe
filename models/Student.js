@@ -1,6 +1,28 @@
 const mongoose = require('mongoose')
 
+const studentEducationSchema = new mongoose.Schema({
+    schoolYear: { type: String, index: true },
+    attendedSchool: { type: mongoose.Schema.Types.ObjectId, index: true, ref: 'AttendedSchool' },
+    note: { type: String, index: true }
+}, { _id: false }) // Disable the creation of _id for this subdocument
 
+const studentAdmissionsSchema = new mongoose.Schema({
+    admissionYear:{type: String, index: true},
+	admission: {type: mongoose.Schema.Types.ObjectId, index: true, ref:''}
+}, { _id: false })
+
+const studentYearsSchema = new mongoose.Schema({
+	academicYear: {type: String, index: true},
+},{ _id: false })
+
+const studentGardienSchema= new mongoose.Schema({
+	gardienYear:{type: String, index: true},
+	gardienFirstName:{type: String, index: true},
+	gardienMiddleName:{type: String, index: true},
+	gardienLastName:{type: String, index: true},
+	gardienRelation:{type: String, index: true},
+	gardienPhone:{type: Number}
+},{ _id: false })
 
 
 const studentSchema = new mongoose.Schema({
@@ -15,36 +37,13 @@ const studentSchema = new mongoose.Schema({
 	studentMother:{type: mongoose.Schema.Types.ObjectId, index: true, ref:'Parent'},
 	studentFather:{type: mongoose.Schema.Types.ObjectId, index: true, ref:'Parent'},
 	studentJointFamily:{type: Boolean},
-	studentYears: [{academicYear: {type: String, index: true}}],
-	studentGardien:[
-		{academicYear:{type: String, index: true},
-		gardienFirstName:{type: String, index: true},
-		gardienMiddleName:{type: String, index: true},
-		gardienLastName:{type: String, index: true},
-		gardienRelation:{type: String, index: true},
-		gardienPhone:{type: Number}}],
-	studentDocuments:[{
-		academicYear:{type: String, index: true},
-		id: {type: mongoose.Schema.Types.ObjectId, index: true, ref:''},
-		}],
-	
-	studentPhoto:[{
-		academicYear:{type: String, index: true},
-		photoId: {type: mongoose.Schema.Types.ObjectId, index: true, ref:''},
-		}],
-	studentEducation:[{
-		educationYear:{type: String, index: true},
-		attendedSchool:{type: mongoose.Schema.Types.ObjectId, index: true, ref:'AttendedSchool'},
-		note:{type: String, index: true}
-	}],		
-	lastModified:{
-		date:{type: Date},
-		operator:{type: String, index: true}},
-		
-	studentAdmissions:[{
-		academicYear:{type: String, index: true},
-		admission: {type: mongoose.Schema.Types.ObjectId, index: true, ref:''}}]
-	}
+	studentGardien:[studentGardienSchema],
+	studentAdmissions:[studentAdmissionsSchema],
+	studentYears: [studentYearsSchema],
+	studentEducation:[studentEducationSchema],		
+	lastModified:{type: Date, default: Date.now},
+	operator:{type: String, index: true},
+}
 	)
 module.exports = mongoose.model('Student', studentSchema,'students')
 

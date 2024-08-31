@@ -17,7 +17,7 @@ const getAllStudents = asyncHandler(async (req, res) => {
     const {selectedYear} = req.query//maybe replace the conditionals with the current year that we get  from middleware
     //console.log(selectedYear, "sleected year inback")
     //will retrive all teh students
-    if (selectedYear === 'all'){
+    if (selectedYear === '1000'){
         const students = await Student.find().populate('studentMother').populate('studentFather').lean()
         if (!students?.length) {
             return res.status(400).json({ message: 'No studentss found' })
@@ -66,51 +66,41 @@ const getAllStudents = asyncHandler(async (req, res) => {
 // @route POST 'students/studentsParents/students
 // @access Private
 const createNewStudent = asyncHandler(async (req, res) => {
-    const { studentName, studentDob,  studentSex, studentIsActive, studentYears, studentPhoto, studentParent,
-         studentContact, studentJointFamily, studentGardien, studentEducation, lastModified, studentDocuments, 
-         admissions   } = req.body//this will come from front end we put all the fields o fthe collection here
-console.log(studentName, studentDob,  studentSex, studentIsActive, studentYears, studentPhoto, studentParent,
-    studentContact, studentJointFamily, studentGardien, studentEducation, lastModified, studentDocuments, 
-    admissions)
+    const { studentName, studentDob,  studentSex, studentIsActive, studentYears, studentParent,
+          studentJointFamily, studentGardien, studentEducation, lastModified } = req.body//this will come from front end we put all the fields o fthe collection here
+console.log(studentName, studentDob,  studentSex, studentIsActive, studentYears, studentParent,
+    studentJointFamily, studentGardien, studentEducation, lastModified)
     //Confirm data is present in the request with all required fields
     if (!studentName || !studentDob ||!studentSex ||!studentYears ) {
         return res.status(400).json({ message: 'All fields are required' })//400 : bad request
     }
+
     
     // Check for duplicate username
-    const duplicate = await Student.findOne({studentName }).lean().exec()//because we re receiving only one response from mongoose
+    const duplicate = await Student.findOne({studentDob}).lean().exec()//because we re receiving only one response from mongoose
 
-    if (duplicate) {
-        return res.status(409).json({ message: 'Duplicate student name' })
+    if (duplicate?.studentName.lastName===studentName.lastName &&duplicate?.studentSex===studentSex) {
+        return res.status(409).json({ message: ` possible duplicate student name ${duplicate.studentName.firstName} ${duplicate.studentName.middleName} ${duplicate.studentName.lastName}` })
     }
+   
+   
 
-    // Check for duplicate userFullName
-    const duplicateFamily = await Student.findOne({studentParent }).lean().exec()//because we re receiving only one response from mongoose
-// no need to check parents because we will create students and create parents and then attach student to parents
-    // if (duplicateFamily) {
-    //     return res.status(409).json({ message: 'Duplicate parents found' })
-    // }
-    
-    
-    const studentObject = { studentName, studentDob,  studentSex, studentIsActive, studentYears, studentPhoto, studentParent,
-        studentContact, studentJointFamily, studentGardien, studentEducation, lastModified, studentDocuments, 
-        admissions }//construct new student to be stored
+
+
+     
+    const studentObject = { studentName, studentDob,  studentSex, studentIsActive, studentYears, studentParent,
+        studentJointFamily, studentGardien, studentEducation, lastModified}//construct new student to be stored
 
     // Create and store new student 
     const student = await Student.create(studentObject)
 
     if (student) { //if created 
-        res.status(201).json({ message: `New student ${studentName.firstName} created` })
+        res.status(201).json({ message: `New student ${studentName.firstName} ${studentName.middleName} ${studentName.lastName} created` })
     } else {
         res.status(400).json({ message: 'Invalid student data received' })
     }
 })
 //internalcontroller :CreateNew User to be used by other controllers??
-
-
-
-
-
 
 
 // @desc Update a student
