@@ -107,12 +107,12 @@ console.log(studentName, studentDob,  studentSex, studentIsActive, studentYears,
 // @route PATCH 'students/studentsParents/students
 // @access Private
 const updateStudent = asyncHandler(async (req, res) => {
-    const { id, studentName, studentDob,  studentSex, studentIsActive, studentYear, studentPhoto, studentParent,
-        studentContact, studentJointFamily, studentGardien, studentEducation, lastModified, studentDocuments, 
+    const { id, studentName, studentDob,  studentSex, studentIsActive, studentYears, studentParent,
+        studentContact, studentJointFamily, studentGardien, studentEducation, operator,  
         admissions  } = req.body
-
+console.log(req.body)
     // Confirm data 
-    if (!studentName || !studentDob ||!studentSex ||!studentYear ||!Array.isArray(studentEducation) || !studentEducation.length) {
+    if (!studentName || !studentDob ||!studentSex ||!studentYears ||!Array.isArray(studentEducation) || !studentEducation.length) {
         return res.status(400).json({ message: 'All fields except required' })
     }
 
@@ -135,15 +135,15 @@ const updateStudent = asyncHandler(async (req, res) => {
     student.studentDob = studentDob
     student.studentSex = studentSex
     student.studentIsActive = studentIsActive
-    student.studentYear = studentYear
-    student.studentPhoto = studentPhoto
+    student.studentYears = studentYears
+    
     student.studentParent = studentParent
     student.studentContact = studentContact
     student.studentJointFamily = studentJointFamily
     student.studentGardien = studentGardien
     student.studentEducation = studentEducation
-    student.lastModified = lastModified
-    student.studentDocuments = studentDocuments
+    student.operator = operator
+    
     student.admissions = admissions
    
     const updatedStudent = await student.save()//save method received when we did not include lean
