@@ -18,7 +18,7 @@ const getAllStudents = asyncHandler(async (req, res) => {
     //console.log(selectedYear, "sleected year inback")
     //will retrive all teh students
     if (selectedYear === '1000'){
-        const students = await Student.find().populate('studentMother').populate('studentFather').lean()
+        const students = await Student.find().lean()
         if (!students?.length) {
             return res.status(400).json({ message: 'No studentss found' })
         }else{
@@ -26,7 +26,7 @@ const getAllStudents = asyncHandler(async (req, res) => {
         res.json(students)}
     }
     //will retrieve only the selcted year
-            const students = await Student.find({ studentYears:{$elemMatch:{academicYear: selectedYear }}}).populate('studentMother').populate('studentFather').lean()//this will not return the extra data(lean)
+            const students = await Student.find({ studentYears:{$elemMatch:{academicYear: selectedYear }}}).lean()//this will not return the extra data(lean)
             //const students = await Student.find({ studentYear: '2023/2024' }).lean()//this will not return the extra data(lean)
             //console.log('with year select',selectedYear,  students)
             if (!students?.length) {
@@ -37,7 +37,7 @@ const getAllStudents = asyncHandler(async (req, res) => {
     //will retreive according to the id
     }else if(req.query.id){
         const {id} = req.query
-        const student = await Student.find({ _id: id }).populate('studentMother').populate('studentFather').lean()//this will not return the extra data(lean)
+        const student = await Student.find({ _id: id }).lean()//this will not return the extra data(lean)//removed populate father and mother
     
     //console.log('with id  select')
     if (!student?.length) {
@@ -66,10 +66,8 @@ const getAllStudents = asyncHandler(async (req, res) => {
 // @route POST 'students/studentsParents/students
 // @access Private
 const createNewStudent = asyncHandler(async (req, res) => {
-    const { studentName, studentDob,  studentSex, studentIsActive, studentYears, studentParent,
-          studentJointFamily, studentGardien, studentEducation, lastModified } = req.body//this will come from front end we put all the fields o fthe collection here
-console.log(studentName, studentDob,  studentSex, studentIsActive, studentYears, studentParent,
-    studentJointFamily, studentGardien, studentEducation, lastModified)
+    const { studentName, studentDob,  studentSex, studentIsActive, studentYears, studentGardien, studentEducation, lastModified } = req.body//this will come from front end we put all the fields o fthe collection here
+//console.log(studentName, studentDob,  studentSex, studentIsActive, studentYears, studentGardien, studentEducation, lastModified)
     //Confirm data is present in the request with all required fields
     if (!studentName || !studentDob ||!studentSex ||!studentYears ) {
         return res.status(400).json({ message: 'All fields are required' })//400 : bad request
@@ -88,8 +86,7 @@ console.log(studentName, studentDob,  studentSex, studentIsActive, studentYears,
 
 
      
-    const studentObject = { studentName, studentDob,  studentSex, studentIsActive, studentYears, studentParent,
-        studentJointFamily, studentGardien, studentEducation, lastModified}//construct new student to be stored
+    const studentObject = { studentName, studentDob,  studentSex, studentIsActive, studentYears, studentGardien, studentEducation, lastModified}//construct new student to be stored
 
     // Create and store new student 
     const student = await Student.create(studentObject)
@@ -107,8 +104,7 @@ console.log(studentName, studentDob,  studentSex, studentIsActive, studentYears,
 // @route PATCH 'students/studentsParents/students
 // @access Private
 const updateStudent = asyncHandler(async (req, res) => {
-    const { id, studentName, studentDob,  studentSex, studentIsActive, studentYears, studentParent,
-        studentContact, studentJointFamily, studentGardien, studentEducation, operator,  
+    const { id, studentName, studentDob,  studentSex, studentIsActive, studentYears, studentContact, studentGardien, studentEducation, operator,  
         admissions  } = req.body
 console.log(req.body)
     // Confirm data 
@@ -136,14 +132,10 @@ console.log(req.body)
     student.studentSex = studentSex
     student.studentIsActive = studentIsActive
     student.studentYears = studentYears
-    
-    student.studentParent = studentParent
     student.studentContact = studentContact
-    student.studentJointFamily = studentJointFamily
     student.studentGardien = studentGardien
     student.studentEducation = studentEducation
     student.operator = operator
-    
     student.admissions = admissions
    
     const updatedStudent = await student.save()//save method received when we did not include lean
