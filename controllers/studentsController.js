@@ -20,7 +20,7 @@ const getAllStudents = asyncHandler(async (req, res) => {
     if (selectedYear === '1000'){
         const students = await Student.find().lean()
         if (!students?.length) {
-            return res.status(400).json({ message: 'No studentss found' })
+            return res.status(400).json({ message: 'No students found!' })
         }else{
         //console.log('returned res', students)
         res.json(students)}
@@ -30,7 +30,7 @@ const getAllStudents = asyncHandler(async (req, res) => {
             //const students = await Student.find({ studentYear: '2023/2024' }).lean()//this will not return the extra data(lean)
             //console.log('with year select',selectedYear,  students)
             if (!students?.length) {
-                return res.status(400).json({ message: 'No studentss found' })
+                return res.status(400).json({ message: 'No students found  for the selected academic year' })
             }else{
             //console.log('returned res', students)
             res.json(students)}
@@ -41,7 +41,7 @@ const getAllStudents = asyncHandler(async (req, res) => {
     
     //console.log('with id  select')
     if (!student?.length) {
-        return res.status(400).json({ message: 'No studentss found' })
+        return res.status(400).json({ message: 'No student found for the Id provided' })
     }
     //console.log('returned res', student)
     res.json(student)
@@ -50,7 +50,7 @@ const getAllStudents = asyncHandler(async (req, res) => {
     const students = await Student.find().lean()//this will not return the extra data(lean)
     //console.log('with no select')
     if (!students?.length) {
-        return res.status(400).json({ message: 'No studentss found' })
+        return res.status(400).json({ message: 'No students found' })
     }
     //console.log('returned res', students)
     res.json(students)}
