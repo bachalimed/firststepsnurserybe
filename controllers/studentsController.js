@@ -66,7 +66,7 @@ const getAllStudents = asyncHandler(async (req, res) => {
 // @route POST 'students/studentsParents/students
 // @access Private
 const createNewStudent = asyncHandler(async (req, res) => {
-    const { studentName, studentDob,  studentSex, studentIsActive, studentYears, studentGardien, studentEducation, lastModified } = req.body//this will come from front end we put all the fields o fthe collection here
+    const { studentName, studentDob,  studentSex, studentIsActive, studentJointFamily, studentYears, studentGardien, studentEducation, lastModified } = req.body//this will come from front end we put all the fields o fthe collection here
 //console.log(studentName, studentDob,  studentSex, studentIsActive, studentYears, studentGardien, studentEducation, lastModified)
     //Confirm data is present in the request with all required fields
     if (!studentName || !studentDob ||!studentSex ||!studentYears ) {
@@ -86,7 +86,7 @@ const createNewStudent = asyncHandler(async (req, res) => {
 
 
      
-    const studentObject = { studentName, studentDob,  studentSex, studentIsActive, studentYears, studentGardien, studentEducation, lastModified}//construct new student to be stored
+    const studentObject = { studentName, studentDob,  studentSex, studentIsActive, studentJointFamily,studentYears, studentGardien, studentEducation, lastModified}//construct new student to be stored
 
     // Create and store new student 
     const student = await Student.create(studentObject)
@@ -104,11 +104,11 @@ const createNewStudent = asyncHandler(async (req, res) => {
 // @route PATCH 'students/studentsParents/students
 // @access Private
 const updateStudent = asyncHandler(async (req, res) => {
-    const { id, studentName, studentDob,  studentSex, studentIsActive, studentYears, studentContact, studentGardien, studentEducation, operator,  
+    const { id, studentName, studentDob,  studentSex, studentIsActive, studentYears, studentJointFamily,studentContact, studentGardien, studentEducation, operator,  
         admissions  } = req.body
 console.log(req.body)
     // Confirm data 
-    if (!studentName || !studentDob ||!studentSex ||!studentYears ||!Array.isArray(studentEducation) || !studentEducation.length) {
+    if (!studentName || !studentDob ||!studentSex ||!studentYears ) {
         return res.status(400).json({ message: 'All fields except required' })
     }
 
@@ -132,6 +132,7 @@ console.log(req.body)
     student.studentSex = studentSex
     student.studentIsActive = studentIsActive
     student.studentYears = studentYears
+    student.studentJointFamily = studentJointFamily
     student.studentContact = studentContact
     student.studentGardien = studentGardien
     student.studentEducation = studentEducation

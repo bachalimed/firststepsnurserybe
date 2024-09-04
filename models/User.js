@@ -12,10 +12,12 @@ const userSchema = new mongoose.Schema({
 	accessToken: {type: String, index: true},
 	isParent:{
 		type: mongoose.Schema.Types.ObjectId,
+		index: true,
 		ref:'Parent'},
 		
 	isEmployee:{
 		type: mongoose.Schema.Types.ObjectId,
+		index: true,
 		ref:'Employee'
 		
 		},

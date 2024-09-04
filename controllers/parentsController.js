@@ -23,7 +23,7 @@ const findAttachUsersToParents = async (parents) => {
             //  console.log('user found',user)
             if (user) {
                 // Attach the parent object to the user object
-                // await user.populate('isParent') 
+                 //await user.populate('isParent') 
                 // console.log('user after adding parent profiel',user)
                 // console.log('Type of foundUsers:', typeof foundUsers)
                 eachParent.userProfile = user
@@ -36,6 +36,47 @@ const findAttachUsersToParents = async (parents) => {
         }
         return ParentsList
 }
+//attach partners and retuen fathers array
+
+
+
+  
+// //from students array find their parent from parent schema and the parent information from the users schema
+// const getUsersFromStudents = async(students)=>{
+//     const users = []
+//     if(students?.length){
+//         await Promise.all(students.map(async (eachStudent) => {
+//             //console.log('id found',eachParent._id)
+//                      const mother = await User.findOne({ isParent: eachStudent.studentMother})
+//                      const father = await User.findOne({ isParent: eachStudent.studentFather})
+//                     //  console.log('user found',user)
+//                     if (mother) {
+//                         // Attach the parent object to the user object
+//                         // await user.populate('isParent') 
+//                         // console.log('user after adding parent profiel',user)
+//                         // console.log('Type of foundUsers:', typeof foundUsers)
+//                         eachStudent.motherProfile = mother
+//                     // console.log('Is array:', Array.isArray(foundUsers));
+//                           users.push(eachStudent)
+//                         //console.log('usrs in controller from parents', eachParent)
+                        
+//                     }if (father) {
+//                         // Attach the parent object to the user object
+//                         // await user.populate('isParent') 
+//                         // console.log('user after adding parent profiel',user)
+//                         // console.log('Type of foundUsers:', typeof foundUsers)
+//                         eachStudent.fatherProfile = father
+//                     // console.log('Is array:', Array.isArray(foundUsers));
+//                           users.push(eachStudent)
+//                         //console.log('usrs in controller from parents', eachParent)
+                        
+//                     }
+//                 }))
+                
+//                 }
+//                 return users
+//         }
+
 
 
 // @desc Get all parents
@@ -43,51 +84,119 @@ const findAttachUsersToParents = async (parents) => {
 // @access Private // later we will establish authorisations
 const getAllParents = asyncHandler(async (req, res) => {
     // Get all parents from MongoDB according to the params
+  let filteredParents
+ 
     if(req.query.selectedYear){
         const {selectedYear} = req.query
         console.log('selectedYear', selectedYear)
-        const parents = await Parent.find({parentYears:{$elemMatch:{academicYear:selectedYear}}}).populate('children').populate('partner').lean()
-        console.log('parents', parents)
+        //retrive all students and populate their parents
+       const  parents = await Parent.find().populate('children').lean()//select('-partner').lean()  
+        
+        //console.log(parents,'parents retriecved')
+        if (!parents?.length) {
+            return res.status(400).json({ message: 'No Parents found !' })
+        }else if (selectedYear!=='1000'){
+            //keep only the parent with students having the selectedyear value
+            
+                // Code that might throw the error
+                 filteredParents = parents.filter(parent => {
+                    return parent.children.some(child => {
+                        return child.studentYears.some(year => year.academicYear === selectedYear)
+                    })
+                })
+                //console.log(filteredParents,'filteredParents')
+            }else{
+                //if selectedYEar is 1000 we retreive all parents
+                 filteredParents = parents
+            }
+            const usersAndParents  = await findAttachUsersToParents(filteredParents)
+            const updatedParentsArray =
+            usersAndParents.map(parent => {
+            if (parent.userProfile.userSex === 'Male') {
+              // Find the partner object in the array
+              const partnerObject = usersAndParents.find(
+                p => p._id.toString() === parent.partner.toString()
+              );
+          
+              if (partnerObject) {
+                // Replace the partner ID with the partner object
+                parent.partner = partnerObject;
+          
+                // Remove the partner object from the original array
+                return parent;
+              }
+            }
+            return parent;
+          }).filter(parent => parent.userProfile.userSex !== 'Female' || !usersAndParents.some(p => p._id.toString() === parent.partner._id.toString()))
+
+            console.log(updatedParentsArray,'updatedParentsArray')
+            if (!parents?.length) {
+                return res.status(400).json({ message: 'No Parents found !' })
+            }else{
+                //assemble fatehr and father profiles
+
+                res.json(updatedParentsArray)}
+
+            }else if(req.query.id){//to be updated
+                    const {id} = req.query
+                    const parents = await Parent.find({_id:id}).populate('children').populate('partner').lean()
+                    if (!parents?.length) {
+                        return res.status(400).json({ message: 'No parents found' })
+                    }
+                    if (parents){
+                        //  find the users that corresponds to the parents
+                        const usersAndParents  = await findAttachUsersToParents(parents)
+                          //console.log(usersAndParents)
+                      res.status(200).json(usersAndParents)
+                    }
+
+
+                }
+        })
+
+
+
+        //const parents = await Parent.find({parentYears:{$elemMatch:{academicYear:selectedYear}}}).populate('children').populate('partner').lean()
+        //const students = await Student.find({ studentYears:{$elemMatch:{academicYear: selectedYear }}}).lean()//this will not return the extra data(lean)
+            //const students = await Student.find({ studentYear: '2023/2024' }).lean()//this will not return the extra data(lean)
+            //console.log('with year select',selectedYear,  students)
+            // if (!students?.length) {
+            //     return res.status(400).json({ message: 'No students nor Parents found  for the selected academic year' })
+            // }else{
+          
+            // res.json(students)}
+
+
+        // const parents = await Parent.find({parentYears:{$elemMatch:{academicYear:selectedYear}}}).populate('children').populate('partner').lean()
+        // console.log('parents', parents)
     // If no parents found 
-        if (!parents?.length) {
-            return res.status(400).json({ message: 'No parents found' })
-        }
-        if (parents){
-            //  find the users that corresponds to the parents
-            const usersAndParents  = await findAttachUsersToParents(parents)
-            //console.log(usersAndParents)
-            res.status(200).json(usersAndParents)
-        }
+        // if (!parents?.length) {
+        //     return res.status(400).json({ message: 'No parents found' })
+        // }
+        // if (parents){
+        //     //  find the users that corresponds to the parents
+        //     const usersAndParents  = await findAttachUsersToParents(parents)
+        //     //console.log(usersAndParents)
+        //     res.status(200).json(usersAndParents)
+        // }
 
-    }else if(req.query.id){
-        const {id} = req.query
-        const parents = await Parent.find({_id:id}).populate('children').populate('partner').lean()
-        if (!parents?.length) {
-            return res.status(400).json({ message: 'No parents found' })
-        }
-        if (parents){
-            //  find the users that corresponds to the parents
-            const usersAndParents  = await findAttachUsersToParents(parents)
-              //console.log(usersAndParents)
-          res.status(200).json(usersAndParents)
-        }
+    // }else 
 
-    }else{
-        console.log('helllllllow')
-        //console.log('parents in controller',parents)
-        const parents = await Parent.find().populate('children').populate('partner').lean()
-        if (!parents?.length) {
-        return res.status(400).json({ message: 'No parents found' })
-        }
-        if (parents){
-            //  find the users that corresponds to the parents
-            const usersAndParents  = await findAttachUsersToParents(parents)
-          //console.log(usersAndParents)
-            res.status(200).json(usersAndParents)
-        }
+    // }else{
+    //     console.log('helllllllow')
+    //     //console.log('parents in controller',parents)
+    //     const parents = await Parent.find().populate('children').populate('partner').lean()
+    //     if (!parents?.length) {
+    //     return res.status(400).json({ message: 'No parents found' })
+    //     }
+    //     if (parents){
+    //         //  find the users that corresponds to the parents
+    //         const usersAndParents  = await findAttachUsersToParents(parents)
+    //       //console.log(usersAndParents)
+    //         res.status(200).json(usersAndParents)
+    //     }
     
-    }
-})
+
 
 //----------------------------------------------------------------------------------
 //@desc Create new parent, check how to save user and parent from the same form, check if year is same as current before rejecting duplicate
