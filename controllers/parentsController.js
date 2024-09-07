@@ -57,7 +57,7 @@ const getAllParents = asyncHandler(async (req, res) => {
             }else if (selectedYear==='1000'){
                  //if selectedYEar is 1000 we retreive all parents
                  filteredParents = parents
-                console.log(filteredParents,'filteredParents')
+                //console.log(filteredParents,'filteredParents')
             }else{
                
                   //keep only the parent with students having the selectedyear value
@@ -69,12 +69,13 @@ const getAllParents = asyncHandler(async (req, res) => {
                     })
                 })
             }
+            console.log(filteredParents,'filteredParents')
             const usersAndParents  = await findAttachUsersToParents(filteredParents)
             const updatedParentsArray = usersAndParents.map(parent => {
             if (parent.userProfile.userSex === 'Male') {
               // Find the partner object in the array
               const partnerObject = usersAndParents.find(
-                p => p._id.toString() === parent.partner.toString()
+                p => p._id.toString() === parent.partner?.toString()
               );
           
               if (partnerObject) {
@@ -121,10 +122,10 @@ const getAllParents = asyncHandler(async (req, res) => {
 //@access Private
 //first we save the studentsm then user then parent
 const createNewParent = asyncHandler(async (req, res) => {
-    const { userFullName, username, password, accessToken, isEmployee, userDob, userIsActive, userRoles, userPhoto, userAddress, userContact, parentYear, children, partner } = req.body//this will come from front end we put all the fields ofthe collection here
-
+    const { userFullName, username, password, accessToken, isEmployee, userDob, userSex, userIsActive, userRoles, userPhoto, userAddress, userContact, parentYear, children, partner } = req.body//this will come from front end we put all the fields ofthe collection here
+    console.log(userFullName, username, password, accessToken, isEmployee, userDob, userSex, userIsActive, userRoles, userPhoto, userAddress, userContact, parentYear, children, partner)
     //Confirm data for user will be checked by the user controller
-    if (!userFullName || !username ||!userDob || userSex ||!password ||!userContact.primaryPhone || !Array.isArray(userRoles) || !userRoles.length) {
+    if (!userFullName || !username ||!userDob ||! userSex ||!password ||!userContact.primaryPhone || !Array.isArray(userRoles) || !userRoles.length) {
         return res.status(400).json({ message: 'All fields are required' })//400 : bad request
     }
 
@@ -165,7 +166,7 @@ const parent = await Parent.create(parentObject)
   
            // Create and store new user 
                 const isParent = parent._id
-                const userObject = { userFullName, username, "password" :hashedPwd, accessToken,  isParent, isEmployee, userDob, userIsActive, userRoles, userPhoto, userAddress, userContact  }//construct new user to be stored
+                const userObject = { userFullName, username, "password" :hashedPwd, accessToken,  isParent, isEmployee, userDob, userSex, userIsActive, userRoles, userPhoto, userAddress, userContact  }//construct new user to be stored
 
         const user = await User.create(userObject)
          
@@ -191,10 +192,10 @@ const parent = await Parent.create(parentObject)
 // @route PATCH /students/studentsParents/parents
 // @access Private
 const updateParent = asyncHandler(async (req, res) => {
-    const { id, userFullName, username, password, accessToken, isParent, isEmployee, userDob, userIsActive, userRoles, userPhoto, userAddress, userContact,parentYear, children, partner  } = req.body
+    const { id, userFullName, username, password, accessToken, isParent, isEmployee, userDob, userIsActive, userRoles, userSex, userPhoto, userAddress, userContact,parentYear, children, partner  } = req.body
 
     // Confirm data 
-    if (!id || !username || !Array.isArray(userRoles) || !userRoles.length || typeof userIsActive !== 'boolean') {
+    if (!id || !username ||!userSex || !Array.isArray(userRoles) || !userRoles.length || typeof userIsActive !== 'boolean') {
         return res.status(400).json({ message: 'All fields except password are required' })
     }
 
@@ -222,6 +223,7 @@ const updateParent = asyncHandler(async (req, res) => {
     user.userRoles = userRoles
     user.accessToken = accessToken
     user.isParent = isParent
+    user.userSex = userSex
     user.isEmployee = isEmployee
     user.userDob = userDob
     user.userIsActive = userIsActive
