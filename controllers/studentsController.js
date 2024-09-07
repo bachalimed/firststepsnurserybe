@@ -24,7 +24,7 @@ const getAllStudents = asyncHandler(async (req, res) => {
         }else{
         //console.log('returned res', students)
         res.json(students)}
-    }
+    }  else{
     //will retrieve only the selcted year
             const students = await Student.find({ studentYears:{$elemMatch:{academicYear: selectedYear }}}).lean()//this will not return the extra data(lean)
             //const students = await Student.find({ studentYear: '2023/2024' }).lean()//this will not return the extra data(lean)
@@ -33,7 +33,7 @@ const getAllStudents = asyncHandler(async (req, res) => {
                 return res.status(400).json({ message: 'No students found  for the selected academic year' })
             }else{
             //console.log('returned res', students)
-            res.json(students)}
+            res.json(students)}}
     //will retreive according to the id
     }else if(req.query.id){
         const {id} = req.query
@@ -82,10 +82,6 @@ const createNewStudent = asyncHandler(async (req, res) => {
     }
    
    
-
-
-
-     
     const studentObject = { studentName, studentDob,  studentSex, studentIsActive, studentJointFamily,studentYears, studentGardien, studentEducation, lastModified}//construct new student to be stored
 
     // Create and store new student 

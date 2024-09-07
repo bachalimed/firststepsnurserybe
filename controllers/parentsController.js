@@ -36,47 +36,6 @@ const findAttachUsersToParents = async (parents) => {
         }
         return ParentsList
 }
-//attach partners and retuen fathers array
-
-
-
-  
-// //from students array find their parent from parent schema and the parent information from the users schema
-// const getUsersFromStudents = async(students)=>{
-//     const users = []
-//     if(students?.length){
-//         await Promise.all(students.map(async (eachStudent) => {
-//             //console.log('id found',eachParent._id)
-//                      const mother = await User.findOne({ isParent: eachStudent.studentMother})
-//                      const father = await User.findOne({ isParent: eachStudent.studentFather})
-//                     //  console.log('user found',user)
-//                     if (mother) {
-//                         // Attach the parent object to the user object
-//                         // await user.populate('isParent') 
-//                         // console.log('user after adding parent profiel',user)
-//                         // console.log('Type of foundUsers:', typeof foundUsers)
-//                         eachStudent.motherProfile = mother
-//                     // console.log('Is array:', Array.isArray(foundUsers));
-//                           users.push(eachStudent)
-//                         //console.log('usrs in controller from parents', eachParent)
-                        
-//                     }if (father) {
-//                         // Attach the parent object to the user object
-//                         // await user.populate('isParent') 
-//                         // console.log('user after adding parent profiel',user)
-//                         // console.log('Type of foundUsers:', typeof foundUsers)
-//                         eachStudent.fatherProfile = father
-//                     // console.log('Is array:', Array.isArray(foundUsers));
-//                           users.push(eachStudent)
-//                         //console.log('usrs in controller from parents', eachParent)
-                        
-//                     }
-//                 }))
-                
-//                 }
-//                 return users
-//         }
-
 
 
 // @desc Get all parents
@@ -93,25 +52,25 @@ const getAllParents = asyncHandler(async (req, res) => {
        const  parents = await Parent.find().populate('children').lean()//select('-partner').lean()  
         
         //console.log(parents,'parents retriecved')
-        if (!parents?.length) {
+            if (!parents?.length) {
             return res.status(400).json({ message: 'No Parents found !' })
-        }else if (selectedYear!=='1000'){
-            //keep only the parent with students having the selectedyear value
+            }else if (selectedYear==='1000'){
+                 //if selectedYEar is 1000 we retreive all parents
+                 filteredParents = parents
+                console.log(filteredParents,'filteredParents')
+            }else{
+               
+                  //keep only the parent with students having the selectedyear value
             
                 // Code that might throw the error
-                 filteredParents = parents.filter(parent => {
+                filteredParents = parents.filter(parent => {
                     return parent.children.some(child => {
                         return child.studentYears.some(year => year.academicYear === selectedYear)
                     })
                 })
-                //console.log(filteredParents,'filteredParents')
-            }else{
-                //if selectedYEar is 1000 we retreive all parents
-                 filteredParents = parents
             }
             const usersAndParents  = await findAttachUsersToParents(filteredParents)
-            const updatedParentsArray =
-            usersAndParents.map(parent => {
+            const updatedParentsArray = usersAndParents.map(parent => {
             if (parent.userProfile.userSex === 'Male') {
               // Find the partner object in the array
               const partnerObject = usersAndParents.find(
@@ -137,7 +96,7 @@ const getAllParents = asyncHandler(async (req, res) => {
 
                 res.json(updatedParentsArray)}
 
-            }else if(req.query.id){//to be updated
+    }else if(req.query.id){//to be updated
                     const {id} = req.query
                     const parents = await Parent.find({_id:id}).populate('children').populate('partner').lean()
                     if (!parents?.length) {
@@ -156,48 +115,6 @@ const getAllParents = asyncHandler(async (req, res) => {
 
 
 
-        //const parents = await Parent.find({parentYears:{$elemMatch:{academicYear:selectedYear}}}).populate('children').populate('partner').lean()
-        //const students = await Student.find({ studentYears:{$elemMatch:{academicYear: selectedYear }}}).lean()//this will not return the extra data(lean)
-            //const students = await Student.find({ studentYear: '2023/2024' }).lean()//this will not return the extra data(lean)
-            //console.log('with year select',selectedYear,  students)
-            // if (!students?.length) {
-            //     return res.status(400).json({ message: 'No students nor Parents found  for the selected academic year' })
-            // }else{
-          
-            // res.json(students)}
-
-
-        // const parents = await Parent.find({parentYears:{$elemMatch:{academicYear:selectedYear}}}).populate('children').populate('partner').lean()
-        // console.log('parents', parents)
-    // If no parents found 
-        // if (!parents?.length) {
-        //     return res.status(400).json({ message: 'No parents found' })
-        // }
-        // if (parents){
-        //     //  find the users that corresponds to the parents
-        //     const usersAndParents  = await findAttachUsersToParents(parents)
-        //     //console.log(usersAndParents)
-        //     res.status(200).json(usersAndParents)
-        // }
-
-    // }else 
-
-    // }else{
-    //     console.log('helllllllow')
-    //     //console.log('parents in controller',parents)
-    //     const parents = await Parent.find().populate('children').populate('partner').lean()
-    //     if (!parents?.length) {
-    //     return res.status(400).json({ message: 'No parents found' })
-    //     }
-    //     if (parents){
-    //         //  find the users that corresponds to the parents
-    //         const usersAndParents  = await findAttachUsersToParents(parents)
-    //       //console.log(usersAndParents)
-    //         res.status(200).json(usersAndParents)
-    //     }
-    
-
-
 //----------------------------------------------------------------------------------
 //@desc Create new parent, check how to save user and parent from the same form, check if year is same as current before rejecting duplicate
 //@route POST /students/studentsParents/parents
@@ -206,21 +123,12 @@ const getAllParents = asyncHandler(async (req, res) => {
 const createNewParent = asyncHandler(async (req, res) => {
     const { userFullName, username, password, accessToken, isEmployee, userDob, userIsActive, userRoles, userPhoto, userAddress, userContact, parentYear, children, partner } = req.body//this will come from front end we put all the fields ofthe collection here
 
-    //Confirm data for parent is present in the request with all required fields, data for user will be checked by the user controller
-    if ( !parentYear ||!children  ) {
+    //Confirm data for user will be checked by the user controller
+    if (!userFullName || !username ||!userDob || userSex ||!password ||!userContact.primaryPhone || !Array.isArray(userRoles) || !userRoles.length) {
         return res.status(400).json({ message: 'All fields are required' })//400 : bad request
     }
-    // Check for duplicate parent by checking duplicate children
-    const duplicateChild = await Parent.findOne({ children: children }).lean().exec()
-    if (duplicateChild) {
-        return res.status(409).json({ message: `Duplicate child found:${children} ` })//get the child name from student collection
-    }
-    
-    //Confirm data is present in the request with all required fields
-    if (!userFullName || !username ||!userDob ||!password ||!userContact || !Array.isArray(userRoles) || !userRoles.length) {
-        return res.status(400).json({ message: 'All fields are required' })//400 : bad request
-    }
-    
+
+   
     // Check for duplicate userFullName
     const duplicateName = await User.findOne({userFullName }).lean().exec()//because we re receiving only one response from mongoose
     const duplicateDob = await User.findOne({userDob }).lean().exec()//because we re receiving only one response from mongoose
@@ -239,10 +147,8 @@ const createNewParent = asyncHandler(async (req, res) => {
     }
 
     
-    
     // Hash password 
     const hashedPwd = await bcrypt.hash(password, 10) // salt roundsm we will implement it laterm normally password is without''
-    
     
   //prepare new parent to be stored
     //get the user Id to store it with parent

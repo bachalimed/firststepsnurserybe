@@ -1,12 +1,16 @@
 const mongoose = require('mongoose')
 
-
+function capitalizeFirstLetter(str) {
+    if (typeof str !== 'string' || str.length === 0) return str;
+    return str.charAt(0).toUpperCase() + str.slice(1);
+}
 const userSchema = new mongoose.Schema({
 	//id is already assigned automatically by mongo
 	userFullName:{
-	userFirstName:{type: String, required:true, index: true},
-    userMiddleName: {type: String, index: true},
-    userLastName: {type: String, required:true, index: true}}, 
+		userFirstName:{type: String, required:true, index: true, set:capitalizeFirstLetter},
+    	userMiddleName: {type: String, index: true, set:capitalizeFirstLetter},
+    	userLastName: {type: String, required:true, index: true, set:capitalizeFirstLetter}
+	}, 
 	username: {type: String, required:true, index: true, unique: true},
 	password: {type: String, required:true, index: true},
 	accessToken: {type: String, index: true},

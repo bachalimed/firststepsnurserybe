@@ -199,9 +199,9 @@ const createNewStudentDocument = asyncHandler(async (req, res) => {
     }
 
     //ensure no other document with the same reference is already saved
-    const duplicate = await  StudentDocument.findOne({studentDocumentReference:studentDocumentReference,studentDocumentYear:studentDocumentYear }).lean().exec()
+    const duplicate = await  StudentDocument.findOne({studentDocumentReference:studentDocumentReference,studentDocumentYear:studentDocumentYear, studentId:studentId }).lean().exec()
     if (duplicate) {
-        return res.status(409).json({ message: 'Duplicate Document type already upploaded ' })
+        return res.status(409).json({ message: 'Duplicate Document type already upploadedd ' })
     }
     // Save document entry to the database
     const document = new StudentDocument({
