@@ -47,7 +47,7 @@ const getAllParents = asyncHandler(async (req, res) => {
  
     if(req.query.selectedYear){
         const {selectedYear} = req.query
-        console.log('selectedYear', selectedYear)
+        //console.log('selectedYear', selectedYear)
         //retrive all students and populate their parents
        const  parents = await Parent.find().populate('children').lean()//select('-partner').lean()  
         
@@ -69,31 +69,30 @@ const getAllParents = asyncHandler(async (req, res) => {
                     })
                 })
             }
-            console.log(filteredParents,'filteredParents')
+            //console.log(filteredParents,'filteredParents')
             const usersAndParents  = await findAttachUsersToParents(filteredParents)
             const updatedParentsArray = usersAndParents.map(parent => {
-            if (parent.userProfile.userSex === 'Male') {
-              // Find the partner object in the array
-              const partnerObject = usersAndParents.find(
-                p => p._id.toString() === parent.partner?.toString()
-              );
-          
-              if (partnerObject) {
-                // Replace the partner ID with the partner object
-                parent.partner = partnerObject;
-          
-                // Remove the partner object from the original array
+                if (parent.userProfile.userSex === 'Male') {
+                // Find the partner object in the array
+                    const partnerObject = usersAndParents.find(
+                        p => p._id.toString() === parent.partner?.toString()
+                    );
+                
+                    if (partnerObject) {
+                        // Replace the partner ID with the partner object
+                        parent.partner = partnerObject;
+                
+                        return parent;
+                    }
+                }
                 return parent;
-              }
-            }
-            return parent;
-          }).filter(parent => parent.userProfile.userSex !== 'Female' || !usersAndParents.some(p => p._id.toString() === parent.partner._id.toString()))
+            }).filter(parent => parent.userProfile.userSex !== 'Female' || !usersAndParents.some(p => p?._id?.toString() === parent?.partner?._id.toString()))
 
-            console.log(updatedParentsArray,'updatedParentsArray')
+            //console.log(updatedParentsArray,'updatedParentsArray')
             if (!parents?.length) {
                 return res.status(400).json({ message: 'No Parents found !' })
             }else{
-                //assemble fatehr and father profiles
+                
 
                 res.json(updatedParentsArray)}
 

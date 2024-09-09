@@ -2,7 +2,7 @@ const mongoose = require('mongoose')
 
 
 const parentSchema = new mongoose.Schema({
-   
+
   
     
     children: [
