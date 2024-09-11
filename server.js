@@ -35,9 +35,9 @@ app.use('/admin/usersManagement/:id/', require('./routes/userRoutes'))//this wil
 app.use('/admin/usersManagement/newUser/', require('./routes/userRoutes'))//check if the path photos is the correct one in storage ROutes
 //app.use('/notes', require('./routes/noteRoutes'))
 //app.use('/students/studentsParent/', require('./routes/parentRoutes'))//no need to specify each sub url to get the requests working
-app.use('/students/studentsParents/parents/', require('./routes/parentRoutes'))
-app.use('/students/studentsParents/students/', require('./routes/studentRoutes'))
 app.use('/students/studentsParents/families/', require('./routes/familyRoutes'))
+app.use('/students/studentsParents/students/', require('./routes/studentRoutes'))
+
 app.use('/students/studentsParents/studentDocuments/', require('./routes/studentDocumentsRoutes'))
 app.use('/students/studentsParents/studentDocuments/:id/', require('./routes/studentDocumentsRoutes'))
 

@@ -1,17 +1,13 @@
 const mongoose = require('mongoose')
 
 const childrenSchema = new mongoose.Schema({
-    childId:{type: mongoose.Schema.Types.ObjectId, index: true, ref:'student'},
+    child:{type: mongoose.Schema.Types.ObjectId, index: true, ref:'Student'},
 }, { _id: false })
 
 const familySchema = new mongoose.Schema({
-	//id is already assigned automatically by mongo
-	
-	
-	father:{type: mongoose.Schema.Types.ObjectId, index: true, ref:'Parent'},
-	mother: {type: mongoose.Schema.Types.ObjectId, index: true, ref:'Parent'},
+	father:{type: mongoose.Schema.Types.ObjectId, index: true, ref:'User'},
+	mother: {type: mongoose.Schema.Types.ObjectId, index: true, ref:'User'},
 	familySituation: {type: Date, required:true, index: true},
-	
 	children:[childrenSchema],
 	
 	})

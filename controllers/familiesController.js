@@ -1,180 +1,319 @@
-// const User = require('../models/User')
-const Family = require('../models/Family')//we might need the parent module in this controller
-//const Employee = require('../models/Employee')//we might need the employee module in this controller
+const Family = require('../models/Family')
+const User = require('../models/User')//we might need the user controller with this model
+const Student = require ('../models/Student')
+// const studentController = require ('../controllers/studentsController')
+// const Student = require ('../models/Student')
 const asyncHandler = require('express-async-handler')//instead of using try catch
-const useSelectedAcademicYear = require ('../middleware/setCurrentAcademicYear')
+const bcrypt = require('bcrypt') //to hash passwords before saving them
 const mongoose = require('mongoose')
 
 
+//will find a user for each aparent and attach parent to the user
+const findAttachUsersToParents = async (parents) => {
+    
+    const ParentsList = []
+    if (parents?.length) {
+        // const users = await User.find({ isParent: { $exists: true, $ne: null } });
+        // const users2 = await User.find({ isParent: '66be308ab56faa4450991460' });
+// console.log('debug',users, users2);
+           
+            await Promise.all(parents.map(async (eachParent) => {
+    //console.log('id found',eachParent._id)
+             const user = await User.findOne({ isParent: eachParent._id })
+            //  console.log('user found',user)
+            if (user) {
+                // Attach the parent object to the user object
+                 //await user.populate('isParent') 
+                // console.log('user after adding parent profiel',user)
+                // console.log('Type of foundUsers:', typeof foundUsers)
+                eachParent.userProfile = user
+            // console.log('Is array:', Array.isArray(foundUsers));
+                  ParentsList.push(eachParent)
+                //console.log('usrs in controller from parents', eachParent)
+                
+            }}))
+        
+        }
+        return ParentsList
+}
 
-// @desc Get all families
-// @route GET 'families/familiesParents/families             
+
+// @desc Get all parents
+// @route GET /students/studentsParents/parents              
 // @access Private // later we will establish authorisations
 const getAllFamilies = asyncHandler(async (req, res) => {
-    // Get all families from MongoDB
-    console.log('request', req.query)
+    // Get all parents from MongoDB according to the params
+  let filteredParents
+ 
     if(req.query.selectedYear){
-    const {selectedYear} = req.query//maybe replace the conditionals with the current year that we get  from middleware
-    console.log(selectedYear, "sleected year inback")
-    //will retrive all teh families
-    if (selectedYear === '1000'){
-        const families = await Family.find().populate('father').populate('mother').populate({path:'children'}).lean()
-        console.log(families, 'families')
-        if (!families?.length) {
-            return res.status(400).json({ message: 'No families found!' })
-        }else{
-        //console.log('returned res', families)
-        res.json(families)}
-    }
-    //will retrieve only the selcted year
-            const families = await Family.find({ familyYears:{$elemMatch:{academicYear: selectedYear }}}).lean()//this will not return the extra data(lean)
-            //const families = await Family.find({ familyYear: '2023/2024' }).lean()//this will not return the extra data(lean)
-            //console.log('with year select',selectedYear,  families)
-            if (!families?.length) {
-                return res.status(400).json({ message: 'No families found  for the selected academic year' })
+        const {selectedYear} = req.query
+        //console.log('selectedYear', selectedYear)
+        //retrive all students and populate their parents
+       const  parents = await Family.find().populate('children').lean()//select('-partner').lean()  
+        
+        //console.log(parents,'parents retriecved')
+            if (!parents?.length) {
+            return res.status(400).json({ message: 'No Parents found !' })
+            }else if (selectedYear==='1000'){
+                 //if selectedYEar is 1000 we retreive all parents
+                 filteredParents = parents
+                //console.log(filteredParents,'filteredParents')
             }else{
-            //console.log('returned res', families)
-            res.json(families)}
-    //will retreive according to the id
-    }else if(req.query.id){
-        const {id} = req.query
-        const family = await Family.find({ _id: id }).lean()//this will not return the extra data(lean)//removed populate father and mother
-    
-    //console.log('with id  select')
-    if (!family?.length) {
-        return res.status(400).json({ message: 'No family found for the Id provided' })
-    }
-    //console.log('returned res', family)
-    res.json(family)
+               
+                  //keep only the parent with students having the selectedyear value
+            
+                // Code that might throw the error
+                filteredParents = parents.filter(parent => {
+                    return parent.children.some(child => {
+                        return child.studentYears.some(year => year.academicYear === selectedYear)
+                    })
+                })
+            }
+            //console.log(filteredParents,'filteredParents')
+            const usersAndParents  = await findAttachUsersToParents(filteredParents)
+            const updatedParentsArray = usersAndParents.map(parent => {
+                if (parent.userProfile.userSex === 'Male') {
+                // Find the partner object in the array
+                    const partnerObject = usersAndParents.find(
+                        p => p._id.toString() === parent.partner?.toString()
+                    );
+                
+                    if (partnerObject) {
+                        // Replace the partner ID with the partner object
+                        parent.partner = partnerObject;
+                
+                        return parent;
+                    }
+                }
+                return parent;
+            }).filter(parent => parent.userProfile.userSex !== 'Female' || !usersAndParents.some(p => p?._id?.toString() === parent?.partner?._id.toString()))
 
-    }else {
-    const families = await Family.find().lean()//this will not return the extra data(lean)
-    //console.log('with no select')
-    if (!families?.length) {
-        return res.status(400).json({ message: 'No families found' })
-    }
-    //console.log('returned res', families)
-    res.json(families)}
+            //console.log(updatedParentsArray,'updatedParentsArray')
+            if (!parents?.length) {
+                return res.status(400).json({ message: 'No Parents found !' })
+            }else{
+                
 
-    // If no families 
-   
-    //res.json(families)
-})
+                res.json(updatedParentsArray)}
+
+    }else if(req.query.id){//to be updated
+                    const {id} = req.query
+                    const parents = await Family.find({_id:id}).populate('children').populate('partner').lean()
+                    if (!parents?.length) {
+                        return res.status(400).json({ message: 'No parents found' })
+                    }
+                    if (parents){
+                        //  find the users that corresponds to the parents
+                        const usersAndParents  = await findAttachUsersToParents(parents)
+                          //console.log(usersAndParents)
+                      res.status(200).json(usersAndParents)
+                    }
+
+
+                }
+        })
+
 
 
 //----------------------------------------------------------------------------------
-// @desc Create new user
-// @route POST 'families/familiesParents/families
-// @access Private
+//@desc Create new parent, check how to save user and parent from the same form, check if year is same as current before rejecting duplicate
+//@route POST /students/studentsParents/parents
+//@access Private
+//first we save the studentsm then user then parent
 const createNewFamily = asyncHandler(async (req, res) => {
-    const { familyName, familyDob,  familiesex, familyIsActive, familyYears, familyGardien, familyEducation, lastModified } = req.body//this will come from front end we put all the fields o fthe collection here
-//console.log(familyName, familyDob,  familiesex, familyIsActive, familyYears, familyGardien, familyEducation, lastModified)
-    //Confirm data is present in the request with all required fields
-    if (!familyName || !familyDob ||!familiesex ||!familyYears ) {
+    const { userFullName, username, password, accessToken, isEmployee, userDob, userSex, userIsActive, userRoles, userPhoto, userAddress, userContact, parentYear, children, partner } = req.body//this will come from front end we put all the fields ofthe collection here
+    console.log(userFullName, username, password, accessToken, isEmployee, userDob, userSex, userIsActive, userRoles, userPhoto, userAddress, userContact, parentYear, children, partner)
+    //Confirm data for user will be checked by the user controller
+    if (!userFullName || !username ||!userDob ||! userSex ||!password ||!userContact.primaryPhone || !Array.isArray(userRoles) || !userRoles.length) {
         return res.status(400).json({ message: 'All fields are required' })//400 : bad request
     }
 
+   
+    // Check for duplicate userFullName
+    const duplicateName = await User.findOne({userFullName }).lean().exec()//because we re receiving only one response from mongoose
+    const duplicateDob = await User.findOne({userDob }).lean().exec()//because we re receiving only one response from mongoose
+
+    if (duplicateName&&duplicateDob) {//we will only save the parent and update the user to be done later
+
+        return res.status(409).json({ message: 'Duplicate Full name and DOB' })
+    }
+
+
+    // Check for duplicate username/ if the user has no isParent we will update only the parent isParent and create it
+    const duplicate = await User.findOne({username }).lean().exec()//because we re receiving only one response from mongoose
+
+    if (duplicate) {
+        return res.status(409).json({ message: 'Duplicate username' })
+    }
+
     
-    // Check for duplicate username
-    const duplicate = await Family.findOne({familyDob}).lean().exec()//because we re receiving only one response from mongoose
+    // Hash password 
+    const hashedPwd = await bcrypt.hash(password, 10) // salt roundsm we will implement it laterm normally password is without''
+    
+  //prepare new parent to be stored
+    //get the user Id to store it with parent
+    //const createdUserId = await User.findOne({username }).lean()/////////////////////
+    ///const parentUserId= createdUserId._id/////////
+    const parentObject = { parentYear, children, partner }//construct new parent to be stored
+  
+//  store new parent 
+const parent = await Family.create(parentObject)
+  
 
-    if (duplicate?.familyName.lastName===familyName.lastName &&duplicate?.familiesex===familiesex) {
-        return res.status(409).json({ message: ` possible duplicate family name ${duplicate.familyName.firstName} ${duplicate.familyName.middleName} ${duplicate.familyName.lastName}` })
+    if (parent) { //if created we will create the parent inside the if statement
+        // res.status(201).json({ message: `New user ${username} created` })
+  
+           // Create and store new user 
+                const isParent = parent._id
+                const userObject = { userFullName, username, "password" :hashedPwd, accessToken,  isParent, isEmployee, userDob, userSex, userIsActive, userRoles, userPhoto, userAddress, userContact  }//construct new user to be stored
+
+        const user = await User.create(userObject)
+         
+         if (user) { //if created 
+             
+             //the following line res is not being executed and was causing the error [ERR_HTTP_HEADERS_SENT, now we send both res for user and parent  together in ne line
+             res.status(201).json({ message: `New user ${username+","} and new parent ${userFullName.userFirstName+" "+userFullName.userMiddleName+" "+userFullName.userLastName+","} created` })//change parentYear later to show the parent full name
+     } else { //delete the user already craeted to be done
+ 
+         res.status(400).json({ message: 'Invalid parent data received' })
+     }
+
+    } else { 
+        res.status(400).json({ message: 'Invalid user data received' })
+        
     }
-   
-   
+       
+})//we need to delete the user if the parent is not saved
 
 
 
-     
-    const familyObject = { familyName, familyDob,  familiesex, familyIsActive, familyYears, familyGardien, familyEducation, lastModified}//construct new family to be stored
-
-    // Create and store new family 
-    const family = await Family.create(familyObject)
-
-    if (family) { //if created 
-        res.status(201).json({ message: `New family ${familyName.firstName} ${familyName.middleName} ${familyName.lastName} created` })
-    } else {
-        res.status(400).json({ message: 'Invalid family data received' })
-    }
-})
-//internalcontroller :CreateNew User to be used by other controllers??
-
-
-// @desc Update a family
-// @route PATCH 'families/familiesParents/families
+// @desc Update a parent, we will retrieve all information from user and parent and update and save in both collections
+// @route PATCH /students/studentsParents/parents
 // @access Private
 const updateFamily = asyncHandler(async (req, res) => {
-    const { id, familyName, familyDob,  familiesex, familyIsActive, familyYears, familyContact, familyGardien, familyEducation, operator,  
-        admissions  } = req.body
-console.log(req.body)
+    const { id, userFullName, username, password, accessToken, isParent, isEmployee, userDob, userIsActive, userRoles, userSex, userPhoto, userAddress, userContact,parentYear, children, partner  } = req.body
+
     // Confirm data 
-    if (!familyName || !familyDob ||!familiesex ||!familyYears ||!Array.isArray(familyEducation) || !familyEducation.length) {
-        return res.status(400).json({ message: 'All fields except required' })
+    if (!id || !username ||!userSex || !Array.isArray(userRoles) || !userRoles.length || typeof userIsActive !== 'boolean') {
+        return res.status(400).json({ message: 'All fields except password are required' })
     }
 
-    // Does the family exist to update?
-    const family = await Family.findById(id).exec()//we did not lean becausse we need the save method attached to the response
+    // Does the user exist to update?
+    const user = await User.findById(id).exec()//we did not lean becausse we need the save method attached to the response
+    const parent= await Family.findOne({_id:isParent}).exec() //find the parent with the id from the user
 
-    if (!family) {
-        return res.status(400).json({ message: 'Family not found' })
+    if (!user) {
+        return res.status(400).json({ message: 'User not found' })
+    }
+    if (!parent) {
+        return res.status(400).json({ message: 'Parent not found' })
     }
 
     // Check for duplicate 
-    const duplicate = await Family.findOne({ familyName }).lean().exec()
+    const duplicate = await User.findOne({ username }).lean().exec()
 
     // Allow updates to the original user 
     if (duplicate && duplicate?._id.toString() !== id) {
-        return res.status(409).json({ message: 'Duplicate name' })
+        return res.status(409).json({ message: 'Duplicate username' })
     }
 
-    family.familyName = familyName//it will only allow updating properties that are already existant in the model
-    family.familyDob = familyDob
-    family.familiesex = familiesex
-    family.familyIsActive = familyIsActive
-    family.familyYears = familyYears
-    family.familyContact = familyContact
-    family.familyGardien = familyGardien
-    family.familyEducation = familyEducation
-    family.operator = operator
-    family.admissions = admissions
-   
-    const updatedFamily = await family.save()//save method received when we did not include lean
+    user.userFullName = userFullName//it will only allow updating properties that are already existant in the model
+    user.username = username
+    user.userRoles = userRoles
+    user.accessToken = accessToken
+    user.isParent = isParent
+    user.userSex = userSex
+    user.isEmployee = isEmployee
+    user.userDob = userDob
+    user.userIsActive = userIsActive
+    user.userRoles = userRoles
+    user.userPhoto = userPhoto
+    user.userAddress =userAddress
+    user.userContact =userContact
+    parent.parentYear=parentYear
+    parent.children=children
+    parent.partner=partner
 
-    res.json({ message: `family ${updatedFamily.familyName.firstName+" "+updatedFamily.familyName.middleName+" "+updatedFamily.familyName.lastName}, updated` })
+    if (password) {//only if the password is requested to be updated
+        // Hash password 
+        user.password = await bcrypt.hash(password, 10) // salt rounds 
+    }
+
+    const updatedUser = await user.save()//save method received when we did not include lean
+    
+
+    // res.json({ message: `${updatedUser.username} updated` })
+
+
+
+    if (updatedUser) { //if updated we will update the parent inside the if statement
+        
+        const updatedParent = await parent.save()
+         
+        
+         if (updatedParent) { //if updated the parent 
+               
+             res.json({ message: ` ${updatedUser.username} updated, and parent ${updatedUser.userFullName.userFirstName+" "+updatedUser.userFullName.userMiddleName+" "+updatedUser.userFullName.userLastName+","} updated` })//change parentYear later to show the parent full name
+     } else { //delete the user already craeted to be done later
+ 
+         res.status(400).json({ message: 'Invalid parent data received' })
+     }
+
+    } else { 
+        res.status(400).json({ message: 'Invalid user data received' })       
+    }
+
 })
+
+
 //--------------------------------------------------------------------------------------1   
-// @desc Delete a family
-// @route DELETE 'families/familiesParents/families
+// @desc Delete a parent, if no isEmployee, then delete the user orelse delete only parent and keep its user, if students are active dont delete
+// @route DELETE /students/studentsParents/parents
 // @access Private
-const deleteFamily = asyncHandler(async (req, res) => {
+const deleteFamily = asyncHandler(async (req, res) => {//uses parent id
     const { id } = req.body
 
     // Confirm data
     if (!id) {
-        return res.status(400).json({ message: 'Family ID Required' })
+        return res.status(400).json({ message: 'User ID Required' })
     }
 
-    // Does the user still have assigned notes?
-    // const note = await Note.findOne({ user: id }).lean().exec()
-    // if (note) {
-    //     return res.status(400).json({ message: 'User has assigned notes' })
+    // Does the parent still have assigned active students?
+    // const student = await Student.findOne({ parent: id }).lean().exec()
+    // if (student) {
+    //     return res.status(400).json({ message: 'Parent has assigned active students' })//to be checked later
     // }
 
 
-    // Does the user exist to delete?
-    const family = await Family.findById(id).exec()
+    // Does the parent exist to delete?
+    const parent = await Family.findById(id).exec()
 
-    if (!family) {
-        return res.status(400).json({ message: 'Family not found' })
+    if (!parent) {
+        return res.status(400).json({ message: 'Parent not found' })
     }
+    const user = await User.findOne({isParent:id})
+    
+    if (!user) {
+        return res.status(400).json({ message: 'corresponding User not found' })
+    }
+    //if user is also an employee, delete only the parent collection and keep user
+    if(user.isEmployee){
+        const result1 = await parent.deleteOne()
+        const reply = `parent ${result1.id} deleted`
+       res.json(reply)
+    } else{
 
-    const result = await family.deleteOne()
+         const result1 = await parent.deleteOne()
+        	const result2 = await user.deleteOne()
+			//console.log(result2)
 
-    const reply = `family ${family.familyName.firstName+" "+family.familyName.middleName+" "+family.familyName.lastName}, with ID ${result._id} deleted`
+        	const reply = `Username ${user.username} deleted, parent ${user.userFullName.userFirstName + " " + user.userFullName.userMiddleName+ " "+ user.userFullName.userLastName} deleted`
 
-    res.json(reply)
+			  res.json(reply)
+		}
+
 })
+
 
 
 
@@ -182,7 +321,5 @@ module.exports = {
     getAllFamilies,
     createNewFamily,
     updateFamily,
-    deleteFamily,
-    
-    
+    deleteFamily
 }

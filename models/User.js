@@ -17,7 +17,7 @@ const userSchema = new mongoose.Schema({
 	isParent:{
 		type: mongoose.Schema.Types.ObjectId,
 		index: true,
-		ref:'Parent'},
+		ref:'Family'},
 		
 	isEmployee:{
 		type: mongoose.Schema.Types.ObjectId,
