@@ -38,15 +38,15 @@ const studentSchema = new mongoose.Schema({
 	studentDob:{type: Date, required:true},
 	studentSex: {type: String, required:true},
 	studentIsActive: {type: Boolean, index: true},
-	studentJointFamily:{type: Boolean, index: true},
+	//studentJointFamily:{type: Boolean, index: true},
 	studentGardien:[studentGardienSchema],
 	studentAdmissions:[studentAdmissionsSchema],
 	studentYears: [studentYearsSchema],
 	studentEducation:[studentEducationSchema],		
 	lastModified:{type: Date, default: Date.now},
 	operator:{type: String, index: true},
-	studentFather:{type: mongoose.Schema.Types.ObjectId, index: true, ref:'Parent'},
-	studentMother:{type: mongoose.Schema.Types.ObjectId, index: true, ref:'Parent'}
+	//studentFather:{type: mongoose.Schema.Types.ObjectId, index: true, ref:'Parent'},
+	//studentMother:{type: mongoose.Schema.Types.ObjectId, index: true, ref:'Parent'}
 }
 	)
 module.exports = mongoose.model('Student', studentSchema,'students')

@@ -9,33 +9,33 @@ const mongoose = require('mongoose')
 
 
 //will find a user for each aparent and attach parent to the user
-const findAttachUsersToParents = async (parents) => {
+// const findAttachUsersToParents = async (parents) => {
     
-    const ParentsList = []
-    if (parents?.length) {
-        // const users = await User.find({ isParent: { $exists: true, $ne: null } });
-        // const users2 = await User.find({ isParent: '66be308ab56faa4450991460' });
-// console.log('debug',users, users2);
+//     const ParentsList = []
+//     if (parents?.length) {
+//         // const users = await User.find({ isParent: { $exists: true, $ne: null } });
+//         // const users2 = await User.find({ isParent: '66be308ab56faa4450991460' });
+// // console.log('debug',users, users2);
            
-            await Promise.all(parents.map(async (eachParent) => {
-    //console.log('id found',eachParent._id)
-             const user = await User.findOne({ isParent: eachParent._id })
-            //  console.log('user found',user)
-            if (user) {
-                // Attach the parent object to the user object
-                 //await user.populate('isParent') 
-                // console.log('user after adding parent profiel',user)
-                // console.log('Type of foundUsers:', typeof foundUsers)
-                eachParent.userProfile = user
-            // console.log('Is array:', Array.isArray(foundUsers));
-                  ParentsList.push(eachParent)
-                //console.log('usrs in controller from parents', eachParent)
+//             await Promise.all(parents.map(async (eachParent) => {
+//     //console.log('id found',eachParent._id)
+//              const user = await User.findOne({ isParent: eachParent._id })
+//             //  console.log('user found',user)
+//             if (user) {
+//                 // Attach the parent object to the user object
+//                  //await user.populate('isParent') 
+//                 // console.log('user after adding parent profiel',user)
+//                 // console.log('Type of foundUsers:', typeof foundUsers)
+//                 eachParent.userProfile = user
+//             // console.log('Is array:', Array.isArray(foundUsers));
+//                   ParentsList.push(eachParent)
+//                 //console.log('usrs in controller from parents', eachParent)
                 
-            }}))
+//             }}))
         
-        }
-        return ParentsList
-}
+//         }
+//         return ParentsList
+// }
 
 
 // @desc Get all parents
@@ -43,70 +43,76 @@ const findAttachUsersToParents = async (parents) => {
 // @access Private // later we will establish authorisations
 const getAllFamilies = asyncHandler(async (req, res) => {
     // Get all parents from MongoDB according to the params
-  let filteredParents
+  let filteredFamilies
  
     if(req.query.selectedYear){
         const {selectedYear} = req.query
-        //console.log('selectedYear', selectedYear)
-        //retrive all students and populate their parents
-       const  parents = await Family.find().populate('children').lean()//select('-partner').lean()  
+        console.log('selectedYear', selectedYear)
+        //retrive all families
+       const  families = await Family.find().populate('children.child').populate('father','-password').populate('mother','-password').lean()
         
-        //console.log(parents,'parents retriecved')
-            if (!parents?.length) {
-            return res.status(400).json({ message: 'No Parents found !' })
+        //  console.log(families,'families retriecved')
+        // families.forEach(family => {
+        //     console.log('Family:', family);
+        //     family.children.forEach((child, index) => {
+        //         console.log(`Child ${index + 1}:`, child);
+        //     });
+        // });
+        
+            if (!families?.length) {
+            return res.status(400).json({ message: 'No families found !' })
             }else if (selectedYear==='1000'){
-                 //if selectedYEar is 1000 we retreive all parents
-                 filteredParents = parents
+                 //if selectedYEar is 1000 we retreive all families
+                 filteredFamilies = families
                 //console.log(filteredParents,'filteredParents')
             }else{
                
                   //keep only the parent with students having the selectedyear value
             
-                // Code that might throw the error
-                filteredParents = parents.filter(parent => {
-                    return parent.children.some(child => {
-                        return child.studentYears.some(year => year.academicYear === selectedYear)
-                    })
-                })
+               filteredFamilies = families.filter(family => 
+                    family?.children?.some(child => 
+                        child?.child?.studentYears?.some(year => year.academicYear === selectedYear)
+                    )
+                );
             }
-            //console.log(filteredParents,'filteredParents')
-            const usersAndParents  = await findAttachUsersToParents(filteredParents)
-            const updatedParentsArray = usersAndParents.map(parent => {
-                if (parent.userProfile.userSex === 'Male') {
-                // Find the partner object in the array
-                    const partnerObject = usersAndParents.find(
-                        p => p._id.toString() === parent.partner?.toString()
-                    );
+            //console.log(filteredFamilies,'filteredFamilies')
+            // const usersAndParents  = await findAttachUsersToParents(filteredFamilies)
+            // const updatedParentsArray = usersAndParents.map(family => {
+            //     if (family.userProfile.userSex === 'Male') {
+            //     // Find the partner object in the array
+            //         const partnerObject = usersAndParents.find(
+            //             p => p._id.toString() === parent.partner?.toString()
+            //         );
                 
-                    if (partnerObject) {
-                        // Replace the partner ID with the partner object
-                        parent.partner = partnerObject;
+            //         if (partnerObject) {
+            //             // Replace the partner ID with the partner object
+            //             family.partner = partnerObject;
                 
-                        return parent;
-                    }
-                }
-                return parent;
-            }).filter(parent => parent.userProfile.userSex !== 'Female' || !usersAndParents.some(p => p?._id?.toString() === parent?.partner?._id.toString()))
+            //             return family;
+            //         }
+            //     }
+            //     return family;
+            // }).filter(family => family.userProfile.userSex !== 'Female' || !usersAndParents.some(p => p?._id?.toString() === family?.partner?._id.toString()))
 
             //console.log(updatedParentsArray,'updatedParentsArray')
-            if (!parents?.length) {
+            if (!filteredFamilies?.length) {
                 return res.status(400).json({ message: 'No Parents found !' })
             }else{
                 
 
-                res.json(updatedParentsArray)}
+                res.json(filteredFamilies)}
 
     }else if(req.query.id){//to be updated
                     const {id} = req.query
-                    const parents = await Family.find({_id:id}).populate('children').populate('partner').lean()
-                    if (!parents?.length) {
+                    const families = await Family.find({_id:id}).populate('children.child').populate('father','-password').populate('mother','-password').lean()
+                    if (!families?.length) {
                         return res.status(400).json({ message: 'No parents found' })
                     }
-                    if (parents){
-                        //  find the users that corresponds to the parents
-                        const usersAndParents  = await findAttachUsersToParents(parents)
-                          //console.log(usersAndParents)
-                      res.status(200).json(usersAndParents)
+                    if (families){
+                        // //  find the users that corresponds to the parents
+                        // const usersAndParents  = await findAttachUsersToParents(families)
+                        //   //console.log(usersAndParents)
+                      res.status(200).json(families)
                     }
 
 
