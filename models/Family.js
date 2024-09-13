@@ -7,7 +7,7 @@ const childrenSchema = new mongoose.Schema({
 const familySchema = new mongoose.Schema({
 	father:{type: mongoose.Schema.Types.ObjectId, index: true, ref:'User'},
 	mother: {type: mongoose.Schema.Types.ObjectId, index: true, ref:'User'},
-	familySituation: {type: Date, required:true, index: true},
+	familySituation: {type: String, index: true},
 	children:[childrenSchema],
 	
 	})

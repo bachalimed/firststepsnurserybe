@@ -127,12 +127,14 @@ const getAllFamilies = asyncHandler(async (req, res) => {
 //@access Private
 //first we save the studentsm then user then parent
 const createNewFamily = asyncHandler(async (req, res) => {
-    const { userFullName, username, password, accessToken, isEmployee, userDob, userSex, userIsActive, userRoles, userPhoto, userAddress, userContact, parentYear, children, partner } = req.body//this will come from front end we put all the fields ofthe collection here
-    console.log(userFullName, username, password, accessToken, isEmployee, userDob, userSex, userIsActive, userRoles, userPhoto, userAddress, userContact, parentYear, children, partner)
+    if(req.body){
+    const { father, familySituation} = req.body//this will come from front end we put all the fields ofthe collection here
+    //console.log(father)
+    const {userFullName, username, password, userDob, userSex, userIsActive, userRoles,  userAddress, userContact}= father
     //Confirm data for user will be checked by the user controller
     if (!userFullName || !username ||!userDob ||! userSex ||!password ||!userContact.primaryPhone || !Array.isArray(userRoles) || !userRoles.length) {
         return res.status(400).json({ message: 'All fields are required' })//400 : bad request
-    }
+    }else{
 
    
     // Check for duplicate userFullName
@@ -142,7 +144,7 @@ const createNewFamily = asyncHandler(async (req, res) => {
     if (duplicateName&&duplicateDob) {//we will only save the parent and update the user to be done later
 
         return res.status(409).json({ message: 'Duplicate Full name and DOB' })
-    }
+    }else{
 
 
     // Check for duplicate username/ if the user has no isParent we will update only the parent isParent and create it
@@ -150,45 +152,38 @@ const createNewFamily = asyncHandler(async (req, res) => {
 
     if (duplicate) {
         return res.status(409).json({ message: 'Duplicate username' })
-    }
-
-    
+    }else{
     // Hash password 
     const hashedPwd = await bcrypt.hash(password, 10) // salt roundsm we will implement it laterm normally password is without''
     
-  //prepare new parent to be stored
-    //get the user Id to store it with parent
-    //const createdUserId = await User.findOne({username }).lean()/////////////////////
-    ///const parentUserId= createdUserId._id/////////
-    const parentObject = { parentYear, children, partner }//construct new parent to be stored
-  
-//  store new parent 
-const parent = await Family.create(parentObject)
-  
-
-    if (parent) { //if created we will create the parent inside the if statement
+  //prepare new user to be stored
+   
+    
         // res.status(201).json({ message: `New user ${username} created` })
   
-           // Create and store new user 
-                const isParent = parent._id
-                const userObject = { userFullName, username, "password" :hashedPwd, accessToken,  isParent, isEmployee, userDob, userSex, userIsActive, userRoles, userPhoto, userAddress, userContact  }//construct new user to be stored
+    const userObject = { userFullName, username, "password" :hashedPwd,  userDob, userSex, userIsActive, userRoles,  userAddress, userContact  }//construct new user to be stored
 
         const user = await User.create(userObject)
+        //console.log(user,'user')
+        
          
          if (user) { //if created 
+            const familyObject = {father:user._id, familySituation:familySituation}
+             const family = await Family.create(familyObject)
+             if (family){
+                res.status(201).json({ message: `New user ${username+","} and new family ${family._id} created` })//change parentYear later to show the parent full name
+         }else{res.status(400).json({ message: 'unable to save family' })
+         }
+         
              
-             //the following line res is not being executed and was causing the error [ERR_HTTP_HEADERS_SENT, now we send both res for user and parent  together in ne line
-             res.status(201).json({ message: `New user ${username+","} and new parent ${userFullName.userFirstName+" "+userFullName.userMiddleName+" "+userFullName.userLastName+","} created` })//change parentYear later to show the parent full name
      } else { //delete the user already craeted to be done
  
-         res.status(400).json({ message: 'Invalid parent data received' })
+         res.status(400).json({ message: 'unable to save user' })
      }
 
-    } else { 
-        res.status(400).json({ message: 'Invalid user data received' })
-        
-    }
-       
+  
+  
+}}}}
 })//we need to delete the user if the parent is not saved
 
 
