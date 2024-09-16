@@ -1,9 +1,43 @@
 // const User = require('../models/User')
 const Student = require('../models/Student')//we might need the parent module in this controller
+const Family = require('../models/Family')//we might need the parent module in this controller
 //const Employee = require('../models/Employee')//we might need the employee module in this controller
 const asyncHandler = require('express-async-handler')//instead of using try catch
 const useSelectedAcademicYear = require ('../middleware/setCurrentAcademicYear')
 const mongoose = require('mongoose')
+
+
+
+
+//function to get only the studetns with no families
+async function getStudentsNotInFamily() {
+    try {
+        // Step 1: Find all students that are part of any family
+        const families = await Family.find({}, 'children.child').lean();
+        
+        // Extract student ObjectId references from all families
+        const studentsInFamilies = families
+            .flatMap(family => family.children.map(child => child.child));
+        
+        // Step 2: Find all students that are not in the `studentsInFamilies` list
+        const studentsNotInFamilies = await Student.find({
+            _id: { $nin: studentsInFamilies }
+        }).lean();
+     
+        return studentsNotInFamilies;
+    } catch (error) {
+        console.error("Error fetching students not in families:", error);
+        throw error;
+    }
+}
+  
+
+
+
+
+
+
+
 
 
 
@@ -23,7 +57,20 @@ const getAllStudents = asyncHandler(async (req, res) => {
             return res.status(400).json({ message: 'No students found!' })
         }else{
         //console.log('returned res', students)
-        res.json(students)}
+
+        // if students found, we check if the criteria : 'No Family 'is present
+                if (req.query.criteria && req.query.criteria==="No Family"){
+                   
+                    getStudentsNotInFamily().then(students => {
+                        res.json(students)
+                    }).catch(error => {
+                        console.error(error);
+                    });
+                   
+                   
+                }else{
+
+        res.json(students)}}
     }  else{
     //will retrieve only the selcted year
             const students = await Student.find({ studentYears:{$elemMatch:{academicYear: selectedYear }}}).lean()//this will not return the extra data(lean)
