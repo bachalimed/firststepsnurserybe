@@ -118,7 +118,32 @@ const getAllFamilies = asyncHandler(async (req, res) => {
 
                 }
         })
+const getFamilyById = asyncHandler(async (req, res) => {
+    try {const { id } = req.params
+    console.log('now in the controller to get family id', id)
+        if (!id) {
+            return res.status(400).json({ message: 'Missing required parameters: id' });
+        }
+    
+        const family = await Family.findOne({ _id: id}).lean();
+    
+        if (!family) {
+            return res.status(404).json({ message: 'Family not found' });
+        }
+        if (family){
 
+          res.status(200).json(family)
+        }
+       
+         
+    
+        } catch (err) {
+            console.error('Error in request:', err);
+            res.status(500).send('Error in request');
+        }
+    });
+    
+    
 
 
 //----------------------------------------------------------------------------------
@@ -357,5 +382,6 @@ module.exports = {
     getAllFamilies,
     createNewFamily,
     updateFamily,
-    deleteFamily
+    deleteFamily, 
+    getFamilyById
 }
