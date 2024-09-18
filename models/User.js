@@ -14,17 +14,17 @@ const userSchema = new mongoose.Schema({
 	username: {type: String, required:true, index: true, unique: true},
 	password: {type: String, required:true, index: true},
 	accessToken: {type: String, index: true},
-	isParent:{
-		type: mongoose.Schema.Types.ObjectId,
-		index: true,
-		ref:'Family'},
+	// isParent:{
+	// 	type: mongoose.Schema.Types.ObjectId,
+	// 	index: true,
+	// 	ref:'Family'},
 		
-	isEmployee:{
-		type: mongoose.Schema.Types.ObjectId,
-		index: true,
-		ref:'Employee'
+	// isEmployee:{
+	// 	type: mongoose.Schema.Types.ObjectId,
+	// 	index: true,
+	// 	ref:'Employee'
 		
-		},
+	// 	},
 	userDob:{
 		type: Date,
 		required:true,

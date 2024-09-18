@@ -123,68 +123,103 @@ const getAllFamilies = asyncHandler(async (req, res) => {
 
 //----------------------------------------------------------------------------------
 //@desc Create new parent, check how to save user and parent from the same form, check if year is same as current before rejecting duplicate
-//@route POST /students/studentsParents/parents
+//@route POST /students/studentsParents/families
 //@access Private
 //first we save the studentsm then user then parent
 const createNewFamily = asyncHandler(async (req, res) => {
-    if(req.body){
-    const { father, familySituation} = req.body//this will come from front end we put all the fields ofthe collection here
-    //console.log(father)
-    const {userFullName, username, password, userDob, userSex, userIsActive, userRoles,  userAddress, userContact}= father
-    //Confirm data for user will be checked by the user controller
-    if (!userFullName || !username ||!userDob ||! userSex ||!password ||!userContact.primaryPhone || !Array.isArray(userRoles) || !userRoles.length) {
-        return res.status(400).json({ message: 'All fields are required' })//400 : bad request
-    }else{
-
-   
-    // Check for duplicate userFullName
-    const duplicateName = await User.findOne({userFullName }).lean().exec()//because we re receiving only one response from mongoose
-    const duplicateDob = await User.findOne({userDob }).lean().exec()//because we re receiving only one response from mongoose
-
-    if (duplicateName&&duplicateDob) {//we will only save the parent and update the user to be done later
-
-        return res.status(409).json({ message: 'Duplicate Full name and DOB' })
-    }else{
-
-
-    // Check for duplicate username/ if the user has no isParent we will update only the parent isParent and create it
-    const duplicate = await User.findOne({username }).lean().exec()//because we re receiving only one response from mongoose
-
-    if (duplicate) {
-        return res.status(409).json({ message: 'Duplicate username' })
-    }else{
-    // Hash password 
-    const hashedPwd = await bcrypt.hash(password, 10) // salt roundsm we will implement it laterm normally password is without''
     
-  //prepare new user to be stored
-   
-    
-        // res.status(201).json({ message: `New user ${username} created` })
-  
-    const userObject = { userFullName, username, "password" :hashedPwd,  userDob, userSex, userIsActive, userRoles,  userAddress, userContact  }//construct new user to be stored
-
-        const user = await User.create(userObject)
-        //console.log(user,'user')
+     
+        if (!req.body){  return res.status(400).json({ message: 'no request body received' })}
+        const { father, mother, children, familySituation} = req.body//this will come from front end we put all the fields ofthe collection here
+       
+        //saving teh father
+        const {
+            userFullName: fatherFullName,
+            username: fatherUsername,
+            password: fatherPassword,
+            userDob: fatherDob,
+            userSex: fatherSex,
+            userIsActive: fatherIsActive,
+            userRoles: fatherRoles,
+            userAddress: fatherAddress,
+            userContact: fatherContact
+          } = father
         
-         
-         if (user) { //if created 
-            const familyObject = {father:user._id, familySituation:familySituation}
-             const family = await Family.create(familyObject)
-             if (family){
-                res.status(201).json({ message: `New user ${username+","} and new family ${family._id} created` })//change parentYear later to show the parent full name
-         }else{res.status(400).json({ message: 'unable to save family' })
-         }
-         
-             
-     } else { //delete the user already craeted to be done
- 
-         res.status(400).json({ message: 'unable to save user' })
-     }
+        
+        //Confirm data for user will be checked by the user controller
+        if (!fatherFullName || !fatherUsername ||!fatherDob ||! fatherSex ||!fatherPassword ||!fatherContact.primaryPhone || !Array.isArray(fatherRoles) || !fatherRoles.length) {
+            return res.status(400).json({ message: 'All fields are required for Father' })//400 : bad request
+        }
 
-  
-  
-}}}}
-})//we need to delete the user if the parent is not saved
+        // Check for duplicate username/ if the user has no isParent we will update only the parent isParent and create it
+        const duplicateFather = await User.findOne({fatherUsername }).lean().exec()//because we re receiving only one response from mongoose
+
+        if (duplicateFather) {
+            return res.status(409).json({ message: 'Duplicate username for Father' })
+        }
+        
+        // Hash password 
+        //console.log(password, 'password')
+        const hashedFatherPwd = await bcrypt.hash(fatherPassword, 10) // salt roundsm we will implement it laterm normally password is without''
+
+            // res.status(201).json({ message: `New user ${username} created` })
+
+        const fatherObject = { ...father, password :hashedFatherPwd}//construct new user to be stored
+        console.log(fatherObject)
+        const savedFather = await User.create(fatherObject)
+
+        const {
+            userFullName: motherFullName,
+            username: motherUsername,
+            password: motherPassword,
+            userDob: motherDob,
+            userSex: motherSex,
+            userIsActive: motherIsActive,
+            userRoles: motherRoles,
+            userAddress: motherAddress,
+            userContact: motherContact
+          } = mother
+            //Confirm data for user will be checked by the user controller
+            if (!motherFullName || !motherUsername ||!motherDob ||! motherSex ||!motherPassword ||!motherContact.primaryPhone || !Array.isArray(motherRoles) || !motherRoles.length) {
+                return res.status(400).json({ message: 'All fields are required for Mother' })//400 : bad request
+            }
+        // Check for duplicate username/ if the user has no isParent we will update only the parent isParent and create it
+        const duplicateMother = await User.findOne({motherUsername }).lean().exec()//because we re receiving only one response from mongoose
+
+        if (duplicateMother) {
+            return res.status(409).json({ message: 'Duplicate username for Mother' })
+        }
+        // Hash password 
+        const hashedMotherPwd = await bcrypt.hash(motherPassword, 10) // salt roundsm we will implement it laterm normally password is without''
+
+        // res.status(201).json({ message: `New user ${username} created` })
+
+        const motherObject = { ...mother, "password" :hashedMotherPwd }//construct new user to be stored
+
+        const savedMother = await User.create(motherObject)
+        if (savedFather&&savedMother) { //if created 
+            const familyObject = {father:savedFather?._id, mother:savedMother?._id, children:children, familySituation:familySituation}
+            const family = await Family.create(familyObject)
+            if (family){
+                res.status(201).json({ message: `New family created ${family._id},  ${father.userFullName.userFirstName+","} ${father.userFullName.userMiddleName+","} ${father.userFullName.userLastName+","} 
+                and new mother ${mother.userFullName.userFirstName+","} ${mother.userFullName.userMiddleName+","} ${mother.userFullName.userLastName+","}  created` })//change parentYear later to show the parent full name
+            }else{res.status(400).json({ message: 'unable to save family' })
+            }
+
+
+            } else { //delete the user already craeted to be done
+
+                res.status(400).json({ message: 'unable to save user' })
+            }
+
+                    
+                
+            
+        
+            
+        
+    
+    })//we need to delete the user if the parent is not saved
 
 
 

@@ -30,14 +30,14 @@ const getAllUsers = asyncHandler(async (req, res) => {
 const createNewUser = asyncHandler(async (req, res) => {
        
     
-        const { userFullName, username, password, userAllowedActions,   userDob, userSex, isParent, isEmployee,userPhoto, userIsActive, userRoles,   userAddress, userContact  } = req.body//this will come from front end we put all the fields o fthe collection here
+        const { userFullName, username, password, userAllowedActions,   userDob, userSex, isParent, isEmployee, userIsActive, userRoles,   userAddress, userContact  } = req.body//this will come from front end we put all the fields o fthe collection here
 
+        //console.log(userFullName, username, password, isParent, isEmployee,  userDob, userIsActive, userRoles,  userAddress, userContact )
     //Confirm data is present in the request with all required fields
-    if (!userFullName || !username ||!userDob || userSex ||!password ||!userContact.primaryPhone || !Array.isArray(userRoles) || !userRoles.length) {
+    if (!userFullName || !username ||!userDob || !userSex ||!password ||!userContact.primaryPhone || !Array.isArray(userRoles) ) {
         return res.status(400).json({ message: 'All fields are requiredd' })//400 : bad request
     }
 
-    //console.log(userFullName, username, password, isParent, isEmployee,  userDob, userIsActive, userRoles, userPhoto, userAddress, userContact )
     // Check for duplicate username
     const duplicate = await User.findOne({username }).lean().exec()//because we re receiving only one response from mongoose
 
@@ -58,16 +58,10 @@ const createNewUser = asyncHandler(async (req, res) => {
 // const userAlsoEmployee=  userRoles.includes(!'Parent') && userRoles.length!==0
 // if (userAlsoParent){
 
-
-// }
-
-
-
-
     // Hash password 
     const hashedPwd = await bcrypt.hash(password, 10) // salt roundsm we will implement it laterm normally password is without''
     
-    const userObject = { userFullName, username, "password" :hashedPwd, userAllowedActions,   isParent, isEmployee, userDob, userSex, userIsActive, userRoles, userPhoto, userAddress, userContact  }//construct new user to be stored
+    const userObject = { userFullName, username, password :hashedPwd, userAllowedActions,   isParent, isEmployee, userDob, userSex, userIsActive, userRoles,  userAddress, userContact  }//construct new user to be stored
 
     // Create and store new user 
     const user = await User.create(userObject)
