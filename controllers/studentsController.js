@@ -195,7 +195,7 @@ const deleteStudent = asyncHandler(async (req, res) => {
 
     // Confirm data
     if (!id) {
-        return res.status(400).json({ message: 'Student ID Required' })
+        return res.status(400).json({ message: 'Student Id Required' })
     }
 
     // Does the user still have assigned notes?
@@ -206,15 +206,15 @@ const deleteStudent = asyncHandler(async (req, res) => {
 
 
     // Does the user exist to delete?
-    const student = await Student.findById(id).exec()
+    const studentToDelete = await Student.findById(id).exec()
 
-    if (!student) {
+    if (!studentToDelete) {
         return res.status(400).json({ message: 'Student not found' })
     }
 
-    const result = await student.deleteOne()
-
-    const reply = `student ${student.studentName.firstName+" "+student.studentName.middleName+" "+student.studentName.lastName}, with ID ${result._id} deleted`
+    const result = await studentToDelete.deleteOne()
+console.log(result,'result')
+    const reply = `confirm:  ${result} student ${studentToDelete.studentName.firstName+" "+studentToDelete.studentName.middleName+" "+studentToDelete.studentName.lastName}, with ID ${studentToDelete._id} deleted`
 
     res.json(reply)
 })
