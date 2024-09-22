@@ -55,15 +55,11 @@ const getAllEmployees = asyncHandler(async (req, res) => {
             userAddress: 1,
             userContact: 1,
             employeeId: 1,
-            'employeeData.employeeJoinDate': 1,
-            'employeeData.employeeAssessment': 1,
-            'employeeData.employeeContractType': 1,
-            'employeeData.employeeDepartureDate': 1,
-            'employeeData.employeePayment': 1,
-            'employeeData.employeeIsActive': 1,
-            'employeeData.employeeSalary': 1,
-            'employeeData.employeeWorkHistory': 1,
+            'employeeData.employeeCurrentEmployment': 1,
+            'employeeData.employeeIsActive': 1,   
             'employeeData.employeeYears': 1, // include employeeYears to see which matched
+            'employeeData.employeeAssessment': 1,
+            'employeeData.employeeWorkHistory': 1,
             
             // Add other fields as necessary
           },
