@@ -10,6 +10,7 @@ const asyncHandler = require('express-async-handler')//instead of using try catc
 
 const mongoose = require('mongoose')
 
+
 // @desc Get all studentDocuments
 // @route GET 'desk/studentDocuments             
 // @access Private // later we will establish authorisations
@@ -34,7 +35,7 @@ const getAllStudentDocuments = asyncHandler(async (req, res) => {
   
         // Check if documents are found and send response
         if (studentDocuments.length || studentDocumentsList.length) {
-            //console.log('studentDocuments',studentDocuments,'studentDocumentsList',studentDocumentsList)
+            console.log('studentDocuments',studentDocuments,'studentDocumentsList',studentDocumentsList)
             const listing =studentDocumentsList[0].documentsList
             
             responseData = listing.map(item => {

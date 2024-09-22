@@ -28,7 +28,6 @@ const studentGardienSchema= new mongoose.Schema({
 	gardienPhone:{type: Number}
 },{ _id: false })
 
-
 const studentSchema = new mongoose.Schema({
 	//id is already assigned automatically by mongo
 	studentName:{

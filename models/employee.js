@@ -1,44 +1,58 @@
-const mongoose = require('mongoose')
-const User = require ('./User')
+const mongoose = require("mongoose");
+const User = require("./User");
+
+
+const employeeYearsSchema = new mongoose.Schema({
+	academicYear: {type: String, index: true},
+},{ _id: false })
+
+const employeeAssessmentSchema = new mongoose.Schema({
+    employeeAssessment:{
+        date: { type: Date },
+        assessor: { type: String },
+        assessmentComment: { type: String },
+        assessmentScore: { type: Number },
+      },
+},{ _id: false })
+
+
+const employeeWorkHistorySchema = new mongoose.Schema({
+    employeeWorkHistory:{
+        from: {
+          type: Date,
+          required: true,
+        },
+        to: { type: Date },
+      },
+},{ _id: false })
 
 const employeeSchema = new mongoose.Schema({
-   emloyeeJoinDate: {
-        type: Date,
-        required: true
+  emloyeeJoinDate: {
+    type: Date,
+    required: true,
+  },
+  
+  employeeDepartureDate: {
+      type: Date,
     },
-
-    employeeDocuments: [{
-        type: String,
-        required: false
-    }],
-    employeeAssessment:[
-        {date:{type: Date},
-        assessor:{type: String},
-        assessmentComment:{type: String},
-        assessmentScore:{type: Number}}],
-    employeeDepartureDate:{
-        type: Date},
-    employeeWorkHistory:[{
-        from:{
-            type: Date,
-            required: true},
-        to:{type: Date}
-        }],
-    employeeContractType:{
-        type: String,
-        required: true
+  employeeIsActive: {
+      type: Boolean,
     },
-    employeeSalary:{
+    
+    employeeContractType: {
+        type: String,
+        required: true,
+    },
+    employeeSalary: {
         type: Number,
-        required: true
+        required: true,
     },
-    employeePayment:{
+    employeePayment: {
         type: String,
-        required: true
-    }
-
-})
-module.exports = mongoose.model('Employee', employeeSchema,'employees')
-
-
-
+        required: true,
+    },
+    employeeYears: [employeeYearsSchema],
+    employeeAssessment: [employeeAssessmentSchema ],
+    employeeWorkHistory: [employeeWorkHistorySchema],
+});
+module.exports = mongoose.model("Employee", employeeSchema, "employees");
