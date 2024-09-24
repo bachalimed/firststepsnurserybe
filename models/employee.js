@@ -29,13 +29,13 @@ const employeeAssessmentSchema = new mongoose.Schema(
 const employeeWorkHistorySchema = new mongoose.Schema(
   {
     employeeWorkHistory: {
-		institution:{type: String, set: capitalizeFirstLetter,},
-      from: { type: Date, required: true },
-      to: { type: Date, required: true },
-      position: { type: String, required: true, set: capitalizeFirstLetter, },
-      contractType: { type: String, required: true, set: capitalizeFirstLetter, },
+		institution:{type: String,  set: capitalizeFirstLetter,},
+      fromDate: { type: Date },
+      toDate: { type: Date },
+      position: { type: String,  set: capitalizeFirstLetter, },
+      contractType: { type: String,  set: capitalizeFirstLetter, },
       salaryPackage: { 
-		basic:{type: Number, required: true },
+		basic:{type: Number },
 		cnss:{type: Number},
 		other:{type: Number },
 	 },
@@ -45,15 +45,15 @@ const employeeWorkHistorySchema = new mongoose.Schema(
 );
 
 const employeeSchema = new mongoose.Schema({
-  employeeCurrentEmployment: {
-    position: { type: String, set: capitalizeFirstLetter, },
-    joinDate: { type: Date },
-	contractType: { type: String, required: true, set: capitalizeFirstLetter, },
-	salaryPackage: { 
-		payment: { type: String, required: true },
-		basic:{type: Number, required: true },
-		cnss:{type: Number},
-		other:{type: Number },
+  	employeeCurrentEmployment: {
+		position: { type: String, required: true, set: capitalizeFirstLetter, },
+		joinDate: { type: Date, required: true },
+		contractType: { type: String, required: true, set: capitalizeFirstLetter, },
+		salaryPackage: { 
+			payment: { type: String, required: true },
+			basic:{type: Number, required: true },
+			cnss:{type: Number},
+			other:{type: Number },
 	 },
   },
   employeeIsActive: { type: Boolean },

@@ -39,13 +39,40 @@ const getAllEmployees = asyncHandler(async (req, res) => {
           $unwind: "$employeeData",
         },
         {
-          // Stage 3: Match documents where employeeYears contains the selectedYear
+          // Stage 3: Unwind the employeeYears array in employeeData
+          $unwind: "$employeeData.employeeYears",
+        },
+        {
+          // Stage 4: Match documents where employeeYears.academicYear equals selectedYear
           $match: {
             "employeeData.employeeYears.academicYear": selectedYear,
           },
         },
-        //Optional: Project fields if needed
         {
+          // Stage 5: Group back the data to reconstruct employeeYears array
+          $group: {
+            _id: "$_id",
+            userFullName: { $first: "$userFullName" },
+            userDob: { $first: "$userDob" },
+            userSex: { $first: "$userSex" },
+            userPhoto: { $first: "$userPhoto" },
+            userAddress: { $first: "$userAddress" },
+            userContact: { $first: "$userContact" },
+            employeeId: { $first: "$employeeId" },
+            employeeData: {
+              $first: {
+                employeeCurrentEmployment: "$employeeData.employeeCurrentEmployment",
+                employeeIsActive: "$employeeData.employeeIsActive",
+                employeeAssessment: "$employeeData.employeeAssessment",
+                employeeWorkHistory: "$employeeData.employeeWorkHistory",
+              },
+            },
+            // Reconstruct employeeYears array
+            employeeYears: { $push: "$employeeData.employeeYears" },
+          },
+        },
+        {
+          // Stage 6: Optional - Project the final shape of the document
           $project: {
             _id: 1,
             userFullName: 1,
@@ -56,16 +83,15 @@ const getAllEmployees = asyncHandler(async (req, res) => {
             userContact: 1,
             employeeId: 1,
             'employeeData.employeeCurrentEmployment': 1,
-            'employeeData.employeeIsActive': 1,   
-            'employeeData.employeeYears': 1, // include employeeYears to see which matched
+            'employeeData.employeeIsActive': 1,
             'employeeData.employeeAssessment': 1,
             'employeeData.employeeWorkHistory': 1,
-            
-            // Add other fields as necessary
+            'employeeYears': 1, // include reconstructed employeeYears
           },
         },
-      ])
-
+      ]);
+      
+      
       // Check if any users were found
       if (users.length === 0) {
         return res
@@ -122,10 +148,10 @@ const getAllEmployees = asyncHandler(async (req, res) => {
       // Check if any users were found
       if (users.length === 0) {
         return res
-          .status(404)
-          .json({ message: "No users found with the selected year." });
+        .status(404)
+        .json({ message: "No users found with the selected year." });
       }
-
+      console.log(users,'users')
       // Return the filtered users
       res.status(200).json(users);
     }
@@ -133,35 +159,37 @@ const getAllEmployees = asyncHandler(async (req, res) => {
 });
 
 //----------------------------------------------------------------------------------
-//@desc Create new employee, check how to save user and employee from the same form
+//@desc Create new employee, first save employee and then use employee id to save user
 //@route POST /hr/employees
 //@access Private
 //first we save the studentsm then employee then user
 const createNewEmployee = asyncHandler(async (req, res) => {
+if (!req.body){
+    return res.status(400).json({ message: "No Data received" })
+}
+
   const {
     userFullName,
     username,
     password,
-    accessToken,
-    isParent,
+    userSex,
     userDob,
-    userIsActive,
+    userAllowedActions,
     userRoles,
-    userPhoto,
+    userIsActive,
     userAddress,
     userContact,
-    emloyeeJoinDate,
-    employeeDocuments,
-    employeeAssessment,
-    employeeDepartureDate,
+    employeeCurrentEmployment,
+    employeeIsActive,
+    employeeYears,
     employeeWorkHistory,
-    employeeContractType,
-    employeeSalary,
-    employeePayment,
-  } = req.body; //this will come from front end we put all the fields ofthe collection here
-
+    employeeAssessment,
+  } = req?.body; //this will come from front end we put all the fields ofthe collection here
+console.log(employeeCurrentEmployment,'employeeCurrentEmployment')
   //Confirm data for employee is present in the request with all required fields, data for user will be checked by the user controller
-  if (!emloyeeJoinDate || !employeeContractType || !employeeSalary) {
+  if (!userFullName.userFirstName || !userFullName.userLastName || !username || !password || !userSex || !userDob || !userRoles.length>0 ||
+     !userAddress.house|| !userAddress.street|| !userAddress.city|| !userContact.primaryPhone|| !employeeCurrentEmployment.contractType || !employeeCurrentEmployment.position
+     || !employeeCurrentEmployment.joinDate || !employeeCurrentEmployment.salaryPackage.basic || !employeeYears.length>0) {
     return res.status(400).json({ message: "All fields are required" }); //400 : bad request
   }
   // Check for duplicate employee by checking duplicate fullname, but we can have a returning employee, we will later check the dates of entry and departure to update them properly
@@ -170,56 +198,42 @@ const createNewEmployee = asyncHandler(async (req, res) => {
   //     return res.status(409).json({ message: `Duplicate employee name found:${duplicateemployee.userFullName.userFirstName} ` })//get the  name from  collection
   // }
 
-  //Confirm user data is present in the request with all required fields
-  if (
-    !userFullName ||
-    !username ||
-    !userDob ||
-    !password ||
-    !userContact ||
-    !Array.isArray(userRoles) ||
-    !userRoles.length
-  ) {
-    return res.status(400).json({ message: "All fields are required" }); //400 : bad request
-  }
+ 
 
   // Check for duplicate username
-  const duplicate = await User.findOne({ username }).lean().exec(); //because we re receiving only one response from mongoose
+  const duplicateUsername = await User.findOne({ username }).lean().exec(); //because we re receiving only one response from mongoose
 
-  if (duplicate) {
+  if (duplicateUsername) {
     //we will later check if the duplicate has isEmployee and then call the update Employee method
     return res.status(409).json({ message: "Duplicate username" });
   }
 
   // Check for duplicate userFullName
-  const duplicateName = await User.findOne({ userFullName }).lean().exec(); //because we re receiving only one response from mongoose
+  const duplicateFullName = await User.findOne({ userFullName }).lean().exec(); //because we re receiving only one response from mongoose
 
-  if (duplicateName) {
+  if (duplicateFullName) {
     return res.status(409).json({ message: "Duplicate Full name" });
   }
 
   // Hash password
   const hashedPwd = await bcrypt.hash(password, 10); // salt roundsm we will implement it laterm normally password is without''
 
-  //prepare new parent to be stored
-  //get the user Id to store it with parent
+  //prepare new employee to be stored
+  //get the employeeId to store it with user
   //const createdUserId = await User.findOne({username }).lean()/////////////////////
   ///const parentUserId= createdUserId._id/////////
   const employeeObject = {
-    emloyeeJoinDate,
-    employeeDocuments,
-    employeeAssessment,
-    employeeDepartureDate,
+    employeeCurrentEmployment,
+    employeeIsActive,
+    employeeYears,
     employeeWorkHistory,
-    employeeContractType,
-    employeeSalary,
-    employeePayment,
+    employeeAssessment
   }; //construct new employee to be stored
 
   //  store new employee
-  const employee = await Employee.create(employeeObject);
+  const savedEmployee = await Employee.create(employeeObject);
 
-  if (employee) {
+  if (savedEmployee) {
     //if created we will create the emmployee inside the if statement
     // res.status(201).json({ message: `New user ${username} created` })
 
@@ -228,26 +242,27 @@ const createNewEmployee = asyncHandler(async (req, res) => {
 
     // Create and store new user
     //const createdEmployee = await Employee.findOne({_id:id }).lean()
-    const isEmployee = employee._id;
-    console.log(isEmployee);
+    const employeeId = savedEmployee._id;
+    console.log(employeeId,'saved  employeeId');
+
+
     const userObject = {
-      userFullName,
-      username,
-      password: hashedPwd,
-      accessToken,
-      isParent,
-      isEmployee,
-      userDob,
-      userIsActive,
-      userRoles,
-      userPhoto,
-      userAddress,
-      userContact,
+        userFullName,
+        username,
+        password:hashedPwd,
+        userSex,
+        userDob,
+        userAllowedActions,
+        userIsActive,
+        userRoles,
+        userAddress,
+        userContact,
+        employeeId
     }; //construct new user to be stored
 
-    const user = await User.create(userObject);
+    const savedUser = await User.create(userObject);
 
-    if (user) {
+    if (savedUser) {
       //if created
 
       //the following line res is not being executed and was causing the error [ERR_HTTP_HEADERS_SENT, now we send both res for user and parent  together in ne line
@@ -262,7 +277,7 @@ const createNewEmployee = asyncHandler(async (req, res) => {
             userFullName.userLastName +
             ","
           } created`,
-        }); //change parentYear later to show the parent full name
+        }); 
     } else {
       //delete the user already craeted to be done
 
@@ -272,6 +287,8 @@ const createNewEmployee = asyncHandler(async (req, res) => {
     res.status(400).json({ message: "Invalid user data received" });
   }
 }); //we need to delete the user if the parent is not saved
+
+
 
 const getEmployeeDetails = asyncHandler(async (req, res) => {
   const { userId } = req.params;
