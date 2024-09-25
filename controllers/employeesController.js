@@ -16,10 +16,64 @@ const getAllEmployees = asyncHandler(async (req, res) => {
     //console.log(selectedYear, "sleected year inback")
     //will retrive all teh students
     if (selectedYear === "1000") {
-      const users = await User.find().populate("employeeId").lean();
+      // Aggregation pipeline to retrieve users with matching employeeYears.academicYear
+      const users = await User.aggregate([
+        {
+          // Stage 1: Match users that have a non-empty employeeId field
+          $match: {
+            employeeId: { $ne: null }, // Ensures employeeId is not null
+          },
+        },
+        {
+          // Stage 2: Lookup to populate employeeId with Employee data
+          $lookup: {
+            from: "employees", // Collection name of Employee
+            localField: "employeeId", // Field in User schema
+            foreignField: "_id", // Field in Employee schema
+            as: "employeeData", // Alias for populated data
+          },
+        },
+        {
+          // Stage 3: Unwind the employeeData array to convert it into an object
+          $unwind: {
+            path: "$employeeData",
+            preserveNullAndEmptyArrays: false, // Ensure users without employee data are excluded
+          },
+        },
+        {
+          // Stage 4: Add employeeId field directly from employeeData._id
+          $addFields: {
+            "employeeData.employeeId": "$employeeData._id", // Rename _id to employeeId in employeeData
+          },
+        },
+        {
+          // Stage 5: Optional - Project to return only the necessary fields
+          $project: {
+            _id: 1,
+            userFullName: 1,
+            userDob: 1,
+            userSex: 1,
+            userPhoto: 1,
+            userAddress: 1,
+            userContact: 1,
+            employeeId: 1, // User's original employeeId reference
+            "employeeData.employeeId": 1, // New employeeId from Employee data
+            "employeeData.employeeCurrentEmployment": 1,
+            "employeeData.employeeIsActive": 1,
+            "employeeData.employeeAssessment": 1,
+            "employeeData.employeeWorkHistory": 1,
+            "employeeData.employeeYears": 1,
+          },
+        },
+      ]);
+      
+      
       if (!users?.length) {
         return res.status(400).json({ message: "No employees found!" });
       }
+      if(users) {
+        console.log(users,'users')
+        return res.status(200).json(users)}
     } else {
       //will retrieve only the employees for the selcted year
 
@@ -35,8 +89,11 @@ const getAllEmployees = asyncHandler(async (req, res) => {
           },
         },
         {
-          // Stage 2: Unwind employeeData array to make filtering possible
-          $unwind: "$employeeData",
+          // Stage 2: Unwind the employeeData array to convert it into an object
+          $unwind: {
+            path: "$employeeData",
+            preserveNullAndEmptyArrays: false, // Ensure users without employee data are excluded
+          },
         },
         {
           // Stage 3: Unwind the employeeYears array in employeeData
@@ -148,10 +205,10 @@ const getAllEmployees = asyncHandler(async (req, res) => {
       // Check if any users were found
       if (users.length === 0) {
         return res
-        .status(404)
-        .json({ message: "No users found with the selected year." });
+          .status(404)
+          .json({ message: "No users found with the selected year." });
       }
-      console.log(users,'users')
+
       // Return the filtered users
       res.status(200).json(users);
     }
@@ -257,7 +314,6 @@ console.log(employeeCurrentEmployment,'employeeCurrentEmployment')
         userRoles,
         userAddress,
         userContact,
-        employeeId
     }; //construct new user to be stored
 
     const savedUser = await User.create(userObject);
