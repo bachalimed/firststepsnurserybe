@@ -96,17 +96,14 @@ const getAllEmployees = asyncHandler(async (req, res) => {
           },
         },
         {
-          // Stage 3: Unwind the employeeYears array in employeeData
-          $unwind: "$employeeData.employeeYears",
-        },
-        {
-          // Stage 4: Match documents where employeeYears.academicYear equals selectedYear
-          $match: {
-            "employeeData.employeeYears.academicYear": selectedYear,
+          // Stage 3: Unwind the employeeYears array in employeeData to flatten it
+          $unwind: {
+            path: "$employeeData.employeeYears",
+            preserveNullAndEmptyArrays: true, // Allow employees without years to be included
           },
         },
         {
-          // Stage 5: Group the data and restructure employeeData
+          // Stage 4: Group to collect all employeeYears back into an array without filtering
           $group: {
             _id: "$_id",
             userFullName: { $first: "$userFullName" },
@@ -124,18 +121,18 @@ const getAllEmployees = asyncHandler(async (req, res) => {
                 employeeWorkHistory: "$employeeData.employeeWorkHistory",
               },
             },
-            // Collect employeeYears into employeeData as a nested object
-            employeeYears: { $push: "$employeeData.employeeYears" },
+            // Collect all employeeYears into a single array
+            employeeYears: { $push: "$employeeData.employeeYears" }, // This will create an array of all academicYears
           },
         },
         {
-          // Stage 6: Add employeeYears back into employeeData
+          // Stage 5: Add employeeYears back into employeeData
           $addFields: {
             "employeeData.employeeYears": "$employeeYears", // Move the employeeYears array into employeeData
           },
         },
         {
-          // Stage 7: Project the final shape of the document
+          // Stage 6: Project the final shape of the document
           $project: {
             _id: 1,
             userFullName: 1,
@@ -153,6 +150,7 @@ const getAllEmployees = asyncHandler(async (req, res) => {
           },
         },
       ]);
+      
       
       
       
