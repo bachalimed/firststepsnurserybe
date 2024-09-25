@@ -106,7 +106,7 @@ const getAllEmployees = asyncHandler(async (req, res) => {
           },
         },
         {
-          // Stage 5: Group back the data to reconstruct employeeYears array
+          // Stage 5: Group the data and restructure employeeData
           $group: {
             _id: "$_id",
             userFullName: { $first: "$userFullName" },
@@ -124,12 +124,18 @@ const getAllEmployees = asyncHandler(async (req, res) => {
                 employeeWorkHistory: "$employeeData.employeeWorkHistory",
               },
             },
-            // Reconstruct employeeYears array
+            // Collect employeeYears into employeeData as a nested object
             employeeYears: { $push: "$employeeData.employeeYears" },
           },
         },
         {
-          // Stage 6: Optional - Project the final shape of the document
+          // Stage 6: Add employeeYears back into employeeData
+          $addFields: {
+            "employeeData.employeeYears": "$employeeYears", // Move the employeeYears array into employeeData
+          },
+        },
+        {
+          // Stage 7: Project the final shape of the document
           $project: {
             _id: 1,
             userFullName: 1,
@@ -143,10 +149,12 @@ const getAllEmployees = asyncHandler(async (req, res) => {
             'employeeData.employeeIsActive': 1,
             'employeeData.employeeAssessment': 1,
             'employeeData.employeeWorkHistory': 1,
-            'employeeYears': 1, // include reconstructed employeeYears
+            'employeeData.employeeYears': 1, // Include employeeYears inside employeeData
           },
         },
       ]);
+      
+      
       
       
       // Check if any users were found
