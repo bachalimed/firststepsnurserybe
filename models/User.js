@@ -34,6 +34,11 @@ const userSchema = new mongoose.Schema({
     index: true,
     ref: "Employee",
   },
+  familyId: {
+    type: mongoose.Schema.Types.ObjectId,
+    index: true,
+    ref: "Family",
+  },
   userDob: {
     type: Date,
     required: true,
@@ -66,11 +71,15 @@ const userSchema = new mongoose.Schema({
     house: { type: String },
     street: {
       type: String,
+      set: capitalizeFirstLetter,
     },
-    area: { type: String },
+    area: { type: String,
+      set: capitalizeFirstLetter,
+     },
     postCode: { type: String },
     city: {
       type: String,
+      set: capitalizeFirstLetter,
     },
   },
   userContact: {

@@ -59,7 +59,7 @@ const getAllFamilies = asyncHandler(async (req, res) => {
       )
       .lean();
 
-    //  console.log(families,'families retriecved')
+      console.log(families,'families retriecved')
     // families.forEach(family => {
     //     console.log('Family:', family);
     //     family.children.forEach((child, index) => {

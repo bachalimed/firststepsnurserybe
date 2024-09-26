@@ -30,7 +30,7 @@ const getAllUsers = asyncHandler(async (req, res) => {
 const createNewUser = asyncHandler(async (req, res) => {
        
     
-        const { userFullName, username, password, userAllowedActions,   userDob, userSex, isParent, isEmployee, userIsActive, userRoles,   userAddress, userContact  } = req.body//this will come from front end we put all the fields o fthe collection here
+        const { userFullName, username, password, userAllowedActions,   userDob, userSex, familyId, employeeId, userIsActive, userRoles,   userAddress, userContact  } = req.body//this will come from front end we put all the fields o fthe collection here
 
         //console.log(userFullName, username, password, isParent, isEmployee,  userDob, userIsActive, userRoles,  userAddress, userContact )
     //Confirm data is present in the request with all required fields
@@ -61,7 +61,7 @@ const createNewUser = asyncHandler(async (req, res) => {
     // Hash password 
     const hashedPwd = await bcrypt.hash(password, 10) // salt roundsm we will implement it laterm normally password is without''
     
-    const userObject = { userFullName, username, password :hashedPwd, userAllowedActions,   isParent, isEmployee, userDob, userSex, userIsActive, userRoles,  userAddress, userContact  }//construct new user to be stored
+    const userObject = { userFullName, username, password :hashedPwd, userAllowedActions,   familyId, employeeId, userDob, userSex, userIsActive, userRoles,  userAddress, userContact  }//construct new user to be stored
 
     // Create and store new user 
     const user = await User.create(userObject)
@@ -82,7 +82,7 @@ const createNewUser = asyncHandler(async (req, res) => {
 // @route PATCH /admin/usersManagement
 // @access Private
 const updateUser = asyncHandler(async (req, res) => {//need te delete old photo??
-    const { id, userFullName, username, password, accessToken,userAllowedActions, isParent, isEmployee, userDob, userSex, userIsActive, userRoles, userAddress, userContact  } = req.body
+    const { id, userFullName, username, password, accessToken,userAllowedActions, familyId, employeeId, userDob, userSex, userIsActive, userRoles, userAddress, userContact  } = req.body
 
     // Confirm data 
     if (!id || !username || !Array.isArray(userRoles) || !userRoles.length || typeof userIsActive !== 'boolean') {
@@ -109,12 +109,12 @@ const updateUser = asyncHandler(async (req, res) => {//need te delete old photo?
     user.userRoles = userRoles
     user.userAllowedActions = userAllowedActions
     user.accessToken = accessToken
-    user.isParent = isParent
-    user.isEmployee = isEmployee
+    user.familyId = familyId
+    user.employeeId = employeeId
     user.userDob = userDob
     user.userSex = userSex
     user.userIsActive = userIsActive
-    user.userRoles = userRoles
+   
     // user.userPhoto = userPhoto
     // user.userPhotoLabel = userPhotoLabel
     // user.userPhotoFormat = userPhotoFormat

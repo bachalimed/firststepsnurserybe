@@ -55,6 +55,7 @@ const getAllEmployees = asyncHandler(async (req, res) => {
             userSex: 1,
             userPhoto: 1,
             userAddress: 1,
+            userRoles: 1,
             userContact: 1,
             employeeId: 1, // User's original employeeId reference
             "employeeData.employeeId": 1, // New employeeId from Employee data
@@ -110,6 +111,7 @@ const getAllEmployees = asyncHandler(async (req, res) => {
             userDob: { $first: "$userDob" },
             userSex: { $first: "$userSex" },
             userPhoto: { $first: "$userPhoto" },
+            userRoles: { $first: "$userRoles" },
             userAddress: { $first: "$userAddress" },
             userContact: { $first: "$userContact" },
             employeeId: { $first: "$employeeId" },
@@ -140,6 +142,7 @@ const getAllEmployees = asyncHandler(async (req, res) => {
             userSex: 1,
             userPhoto: 1,
             userAddress: 1,
+            userRoles: 1,
             userContact: 1,
             employeeId: 1,
             'employeeData.employeeCurrentEmployment': 1,
@@ -379,164 +382,101 @@ const getEmployeeDetails = asyncHandler(async (req, res) => {
 
   res.status(200).json(result[0]); // Sending the aggregated result
 });
-
+////////////////////////////////////////////////////////////////////
 module.exports = {
   getEmployeeDetails,
 };
 
-const createupdateEmployee = asyncHandler(async (req, res) => {
-  const {
-    userId, // ID of the user to link with this employee
-    employeeJoinDate,
-    employeeDocuments,
-    employeeAssessment,
-    employeeDepartureDate,
-    employeeWorkHistory,
-    employeeContractType,
-    employeeSalary,
-    employeePayment,
-  } = req.body;
 
-  // Check if the user exists
-  const user = await User.findById(userId);
-  if (!user) {
-    return res.status(404).json({ message: "User not found" });
-  }
 
-  // Check if the user is already associated with an employee
-  if (user.employeeId) {
-    return res
-      .status(400)
-      .json({ message: "User is already associated with an employee" });
-  }
 
-  // Create the employee
-  const newEmployee = new Employee({
-    employeeJoinDate,
-    employeeDocuments,
-    employeeAssessment,
-    employeeDepartureDate,
-    employeeWorkHistory,
-    employeeContractType,
-    employeeSalary,
-    employeePayment,
-  });
-
-  // Save the employee to the database
-  const savedEmployee = await newEmployee.save();
-
-  // Update the user to link the newly created employee
-  user.employeeId = savedEmployee._id; // Add the employee reference to the user
-  await user.save();
-
-  res.status(201).json({
-    message: "Employee created successfully and linked to the user",
-    employee: savedEmployee,
-  });
-});
-
-module.exports = {
-  createupdateEmployee,
-};
 
 // @desc Update a employee, we will retrieve all information from user and parent and update and save in both collections
 // @route PATCH /hr/employees
 // @access Private
 const updateEmployee = asyncHandler(async (req, res) => {
+  if (!req.body){
+    return res.status(400).json({ message: "No Data received" })
+}
+
   const {
-    id,
+    userId,
+    employeeId,
     userFullName,
-    username,
-    password,
-    accessToken,
-    isParent,
-    isEmployee,
+    userSex,
     userDob,
-    userIsActive,
     userRoles,
-    userPhoto,
     userAddress,
     userContact,
-    emloyeeJoinDate,
-    employeeDocuments,
-    employeeAssessment,
-    employeeDepartureDate,
+    employeeCurrentEmployment,
+    employeeIsActive,
+    employeeYears,
     employeeWorkHistory,
-    employeeContractType,
-    employeeSalary,
-    employeePayment,
-  } = req.body;
-  // id is the user id not employee
-  // Confirm data
-  if (
-    !id ||
-    !username ||
-    !Array.isArray(userRoles) ||
-    !userRoles.length ||
-    typeof userIsActive !== "boolean"
-  ) {
-    return res
-      .status(400)
-      .json({ message: "All fields except password are required" });
+    employeeAssessment,
+  } = req?.body; //this will come from front end we put all the fields ofthe collection here
+
+ console.log(
+    userId,
+    employeeId,
+    userFullName,
+    userSex,
+    userDob,
+    userRoles,
+    userAddress,
+    userContact,
+    employeeCurrentEmployment,
+    employeeIsActive,
+    employeeYears,
+    employeeWorkHistory,
+    employeeAssessment)
+  //Confirm data for employee is present in the request with all required fields, data for user will be checked by the user controller
+  if (!userId || !userFullName.userFirstName || !userFullName.userLastName || !userSex || !userDob || !userRoles.length>0 || !employeeId ||
+     !userAddress.house|| !userAddress.street|| !userAddress.city|| !userContact.primaryPhone|| !employeeCurrentEmployment.contractType || !employeeCurrentEmployment.position
+     || !employeeCurrentEmployment.joinDate || !employeeCurrentEmployment.salaryPackage.basic || !employeeYears.length>0) {
+    return res.status(400).json({ message: "All fields are required" }); //400 : bad request
   }
-
+ 
+  //no need to check for duplicate username because it was not edited in empoloyee edit 
+ 
   // Does the user exist to update?
-  const user = await User.findById(id).exec(); //we did not lean because we need the save method attached to the response
-  const employee = await Employee.findOne({ _id: isEmployee }).exec(); //find the parent with the id from the user
-
+  const user = await User.findById(userId).exec(); //we did not lean because we need the save method attached to the response
+  
   if (!user) {
     return res.status(400).json({ message: "User not found" });
   }
+  const employee = await Employee.findById(employeeId).exec(); //find the parent with the id from the user
   if (!employee) {
     return res.status(400).json({ message: "Employee not found" });
   }
 
-  // Check for duplicate
-  const duplicate = await User.findOne({ username }).lean().exec();
-
-  // Allow updates to the original user
-  if (duplicate && duplicate?._id.toString() !== id) {
-    return res.status(409).json({ message: "Duplicate username" });
-  }
 
   user.userFullName = userFullName; //it will only allow updating properties that are already existant in the model
-  user.username = username;
   user.userRoles = userRoles;
-  user.accessToken = accessToken;
-  user.isParent = isParent;
-  user.isEmployee = isEmployee;
+  user.employeeId = employeeId;
+  user.userSex = userSex
   user.userDob = userDob;
-  user.userIsActive = userIsActive;
   user.userRoles = userRoles;
-  user.userPhoto = userPhoto;
+  //user.userPhoto = userPhoto;
   user.userAddress = userAddress;
   user.userContact = userContact;
-  employee.emloyeeJoinDate = emloyeeJoinDate;
-  employee.employeeDocuments = employeeDocuments;
+  employee.employeeCurrentEmployment = employeeCurrentEmployment;
   employee.employeeAssessment = employeeAssessment;
-  employee.employeeDepartureDate = employeeDepartureDate;
   employee.employeeWorkHistory = employeeWorkHistory;
-  employee.employeeContractType = employeeContractType;
-  employee.employeeSalary = employeeSalary;
-  employee.employeePayment = employeePayment;
-
-  if (password) {
-    //only if the password is requested to be updated
-    // Hash password
-    user.password = await bcrypt.hash(password, 10); // salt rounds
-  }
+  employee.employeeIsActive = employeeIsActive;
+  employee.employeeYears = employeeYears;
+  
 
   const updatedUser = await user.save(); //save method received when we did not include lean
 
   // res.json({ message: `${updatedUser.username} updated` })
 
   if (updatedUser) {
-    //if updated we will update the parent inside the if statement
+   
 
     const updatedEmployee = await employee.save();
 
     if (updatedEmployee) {
-      //if updated the parent
+     
 
       res.json({
         message: ` ${updatedUser.username} updated, and employee ${
