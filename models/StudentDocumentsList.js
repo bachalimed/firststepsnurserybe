@@ -1,5 +1,10 @@
 const mongoose = require("mongoose");
 
+function capitalizeFirstLetter(str) {
+  if (typeof str !== "string" || str.length === 0) return str;
+  return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
 const documentsListSchema = new mongoose.Schema(
   {
     documentReference: {
@@ -12,6 +17,7 @@ const documentsListSchema = new mongoose.Schema(
       type: String,
       required: true,
       index: true,
+      set: capitalizeFirstLetter,
     },
     isRequired: {
       type: Boolean,

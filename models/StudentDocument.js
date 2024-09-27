@@ -1,5 +1,10 @@
 const mongoose = require("mongoose");
 
+function capitalizeFirstLetter(str) {
+  if (typeof str !== "string" || str.length === 0) return str;
+  return str.charAt(0).toUpperCase() + str.slice(1);
+} 
+
 const studentDocumentSchema = new mongoose.Schema({
   //id is already assigned automatically by mongo
 
@@ -25,6 +30,7 @@ const studentDocumentSchema = new mongoose.Schema({
   },
   studentDocumentLabel: {
     type: String,
+    set: capitalizeFirstLetter,
   },
 });
 module.exports = mongoose.model(
