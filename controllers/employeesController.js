@@ -13,7 +13,7 @@ const mongoose = require("mongoose");
 const getAllEmployees = asyncHandler(async (req, res) => {
   if (req.query.selectedYear) {
     const { selectedYear } = req.query; //maybe replace the conditionals with the current year that we get  from middleware
-    //console.log(selectedYear, "sleected year inback")
+    console.log(selectedYear, "sleected year inback")
     //will retrive all teh students
     if (selectedYear === "1000") {
       // Aggregation pipeline to retrieve users with matching employeeYears.academicYear
@@ -100,11 +100,17 @@ const getAllEmployees = asyncHandler(async (req, res) => {
           // Stage 3: Unwind the employeeYears array in employeeData to flatten it
           $unwind: {
             path: "$employeeData.employeeYears",
-            preserveNullAndEmptyArrays: true, // Allow employees without years to be included
+            preserveNullAndEmptyArrays: false, // Allow employees without years to be included
           },
         },
         {
-          // Stage 4: Group to collect all employeeYears back into an array without filtering
+          // Stage 4: Match only employees whose employeeYears array contains the selectedYear
+          $match: {
+            "employeeData.employeeYears.academicYear": selectedYear, // Match the selected year
+          },
+        },
+        {
+          // Stage 5: Group to collect all employeeYears back into an array without filtering
           $group: {
             _id: "$_id",
             userFullName: { $first: "$userFullName" },
@@ -124,17 +130,17 @@ const getAllEmployees = asyncHandler(async (req, res) => {
               },
             },
             // Collect all employeeYears into a single array
-            employeeYears: { $push: "$employeeData.employeeYears" }, // This will create an array of all academicYears
+            employeeYears: { $push: "$employeeData.employeeYears" }, // Rebuild the employeeYears array
           },
         },
         {
-          // Stage 5: Add employeeYears back into employeeData
+          // Stage 6: Add employeeYears back into employeeData
           $addFields: {
             "employeeData.employeeYears": "$employeeYears", // Move the employeeYears array into employeeData
           },
         },
         {
-          // Stage 6: Project the final shape of the document
+          // Stage 7: Project the final shape of the document
           $project: {
             _id: 1,
             userFullName: 1,
@@ -145,72 +151,14 @@ const getAllEmployees = asyncHandler(async (req, res) => {
             userRoles: 1,
             userContact: 1,
             employeeId: 1,
-            'employeeData.employeeCurrentEmployment': 1,
-            'employeeData.employeeIsActive': 1,
-            'employeeData.employeeAssessment': 1,
-            'employeeData.employeeWorkHistory': 1,
-            'employeeData.employeeYears': 1, // Include employeeYears inside employeeData
+            "employeeData.employeeCurrentEmployment": 1,
+            "employeeData.employeeIsActive": 1,
+            "employeeData.employeeAssessment": 1,
+            "employeeData.employeeWorkHistory": 1,
+            "employeeData.employeeYears": 1, // Include employeeYears inside employeeData
           },
         },
       ]);
-      
-      
-      
-      
-      
-      // Check if any users were found
-      if (users.length === 0) {
-        return res
-          .status(404)
-          .json({ message: "No users found with the selected year." });
-      }
-
-      // Return the filtered users
-      res.status(200).json(users);
-
-      //will retreive according to the id
-    }
-    if (req.query.id) {
-      const { id } = req.query;
-      const users = await User.aggregate([
-        {
-          // Stage 1: Lookup to populate employeeId with Employee data
-          $lookup: {
-            from: "employees", // Collection name of Employee
-            localField: "employeeId", // Field in User schema
-            foreignField: "_id", // Field in Employee schema
-            as: "employeeData", // Alias for populated data
-          },
-        },
-        {
-          // Stage 2: Unwind employeeData array to make filtering possible
-          $unwind: {
-            path: "$employeeData",
-            preserveNullAndEmptyArrays: true, // Optional: use this if some users might not have associated employees
-          },
-        },
-        {
-          // Stage 3: Match documents based on specific criteria
-          $match: {
-            "employeeData._id": id, // Match based on the _id field of employeeData
-          },
-        },
-        {
-          // Stage 4: Project fields if needed - this stage can be omitted if you want all fields
-          // $project: {
-          //   _id: 1,
-          //   username: 1,
-          //   userFullName: 1,
-          //   employeeId: 1,
-          //   "employeeData.emloyeeJoinDate": 1,
-          //   "employeeData.employeeContractType": 1,
-          //   "employeeData.employeeSalary": 1,
-          //   "employeeData.employeeYears": 1,
-          //   // Add other fields as necessary
-          // },
-        },
-      ]);
-
       // Check if any users were found
       if (users.length === 0) {
         return res
