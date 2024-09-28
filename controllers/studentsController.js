@@ -46,7 +46,7 @@ async function getStudentsNotInFamily() {
 // @access Private // later we will establish authorisations
 const getAllStudents = asyncHandler(async (req, res) => {
     // Get all students from MongoDB
-    console.log('teh request', req.query)
+    //console.log('teh request', req.query)
     if(req.query.selectedYear){
     const {selectedYear} = req.query//maybe replace the conditionals with the current year that we get  from middleware
     //console.log(selectedYear, "sleected year inback")

@@ -115,7 +115,7 @@ const getAllFamilies = asyncHandler(async (req, res) => {
       const criteria = req.query.criteria;
       console.log("in teh criteria", criteria);
       if (criteria == "Dry") {
-        console.log("in teh dry");
+        //console.log("in teh dry");
         const family = await Family.find({ _id: id })
           .populate(
             "children.child",
@@ -177,7 +177,7 @@ const formatChildren = (children) => {
 };
 
 const getFamilyById = asyncHandler(async (req, res) => {
-  console.log("hellloooww");
+  //console.log("hellloooww");
   try {
     const { id, criteria } = req.params;
     console.log(id, criteria);
@@ -185,7 +185,7 @@ const getFamilyById = asyncHandler(async (req, res) => {
     const path = "children.child";
     const selection = "_id studentName";
 
-    console.log("now in the controller to get family id", id);
+    //console.log("now in the controller to get family id", id);
     if (!id) {
       return res
         .status(400)
@@ -193,7 +193,7 @@ const getFamilyById = asyncHandler(async (req, res) => {
     }
     let family;
     if (criteria === "Dry") {
-      console.log("dry");
+      //console.log("dry");
       family = await Family.findOne({ _id: id })
         .populate({ path: path, select: selection })
         .populate(

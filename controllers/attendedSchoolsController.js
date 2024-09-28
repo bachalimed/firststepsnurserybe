@@ -9,15 +9,38 @@ const mongoose = require('mongoose')
 // @route GET 'desk/attendedSchool             
 // @access Private // later we will establish authorisations
 const getAllAttendedSchools = asyncHandler(async (req, res) => {
-    // Get all schools from MongoDB
-    const attendedSchools = await AttendedSchool.find().lean()//this will not return the extra data(lean)
-    // If no students 
-    if (!attendedSchools?.length) {
-        console.log(attendedSchools)
-        return res.status(400).json({ message: 'No attendedSchools found from attendedSchool controller with love' })
+    try {
+        // Check if an ID is passed as a query parameter
+        if (req.query.id) {
+            const { id } = req.query;
+
+            // Find a single attended school by its ID
+            const attendedSchool = await AttendedSchool.findOne({ _id: id }).lean();
+
+            if (!attendedSchool) {
+                return res.status(404).json({ message: 'Attended School not found' });
+            }
+
+            return res.json(attendedSchool);
+        } 
+        
+        // If no ID is provided, fetch all attended schools
+        const attendedSchools = await AttendedSchool.find().lean();
+
+        if (!attendedSchools.length) {
+            return res.status(404).json({ message: 'No attended schools found' });
+        }
+
+        res.json(attendedSchools);
+    } catch (error) {
+        res.status(500).json({ message: 'Server error while fetching attended schools', error: error.message });
     }
-    res.json(attendedSchools)
-})
+});
+
+
+
+
+
 // // @desc getAttendedSchoolByUSerId
 // // @route GET 'desk/attendedSchool/myAttendedSchool with userID passed in the body of the query             
 // // @access Private // later we will establish authorisations
@@ -45,33 +68,29 @@ const getAllAttendedSchools = asyncHandler(async (req, res) => {
 // @route POST 'desk/attendedSchool
 // @access Private
 const createNewAttendedSchool = asyncHandler(async (req, res) => {
-    const { attendedSchoolCreationDate, attendedSchoolPriority, attendedSchoolubject, attendedSchoolDescription, attendedSchoolCreator, attendedSchoolReference,  attendedSchoolDueDate,
-        attendedSchoolResponsible, attendedSchoolAction, attendedSchooltate, attendedSchoolCompletionDate, lastModified, attendedSchoolOperator, attendedSchoolYear
-      } = req.body//this will come from front end we put all the fields o fthe collection here
-
+    const { schoolName, schoolCity, schoolType } = req?.body//this will come from front end we put all the fields o fthe collection here
+console.log(schoolName, schoolCity, schoolType)
     //Confirm data is present in the request with all required fields
         
-        if (!attendedSchoolCreationDate ||!attendedSchoolPriority ||! attendedSchoolubject ||! attendedSchoolDescription ||! attendedSchoolCreator 
-            ||! attendedSchoolDueDate||! attendedSchoolResponsible||! attendedSchooltate||! lastModified.operator||! attendedSchoolYear) {
+        if ( !schoolName || !schoolCity || !schoolType) {
         return res.status(400).json({ message: 'All mandatory fields are required' })//400 : bad request
     }
     
     // Check for duplicate username
-    const duplicate = await AttendedSchool.findOne({attendedSchoolubject }).lean().exec()//because we re receiving only one response from mongoose
+    const duplicate = await AttendedSchool.findOne({schoolName }).lean().exec()//because we re receiving only one response from mongoose
 
-    if (duplicate&&duplicate.attendedSchoolReference== attendedSchoolReference) {
-        return res.status(409).json({ message: `Duplicate attendedSchool: ${duplicate.attendedSchoolubject}, found` })
+    if (duplicate&&duplicate.schoolType== schoolType) {
+        return res.status(409).json({ message: `Duplicate attendedSchool: ${duplicate.schoolName}, found` })
     }
   
     
-    const attendedSchoolObject = { attendedSchoolCreationDate, attendedSchoolPriority, attendedSchoolubject, attendedSchoolDescription, attendedSchoolCreator, attendedSchoolReference,  attendedSchoolDueDate,
-        attendedSchoolResponsible, attendedSchoolAction, attendedSchooltate, attendedSchoolCompletionDate, lastModified, attendedSchoolOperator, attendedSchoolYear}//construct new attendedSchool to be stored
+    const attendedSchoolObject = { schoolName, schoolCity, schoolType}//construct new attendedSchool to be stored
 
     // Create and store new attendedSchool 
     const attendedSchool = await AttendedSchool.create(attendedSchoolObject)
 
     if (attendedSchool) { //if created 
-        res.status(201).json({ message: `New attendedSchool of subject: ${attendedSchool.attendedSchoolubject}, created` })
+        res.status(201).json({ message: `New attendedSchool of subject: ${attendedSchool.schoolName}, created` })
     } else {
         res.status(400).json({ message: 'Invalid attendedSchool data received' })
     }
@@ -84,12 +103,10 @@ const createNewAttendedSchool = asyncHandler(async (req, res) => {
 // @route PATCH 'desk/attendedSchool
 // @access Private
 const updateAttendedSchool = asyncHandler(async (req, res) => {
-    const { id, attendedSchoolCreationDate, attendedSchoolPriority, attendedSchoolubject, attendedSchoolDescription, attendedSchoolCreator, attendedSchoolReference,  attendedSchoolDueDate,
-        attendedSchoolResponsible, attendedSchoolAction, attendedSchooltate, attendedSchoolCompletionDate, lastModified, attendedSchoolYear  } = req.body
+    const { id, schoolName, schoolCity, schoolType  } = req?.body
 
     // Confirm data 
-    if (!attendedSchoolCreationDate ||!attendedSchoolPriority ||! attendedSchoolubject ||! attendedSchoolDescription ||! attendedSchoolCreator 
-        ||! attendedSchoolDueDate||! attendedSchoolResponsible||! attendedSchooltate||! lastModified.operator||! attendedSchoolYear) {
+    if (!id ||!schoolName ||! schoolCity ||! schoolType ) {
         return res.status(400).json({ message: 'All mandatory fields required' })
     }
 
@@ -100,33 +117,18 @@ const updateAttendedSchool = asyncHandler(async (req, res) => {
         return res.status(400).json({ message: 'AttendedSchool not found' })
     }
 
-    // Check for duplicate 
-    const duplicate = await AttendedSchool.findOne({ attendedSchoolubject }).lean().exec()
 
-    // Allow updates to the original user 
-    if (duplicate && duplicate?._id.toString() !== id) {
-        return res.status(409).json({ message: 'Duplicate attendedSchool' })
-    }
-
-    attendedSchool.attendedSchoolCreationDate = attendedSchoolCreationDate//it will only allow updating properties that are already existant in the model
-    attendedSchool.attendedSchoolPriority = attendedSchoolPriority
-    attendedSchool.attendedSchoolubject = attendedSchoolubject
-    attendedSchool.attendedSchoolDescription = attendedSchoolDescription
-    attendedSchool.attendedSchoolCreator = attendedSchoolCreator
-    attendedSchool.attendedSchoolReference = attendedSchoolReference
-    attendedSchool.attendedSchoolDueDate = attendedSchoolDueDate
-    attendedSchool.attendedSchoolResponsible = attendedSchoolResponsible
-    attendedSchool.attendedSchoolAction = attendedSchoolAction
-    attendedSchool.attendedSchooltate = attendedSchooltate
-    attendedSchool.attendedSchoolCompletionDate = attendedSchoolCompletionDate
-    attendedSchool.lastModified = lastModified
-    attendedSchool.attendedSchoolYear = attendedSchoolYear
-    
+    attendedSchool.schoolName = schoolName//it will only allow updating properties that are already existant in the model
+    attendedSchool.schoolCity = schoolCity
+    attendedSchool.schoolType = schoolType    
     
     const updatedAttendedSchool = await attendedSchool.save()//save method received when we did not include lean
 
-    res.json({ message: `attendedSchool: ${updatedAttendedSchool.attendedSchoolubject}, updated` })
+    res.json({ message: `attendedSchool: ${updatedAttendedSchool.schoolName}, updated` })
 })
+
+
+
 //--------------------------------------------------------------------------------------1   
 // @desc Delete a student
 // @route DELETE 'students/studentsParents/students

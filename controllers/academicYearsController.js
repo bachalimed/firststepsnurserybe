@@ -117,8 +117,8 @@ const deleteAcademicYear = asyncHandler(async (req, res) => {
   }
 
   const result = await academicYear.deleteOne();
-
-  const reply = `AcademicYearname ${result.academicYearname} with ID ${result._id} deleted`;
+console.log(result, 'result')
+  const reply = `deleted ${result.deletedCount} AcademicYear: Name ${academicYear.academicYearname} with ID ${academicYear._id} `;
 
   res.json(reply);
 });
