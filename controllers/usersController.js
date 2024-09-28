@@ -29,8 +29,8 @@ const getAllUsers = asyncHandler(async (req, res) => {
 // @access Private
 const createNewUser = asyncHandler(async (req, res) => {
        
-    
-        const { userFullName, username, password, userAllowedActions,   userDob, userSex, familyId, employeeId, userIsActive, userRoles,   userAddress, userContact  } = req.body//this will come from front end we put all the fields o fthe collection here
+    const{formData}= req?.body
+        const { userFullName, username, password, userAllowedActions,   userDob, userSex, familyId, employeeId, userIsActive, userRoles,   userAddress, userContact  } = formData//this will come from front end we put all the fields o fthe collection here
 
         //console.log(userFullName, username, password, isParent, isEmployee,  userDob, userIsActive, userRoles,  userAddress, userContact )
     //Confirm data is present in the request with all required fields

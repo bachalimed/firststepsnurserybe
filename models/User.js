@@ -93,5 +93,5 @@ const userSchema = new mongoose.Schema({
       type: String,
     },
   },
-});
+}, { timestamps: true }); // This option enables createdAt and updatedAt fields
 module.exports = mongoose.model("User", userSchema, "users");
