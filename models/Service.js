@@ -6,14 +6,19 @@ function capitalizeFirstLetter(str) {
     return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
-
-
 const serviceSchema = new mongoose.Schema({
 	serviceType:{type: String, index: true, required:true, set:capitalizeFirstLetter},
-	servicePeriodicity: {type: String, index: true, required:true, set:capitalizeFirstLetter},
-	serviceYear: {type: String, index: true, required:true, set:capitalizeFirstLetter},
-	fee: {type: Number, index: true, required:true},
+	serviceYear: {type: String, index: true, required:true},
+	serviceAnchor: {
+	monthly:{type: Number, index: true},
+	weekly:{type: Number, index: true},
+	oneTimeOff:{type: Number, index: true},
+	},
+	serviceCreator: {type: mongoose.Schema.Types.ObjectId, index: true, required:true, ref:'User'},
+	serviceOperator: {type: mongoose.Schema.Types.ObjectId, index: true, required:true, ref:'User'},
+},
 	
-	
-	})
-module.exports = mongoose.model('service', serviceSchema,'services')//the thrid is the name that will be used in the mongo collection
+	 {
+		timestamps: true // Automatically create `createdAt` and `updatedAt` fields
+	  })
+module.exports = mongoose.model('Service', serviceSchema,'services')//the thrid is the name that will be used in the mongo collection

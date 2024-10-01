@@ -10,13 +10,14 @@ const studentEducationSchema = new mongoose.Schema({
     note: { type: String, index: true }
 }, { _id: false }) // Disable the creation of _id for this subdocument
 
-const studentAdmissionsSchema = new mongoose.Schema({
-    admissionYear:{type: String, index: true},
-	admission: {type: mongoose.Schema.Types.ObjectId, index: true, ref:''}
-}, { _id: false })
+// const studentAdmissionsSchema = new mongoose.Schema({
+//     admissionYear:{type: String, index: true},
+// 	admission: {type: mongoose.Schema.Types.ObjectId, index: true, ref:''}
+// }, { _id: false })
 
 const studentYearsSchema = new mongoose.Schema({
 	academicYear: {type: String, index: true},
+	admission:{type: mongoose.Schema.Types.ObjectId, index: true, ref:'Admission'}
 },{ _id: false })
 
 const studentGardienSchema= new mongoose.Schema({
@@ -39,7 +40,7 @@ const studentSchema = new mongoose.Schema({
 	studentIsActive: {type: Boolean, index: true},
 	//studentJointFamily:{type: Boolean, index: true},
 	studentGardien:[studentGardienSchema],
-	studentAdmissions:[studentAdmissionsSchema],
+	//studentAdmissions:[studentAdmissionsSchema],
 	studentYears: [studentYearsSchema],
 	studentEducation:[studentEducationSchema],		
 	lastModified:{type: Date, default: Date.now},

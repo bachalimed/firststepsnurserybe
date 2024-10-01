@@ -66,21 +66,24 @@ const getAllServices = asyncHandler(async (req, res) => {
 // @route POST '/settings/academicsSet/services/'
 // @access Private
 const createNewService = asyncHandler(async (req, res) => {
-  const { title, yearStart, yearEnd, serviceCreator } = req.body; //this will come from front end we put all the fields o fthe collection here
+ 
+  const { serviceType, serviceYear, serviceAnchor,  serviceCreator, serviceOperator } = req?.body; //this will come from front end we put all the fields o fthe collection here
+  
 
   //Confirm data is present in the request with all required fields
-  if (!title || !yearStart || !yearEnd || !serviceCreator) {
+  if (!serviceType || !serviceYear || !serviceAnchor  || !serviceCreator || !serviceOperator) {
     return res.status(400).json({ message: "All fields are required" }); //400 : bad request
   }
 
   // Check for duplicate servicename
-  const duplicate = await Service.findOne({ yearStart }).lean().exec(); //because we re receiving only one response from mongoose
+  // Check for duplicate service
+const duplicate = await Service.findOne({ serviceYear, serviceType }).lean().exec();
 
   if (duplicate) {
-    return res.status(409).json({ message: "Duplicate service" });
+    return res.status(409).json({ message: `  ${serviceType} service ${serviceYear} found ` });
   }
 
-  const serviceObject = { title, yearStart, yearEnd, serviceCreator }; //construct new service to be stored
+  const serviceObject = { serviceType, serviceYear, serviceAnchor, serviceCreator, serviceOperator }; //construct new service to be stored
 
   // Create and store new service
   const service = await Service.create(serviceObject);
@@ -89,7 +92,7 @@ const createNewService = asyncHandler(async (req, res) => {
     //if created
     res
       .status(201)
-      .json({ message: `New academic Year ${service.title} created` });
+      .json({ message: `New   ${service.serviceType} service for ${service.serviceYear} created` });
   } else {
     res.status(400).json({ message: "Invalid academic Year data received" });
   }
@@ -99,10 +102,10 @@ const createNewService = asyncHandler(async (req, res) => {
 // @route PATCH '/settings/academicsSet/services/'
 // @access Private
 const updateService = asyncHandler(async (req, res) => {
-  const { id, title, yearStart, yearEnd, serviceCreator } = req.body;
+  const { id, serviceType, serviceYear, serviceAnchor,  serviceOperator } = req.body;
 
   // Confirm data
-  if (!id || !title || !yearStart || !yearEnd || !serviceCreator) {
+  if (!id || !serviceType || !serviceYear || !serviceAnchor || !serviceOperator) {
     return res.status(400).json({ message: "All fields  are required" });
   }
 
@@ -114,18 +117,17 @@ const updateService = asyncHandler(async (req, res) => {
   }
 
   // Check for duplicate
-  const duplicate = await Service.findOne({ title }).lean().exec();
+  const duplicate = await Service.findOne({ serviceYear, serviceType }).lean().exec();
 
   // Allow updates to the original service
   if (duplicate && duplicate?._id.toString() !== id) {
     return res.status(409).json({ message: "Duplicate academic Year" });
   }
 
-  service.title = title; //it will only allow updating properties that are already existant in the model
-  service.yearStart = yearStart;
-  service.yearEnd = yearEnd;
-
-  service.serviceCreator = serviceCreator;
+  service.serviceType = serviceType; //it will only allow updating properties that are already existant in the model
+  service.serviceYear = serviceYear;
+  service.serviceAnchor = serviceAnchor;
+  service.serviceOperator = serviceOperator;
 
   const updatedService = await service.save(); //save method received when we did not include lean
 

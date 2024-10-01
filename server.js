@@ -38,6 +38,7 @@ app.use('/admin/usersManagement/newUser/', require('./routes/userRoutes'))//chec
 app.use('/students/studentsParents/families/:id', require('./routes/familyRoutes'))
 app.use('/students/studentsParents/families/', require('./routes/familyRoutes'))
 app.use('/students/studentsParents/students/', require('./routes/studentRoutes'))
+app.use('/students/admissions/admissions/', require('./routes/admissionRoutes'))
 
 app.use('/students/studentsParents/studentDocuments/', require('./routes/studentDocumentsRoutes'))
 app.use('/students/studentsParents/studentDocuments/:id/', require('./routes/studentDocumentsRoutes'))
