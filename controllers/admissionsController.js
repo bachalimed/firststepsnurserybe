@@ -29,7 +29,7 @@ const getAllAdmissions = asyncHandler(async (req, res) => {
         // Fetch admissions for the selected year
         //console.log('with yearrrrrrrrrrrrrrrrrrr select', selectedYear);
         const admissions = await Admission.find({ admissionYear: selectedYear })
-          .populate('agreedFees.service', '-serviceCreator -serviceOperator') // Exclude these fields
+          .populate('agreedServices.service', '-serviceCreator -serviceOperator') // Exclude these fields
           .populate('student', 'studentName') // Populate student name
           .lean();
   
@@ -64,29 +64,36 @@ const getAllAdmissions = asyncHandler(async (req, res) => {
 // @route POST 'admissions/admissionsParents/admissions
 // @access Private
 const createNewAdmission = asyncHandler(async (req, res) => {
-    const { admissionName, admissionDob,  admissionSex, admissionIsActive, admissionJointFamily, admissionYears, admissionGardien, admissionEducation, lastModified } = req.body//this will come from front end we put all the fields o fthe collection here
+ 
+//console.log(req.body,'request body')
+
+    const { student, admissionCreator, admissionOperator, admissionDate, admissionYear, agreedServices } = req.body//this will come from front end we put all the fields o fthe collection here
 //console.log(admissionName, admissionDob,  admissionSex, admissionIsActive, admissionYears, admissionGardien, admissionEducation, lastModified)
     //Confirm data is present in the request with all required fields
-    if (!admissionName || !admissionDob ||!admissionSex ||!admissionYears ) {
+    if ( !student || !admissionCreator || !admissionOperator || !admissionDate || !admissionYear || !agreedServices ) {
         return res.status(400).json({ message: 'All fields are required' })//400 : bad request
     }
 
     
-    // Check for duplicate username
-    const duplicate = await Admission.findOne({admissionDob}).lean().exec()//because we re receiving only one response from mongoose
+    // Check for duplicate 
+    const duplicate = await Admission.findOne({
+      student,                               // Match the same student
+      admissionYear,                         // Match the same admission year
+      //'agreedServices.service': agreedServices?.service          // Match the agreedServices.service field
+    }).lean().exec();
 
-    if (duplicate?.admissionName.lastName===admissionName.lastName &&duplicate?.admissionSex===admissionSex) {
-        return res.status(409).json({ message: ` possible duplicate admission name ${duplicate.admissionName.firstName} ${duplicate.admissionName.middleName} ${duplicate.admissionName.lastName}` })
+    if (duplicate) {
+        return res.status(409).json({ message: ` duplicate admission name for student ${duplicate.student} and service ${duplicate.agreedServices} ` })
     }
    
    
-    const admissionObject = { admissionName, admissionDob,  admissionSex, admissionIsActive, admissionJointFamily,admissionYears, admissionGardien, admissionEducation, lastModified}//construct new admission to be stored
+    const admissionObject = { student, admissionCreator, admissionOperator, admissionDate, admissionYear, agreedServices}//construct new admission to be stored
 
     // Create and store new admission 
     const admission = await Admission.create(admissionObject)
 
     if (admission) { //if created 
-        res.status(201).json({ message: `New admission ${admissionName.firstName} ${admissionName.middleName} ${admissionName.lastName} created` })
+        res.status(201).json({ message: `New admission for student ${admission?.student} and service ${admission?.agreedServices} created` })
     } else {
         res.status(400).json({ message: 'Invalid admission data received' })
     }
