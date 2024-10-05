@@ -11,7 +11,7 @@ const mongoose = require("mongoose");
 // @access Private // later we will establish authorisations
 const getAllAdmissions = asyncHandler(async (req, res) => {
   // Check if the request has selectedYear or id query parameters
-  console.log('getting', req.query)
+  console.log('getting the query', req.query)
   if (req.query.selectedYear) {
     const { selectedYear } = req.query;
 
@@ -43,7 +43,7 @@ const getAllAdmissions = asyncHandler(async (req, res) => {
   } else if (req.query.id) {
     // Fetch admission by ID
     const { id } = req.query;
-    const admission = await Admission.find({ _id: id }).lean();
+    const admission = await Admission.find({ _id: id }).populate('student').lean();
 console.log('admssion with id', admission)
     if (!admission?.length) {
       return res
