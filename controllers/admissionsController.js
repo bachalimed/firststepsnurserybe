@@ -92,12 +92,35 @@ const createNewAdmission = asyncHandler(async (req, res) => {
     // Create and store new admission 
     const admission = await Admission.create(admissionObject)
 
-    if (admission) { //if created 
-        res.status(201).json({ message: `New admission for student ${admission?.student} and service ${admission?.agreedServices} created` })
-    } else {
+    if (admission) {
+      // Find the student by _id
+      const studentToUpdateWithAdmission = await Student.findOne({ _id: student });
+  
+      if (studentToUpdateWithAdmission) {
+          // Find the year object in studentYears that matches the admissionYear
+          const studentYearToUpdate = studentToUpdateWithAdmission.studentYears.find(
+              year => year.academicYear === admission.admissionYear
+          );
+  
+          // If the year is found, add the admission key with admission._id
+          if (studentYearToUpdate) {
+              studentYearToUpdate.admission = admission._id;
+          }
+  
+          // Save the updated student document
+          await studentToUpdateWithAdmission.save();
+  
+          res.status(201).json({
+              message: `New admission for student ${admission.student} and service ${admission.agreedServices} created`
+          });
+      } else {
+          res.status(404).json({ message: 'Student not found' });
+      }
+  } else {
         res.status(400).json({ message: 'Invalid admission data received' })
     }
-})
+}
+)
 //internalcontroller :CreateNew User to be used by other controllers??
 
 
