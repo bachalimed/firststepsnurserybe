@@ -28,7 +28,7 @@ const getAllServices = asyncHandler(async (req, res) => {
   //will retrieve only the selcted year
           const services = await Service.find({ serviceYear:selectedYear }).lean()//this will not return the extra data(lean)
           
-          console.log('with year select',selectedYear, services)
+          //console.log('with year select',selectedYear, services)
           if (!services?.length) {
               return res.status(400).json({ message: 'No services found  for the selected academic year' })
           }else{
