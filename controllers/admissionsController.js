@@ -224,30 +224,38 @@ const deleteAdmission = asyncHandler(async (req, res) => {
     return res.status(400).json({ message: "Admission Id Required" });
   }
 
-  // Does the user still have assigned notes?
-  // const note = await Note.findOne({ user: id }).lean().exec()
-  // if (note) {
-  //     return res.status(400).json({ message: 'User has assigned notes' })
-  // }
 
-  // Does the user exist to delete?
+
+  // Does the admission exist to delete?
   const admissionToDelete = await Admission.findById(id).exec();
 
   if (!admissionToDelete) {
     return res.status(400).json({ message: "Admission not found" });
   }
-
+  
+  
   const result = await admissionToDelete.deleteOne();
-  console.log(result, "result");
-  const reply = `confirm:  ${result} admission ${
-    admissionToDelete.admissionName.firstName +
-    " " +
-    admissionToDelete.admissionName.middleName +
-    " " +
-    admissionToDelete.admissionName.lastName
-  }, with ID ${admissionToDelete._id} deleted`;
+  if( result.acknowledged){
+  await Student.updateMany(
+    { "studentYears.admission": id }, // Match students where an admission field in studentYears equals the id
+    { $unset: { "studentYears.$[elem].admission": "" } }, // Unset (remove) the admission field
+    {
+      arrayFilters: [
+        { "elem.admission": id }, // Filter array elements where admission equals the id
+      ],
+    }
+  );
+  const reply = `confirm: deleted ${result.deletedCount} admissions , with ID ${admissionToDelete._id} `;
 
-  res.json(reply);
+  return res.json(reply);
+}//if failed to delete admission
+const reply= `confirm: deleted ${result.deletedCount} admissions `
+return res.status(400).json(reply);
+  
+
+
+  
+  
 });
 
 module.exports = {
