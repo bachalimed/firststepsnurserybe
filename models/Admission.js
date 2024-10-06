@@ -8,6 +8,7 @@ const agreedServicesSchema= new mongoose.Schema({//fee can be changed in the mid
 	feeStartDate:{type: Date, required:true, index: true},
 	feeEndDate:{type: Date, index: true},
 	isFlagged:{type: Boolean, required:true, index:true},
+	isAuthorised:{type: Boolean, required:true, index:true},
 	authorisedBy:{type: mongoose.Schema.Types.ObjectId, index:true, ref:'User'},
 	comment:{type: String,  index:true}
 },{ _id: false })

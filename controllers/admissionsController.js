@@ -6,6 +6,9 @@ const asyncHandler = require("express-async-handler"); //instead of using try ca
 
 const mongoose = require("mongoose");
 
+
+
+
 // @desc Get all admissions
 // @route GET 'admissions/admissionsParents/admissions
 // @access Private // later we will establish authorisations
@@ -106,14 +109,28 @@ const createNewAdmission = asyncHandler(async (req, res) => {
       });
   }
 
-  const admissionObject = {
-    student,
-    admissionCreator,
-    admissionOperator,
-    admissionDate,
-    admissionYear,
-    agreedServices,
-  }; //construct new admission to be stored
+ // Modify agreedServices array to set isAuthorised: true where isFlagged is false
+ const modifiedAgreedServices = agreedServices.map(service => {
+  if (service.isFlagged === false) {
+    return { ...service, isAuthorised: true }; // Set isAuthorised to true
+  } else if(service.isFlagged === true) {
+    return { ...service, isAuthorised: false }}
+  return service;
+})
+
+//console.log(modifiedAgreedServices,'modifiedAgreedServices')
+const admissionObject = {
+  student,
+  admissionCreator,
+  admissionOperator,
+  admissionDate,
+  admissionYear,
+  agreedServices:modifiedAgreedServices,
+}; //construct new admission to be stored
+//set is authjorised for everfy isFLagged:false
+
+console.log(admissionObject.agreedServices,'modifiedAgreedServices')
+
 
   // Create and store new admission
   const admission = await Admission.create(admissionObject);
