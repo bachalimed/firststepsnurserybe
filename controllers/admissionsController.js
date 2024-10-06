@@ -11,7 +11,7 @@ const mongoose = require("mongoose");
 // @access Private // later we will establish authorisations
 const getAllAdmissions = asyncHandler(async (req, res) => {
   // Check if the request has selectedYear or id query parameters
-  console.log('getting the query', req.query)
+  //console.log('getting the query', req.query)
   if (req.query.selectedYear) {
     const { selectedYear } = req.query;
 
@@ -44,7 +44,7 @@ const getAllAdmissions = asyncHandler(async (req, res) => {
     // Fetch admission by ID
     const { id } = req.query;
     const admission = await Admission.find({ _id: id }).populate('student').lean();
-console.log('admssion with id', admission)
+//console.log('admssion with id', admission)
     if (!admission?.length) {
       return res
         .status(400)
@@ -156,62 +156,43 @@ const createNewAdmission = asyncHandler(async (req, res) => {
 // @access Private
 const updateAdmission = asyncHandler(async (req, res) => {
   const {
-    id,
-    admissionName,
-    admissionDob,
-    admissionSex,
-    admissionIsActive,
-    admissionYears,
-    admissionJointFamily,
-    admissionContact,
-    admissionGardien,
-    admissionEducation,
-    operator,
-    admissions,
+    admissionId,
+    student,
+    admissionDate,
+    admissionYear,
+    admissionOperator,
+    agreedServices,
   } = req.body;
   console.log(req.body);
   // Confirm data
-  if (!admissionName || !admissionDob || !admissionSex || !admissionYears) {
-    return res.status(400).json({ message: "All fields except required" });
+  if ( !admissionId || !student || !admissionDate || !admissionYear || !admissionOperator || !agreedServices || agreedServices?.length===0) {
+    return res.status(400).json({ message: "All fields are required" });
   }
 
   // Does the admission exist to update?
-  const admission = await Admission.findById(id).exec(); //we did not lean becausse we need the save method attached to the response
+  const admission = await Admission.findById(admissionId).exec(); //we did not lean becausse we need the save method attached to the response
 
   if (!admission) {
     return res.status(400).json({ message: "Admission not found" });
   }
 
   // Check for duplicate
-  const duplicate = await Admission.findOne({ admissionName }).lean().exec();
+  const duplicate = await Admission.findOne({ student }).lean().exec();
 
   // Allow updates to the original user
-  if (duplicate && duplicate?._id.toString() !== id) {
-    return res.status(409).json({ message: "Duplicate name" });
+  if (duplicate && duplicate?._id.toString() !== admissionId) {
+    return res.status(409).json({ message: "Duplicate Admission" });
   }
 
-  admission.admissionName = admissionName; //it will only allow updating properties that are already existant in the model
-  admission.admissionDob = admissionDob;
-  admission.admissionSex = admissionSex;
-  admission.admissionIsActive = admissionIsActive;
-  admission.admissionYears = admissionYears;
-  admission.admissionJointFamily = admissionJointFamily;
-  admission.admissionContact = admissionContact;
-  admission.admissionGardien = admissionGardien;
-  admission.admissionEducation = admissionEducation;
-  admission.operator = operator;
-  admission.admissions = admissions;
+  admission.admissionDate = admissionDate; //it will only allow updating properties that are already existant in the model
+  admission.admissionOperator = admissionOperator;
+  admission.agreedServices = agreedServices;
+
 
   const updatedAdmission = await admission.save(); //save method received when we did not include lean
 
   res.json({
-    message: `admission ${
-      updatedAdmission.admissionName.firstName +
-      " " +
-      updatedAdmission.admissionName.middleName +
-      " " +
-      updatedAdmission.admissionName.lastName
-    }, updated`,
+    message: `admission ${ updatedAdmission._id }, updated`,
   });
 });
 //--------------------------------------------------------------------------------------1

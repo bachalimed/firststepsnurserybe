@@ -43,10 +43,13 @@ const studentSchema = new mongoose.Schema({
 	//studentAdmissions:[studentAdmissionsSchema],
 	studentYears: [studentYearsSchema],
 	studentEducation:[studentEducationSchema],		
-	lastModified:{type: Date, default: Date.now},
+	
 	operator:{type: String, index: true},
 	//studentFather:{type: mongoose.Schema.Types.ObjectId, index: true, ref:'Parent'},
 	//studentMother:{type: mongoose.Schema.Types.ObjectId, index: true, ref:'Parent'}
-}
+}	,
+{
+   timestamps: true // Automatically create `createdAt` and `updatedAt` fields
+ }
 	)
 module.exports = mongoose.model('Student', studentSchema,'students')
