@@ -6,6 +6,7 @@ function capitalizeFirstLetter(str) {
 }
 const studentEducationSchema = new mongoose.Schema({
     schoolYear: { type: String, index: true },
+
     attendedSchool: { type: mongoose.Schema.Types.ObjectId, index: true, ref: 'AttendedSchool' },
     note: { type: String, index: true }
 }, { _id: false }) // Disable the creation of _id for this subdocument
@@ -17,6 +18,7 @@ const studentEducationSchema = new mongoose.Schema({
 
 const studentYearsSchema = new mongoose.Schema({
 	academicYear: {type: String, index: true},
+	grade:{type: Number, required:true, index: true},
 	admission:{type: mongoose.Schema.Types.ObjectId, index: true, ref:'Admission'}
 },{ _id: false })
 
