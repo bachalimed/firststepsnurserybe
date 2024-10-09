@@ -176,8 +176,6 @@ const getAllStudents = asyncHandler(async (req, res) => {
         ]).exec();
         
           
-          
-          
         if (!students?.length) {
           return res.status(400).json({
             message: "No students with admissions found  for the selected academic year",
@@ -187,6 +185,10 @@ const getAllStudents = asyncHandler(async (req, res) => {
           return res.json(students);
         }
       }
+      // if (req.query?.criteria === "withEducation") {//needed for new section list form////////////////////
+      //   const students = await Student.find()
+      // }
+
       //will retrieve only the selcted year
       const students = await Student.find({
         studentYears: { $elemMatch: { academicYear: selectedYear } },

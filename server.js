@@ -54,6 +54,7 @@ app.use('/settings/academicsSet/academicYears/', require('./routes/academicYearR
 app.use('/settings/academicsSet/attendedSchools/', require('./routes/attendedSchoolRoutes'))
 app.use('/settings/studentsSet/studentDocumentsLists/', require('./routes/studentDocumentsListRoutes'))
 app.use('/settings/studentsSet/services/', require('./routes/serviceRoutes'))
+app.use('/settings/academicsSet/classrooms/', require('./routes/classroomRoutes'))
 
 
 
