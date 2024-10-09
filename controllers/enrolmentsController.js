@@ -24,7 +24,7 @@ const getAllEnrolments = asyncHandler(async (req, res) => {
       return res.json(enrolments);
     } else {
       // Fetch enrolments for the selected year
-      console.log("with yearrrrrrrrrrrrrrrrrrr select", selectedYear);
+      //console.log("with yearrrrrrrrrrrrrrrrrrr select", selectedYear);
       //const enrolments = await Enrolment.find()
       // const enrolments = await Enrolment.find({ enrolmentYear: selectedYear })
       //   .populate("student", "-studentDob -studentEducation -operator -studentGardien") // Exclude these fields
@@ -33,82 +33,59 @@ const getAllEnrolments = asyncHandler(async (req, res) => {
       //   .lean();
 
       const enrolments = await Enrolment.find({ enrolmentYear: selectedYear })
-        .populate(
-          "student",
-          "-studentDob -studentEducation -operator -studentGardien"
-        )
-        .populate("service", "-serviceAnchor -serviceCreator -serviceOperator")
-        .populate({
-          path: "admission", // Populate the admission field in enrolments
-          select: "-admissionCreator -admissionOperator -student -updatedAt", // Exclude certain fields from admission
-          populate: {
-            path: "agreedServices.service", // Populate the service field within each agreedService
-            select: "-serviceAnchor -serviceCreator -serviceOperator", // Exclude fields from service
-          },
-        })
-        .lean(); // Convert Mongoose documents to plain JavaScript objects
+    .populate(
+        "student",
+        "-studentDob -studentEducation -operator -studentGardien"
+    )
+    .populate("service", "-serviceAnchor -serviceCreator -serviceOperator")
+    .populate({
+        path: "admission",
+        select: "-admissionCreator -admissionOperator -student -updatedAt",
+        populate: {
+            path: "agreedServices.service",
+            select: "-serviceAnchor -serviceCreator -serviceOperator",
+        },
+    })
+    .lean();
+
+console.log("Fetched Enrolments:", enrolments); // Debug log
 
 
 
 
+// Assuming `enrolments` is your array of enrolment objects
+const filteredEnrolments = enrolments.map(enrolment => {
+  // Filter agreedServices based on the condition
+  const filteredAgreedServices = enrolment.admission.agreedServices.filter(serviceObj => 
+      (serviceObj.service._id.toString() === enrolment.service._id.toString()
+      && serviceObj.feeMonths.includes(enrolment.enrolmentMonth))
+  );
 
-// // Now we transform agreedServices from an array to a single object// this will not work for many services that have feeend date
-// const transformedEnrolments = enrolments.map((enrolment) => {
-//   const admission = enrolment.admission;
-//   if (admission && admission.agreedServices && enrolment.service) {
-//     // Find the matching agreedService where the service IDs match
-//     const matchedService = admission.agreedServices.find(
-//       (agreedService) => agreedService.service._id.toString() === enrolment.service._id.toString()
-//     );
-
-//     // If a matching agreedService is found, replace agreedServices array with a single object
-//     if (matchedService) {
-//       admission.agreedServices = matchedService; // Now agreedServices is an object
-//     } else {
-//       // If no match is found, set agreedServices to null or an empty object
-//       admission.agreedServices = null;
-//     }
-//   }
-//   return enrolment;
-// });
-
-// Transform agreedServices from an array to a single object
-const transformedEnrolments = enrolments.map((enrolment) => {
-  const admission = enrolment.admission;
-  if (admission && admission.agreedServices && enrolment.service) {
-    // Filter matching agreedServices where service IDs match
-    const matchedServices = admission.agreedServices.filter(
-      (agreedService) =>
-        agreedService.service._id.toString() === enrolment.service._id.toString()
-    );
-
-    // Prioritize agreedService that has no feeEndDate or feeEndDate is empty string
-    const matchedService = matchedServices.find(
-      (agreedService) => !agreedService.feeEndDate || agreedService.feeEndDate === ""
-    ) || matchedServices[0]; // Fallback to the first matched service if no such service
-
-    // If a matching agreedService is found, replace agreedServices array with a single object
-    if (matchedService) {
-      admission.agreedServices = matchedService; // Now agreedServices is an object
-    } else {
-      // If no match is found, set agreedServices to null
-      admission.agreedServices = null;
-    }
-  }
-  return enrolment;
+  // Return a new enrolment object with the filtered agreedServices
+  return {
+      ...enrolment,
+      admission: {
+          ...enrolment.admission,
+          agreedServices: filteredAgreedServices[0],//we suppose we only have one match//////
+      }
+  };
 });
 
-      console.log(
-        "with yeaaaaaaaaaaaaaaaaaar select",
-        selectedYear,
-        transformedEnrolments
-      );
-      if (!transformedEnrolments?.length) {
+
+
+
+
+    //  console.log(
+    //     "with yeaaaaaaaaaaaaaaaaaar select",
+    
+    //     transformedEnrolments
+    //   );
+      if (!filteredEnrolments?.length) {
         return res.status(400).json({
           message: "No enrolments found for the selected academic year",
         });
       }
-      return res.json(transformedEnrolments);
+      return res.json(filteredEnrolments);
     }
   } else if (req.query.id) {
     // Fetch enrolment by ID
@@ -137,89 +114,94 @@ const transformedEnrolments = enrolments.map((enrolment) => {
 // @desc Create new user
 // @route POST 'enrolments/enrolmentsParents/enrolments
 // @access Private
-const createNewEnrolment = asyncHandler(async (req, res) => {
+const createNewEnrolment = asyncHandler(async (req, res) => {//generate an invoice automatically with each new enrolment
   //console.log(req.body,'request body')
 
   const {
     student,
+    admission,
     enrolmentCreator,
     enrolmentOperator,
-    enrolmentDate,
     enrolmentYear,
-    agreedServices,
-  } = req.body; //this will come from front end we put all the fields o fthe collection here
+    enrolmentMonth,
+    enrolments,
+  } = req?.body; //this will come from front end we put all the fields o fthe collection here
   //console.log(enrolmentName, enrolmentDob,  enrolmentSex, enrolmentIsActive, enrolmentYears, enrolmentGardien, enrolmentEducation, lastModified)
   //Confirm data is present in the request with all required fields
   if (
     !student ||
     !enrolmentCreator ||
     !enrolmentOperator ||
-    !enrolmentDate ||
+    !admission ||
     !enrolmentYear ||
-    !agreedServices
+    !enrolmentMonth ||
+    !Array.isArray(enrolments) ||
+    enrolments.length===0
   ) {
     return res.status(400).json({ message: "All fields are required" }); //400 : bad request
   }
 
-  // Check for duplicate
-  const duplicate = await Enrolment.findOne({
-    student, // Match the same student
-    enrolmentYear, // Match the same enrolment year
-    //'agreedServices.service': agreedServices?.service          // Match the agreedServices.service field
-  })
-    .lean()
-    .exec();
+  // Iterate through the enrolments array and process each enrolment object
+  const enrolmentPromises = enrolments.map(async (enrolment) => {
+    const { service, serviceType, servicePeriod, serviceAuthorisedFee, serviceFinalFee } = enrolment;
 
-  if (duplicate) {
-    return res.status(409).json({
-      message: ` duplicate enrolment name for student ${duplicate.student} and service ${duplicate.agreedServices} `,
-    });
-  }
-
-  const enrolmentObject = {
-    student,
-    enrolmentCreator,
-    enrolmentOperator,
-    enrolmentDate,
-    enrolmentYear,
-    agreedServices,
-  }; //construct new enrolment to be stored
-
-  // Create and store new enrolment
-  const enrolment = await Enrolment.create(enrolmentObject);
-
-  if (enrolment) {
-    // Find the student by _id
-    const studentToUpdateWithEnrolment = await Student.findOne({
-      _id: student,
+    // Check for duplicates: check if an enrolment already exists for the same student, admission, service, and servicePeriod
+    const existingEnrolment = await Enrolment.findOne({
+      student,
+      admission,
+      service,
+      serviceType,
+      enrolmentMonth,
+      enrolmentYear
     });
 
-    if (studentToUpdateWithEnrolment) {
-      // Find the year object in studentYears that matches the enrolmentYear
-      const studentYearToUpdate =
-        studentToUpdateWithEnrolment.studentYears.find(
-          (year) => year.academicYear === enrolment.enrolmentYear
-        );
-
-      // If the year is found, add the enrolment key with enrolment._id
-      if (studentYearToUpdate) {
-        studentYearToUpdate.enrolment = enrolment._id;
-      }
-
-      // Save the updated student document
-      await studentToUpdateWithEnrolment.save();
-
-      res.status(201).json({
-        message: `New enrolment for student ${enrolment.student} and service ${enrolment.agreedServices} created`,
-      });
-    } else {
-      res.status(404).json({ message: "Student not found" });
+    if (existingEnrolment) {
+      return { error: `Duplicate enrolment for service: ${serviceType} in period: ${enrolmentMonth} ${enrolmentYear}` };
     }
-  } else {
-    res.status(400).json({ message: "Invalid enrolment data received" });
+
+    // Create new enrolment object
+    const newEnrolment = new Enrolment({
+      student,
+      admission,
+      service,
+      serviceType,
+      servicePeriod,
+      serviceAuthorisedFee,
+      serviceFinalFee,
+      enrolmentYear,
+      enrolmentMonth,
+      enrolementCreator: enrolmentCreator,
+      enrolementOperator: enrolmentOperator,
+    });
+
+    // Save enrolment and handle errors
+    try {
+      const savedEnrolment = await newEnrolment.save();
+      return savedEnrolment;
+    } catch (error) {
+      return { error: `Error saving enrolment for service: ${serviceType}, Error: ${error.message}` };
+    }
+  });
+
+  // Wait for all enrolments to process
+  const savedEnrolments = await Promise.all(enrolmentPromises);
+
+  // Filter out enrolments that encountered errors and return a response
+  const errors = savedEnrolments.filter((enrolment) => enrolment.error);
+  const successfulEnrolments = savedEnrolments.filter((enrolment) => !enrolment.error);
+
+  if (errors.length > 0) {
+    return res.status(400).json({
+      message: "Some enrolments encountered errors",
+      errors,
+    });
   }
+
+  return res.status(201).json({
+    message: "Enrolments successfully created",
+    enrolments: successfulEnrolments,
+  });
 });
-//internalcontroller :CreateNew User to be used by other controllers??
 
 // @desc Update a enrolment
 // @route PATCH 'enrolments/enrolmentsParents/enrolments

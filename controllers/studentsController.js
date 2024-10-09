@@ -61,7 +61,7 @@ const getAllStudents = asyncHandler(async (req, res) => {
       }
     }
     if (selectedYear !== "1000") {
-      if (req.query?.criteria === "withAdmission") {
+      if (req.query?.criteria === "withAdmission") {//needed for new enrolment form////////////////////
         //will retrieve only the selcted year
         // const students = await Student.find({
         //     studentYears: {
@@ -72,62 +72,109 @@ const getAllStudents = asyncHandler(async (req, res) => {
         //     },
         //   }).lean(); //this will not return the extra data(lean)
         const students = await Student.aggregate([
-            // Match students with studentYears containing the selected academic year and a non-null admission
-            {
-              $match: {
-                studentYears: {
-                  $elemMatch: {
-                    academicYear: selectedYear,
-                    admission: { $exists: true, $ne: null }
-                  }
-                }
-              }
-            },
-            // Unwind the studentYears array to work with individual elements
-            { $unwind: "$studentYears" },
-            // Match only studentYears for the selected academic year
-            {
-              $match: {
-                "studentYears.academicYear": selectedYear,
-                "studentYears.admission": { $exists: true, $ne: null }
-              }
-            },
-            // Lookup (populate) the admission field in studentYears
-            {
-              $lookup: {
-                from: "admissions", // The admission collection
-                localField: "studentYears.admission",
-                foreignField: "_id",
-                as: "studentYears.admissionDetails"
-              }
-            },
-            // Unwind the admissionDetails array (because lookup returns an array)
-            { $unwind: "$studentYears.admissionDetails" },
-            // Lookup (populate) the service field inside the populated admission
-            {
-              $lookup: {
-                from: "services", // The service collection
-                localField: "studentYears.admissionDetails.agreedServices.service",
-                foreignField: "_id",
-                as: "studentYears.admissionDetails.agreedServices.serviceDetails"
-              }
-            },
-            // Replace the root document with the student object and flatten studentYears into a single object
-            {
-              $replaceRoot: {
-                newRoot: {
-                  _id: "$_id",
-                  studentName: "$studentName", // Include the studentName directly
-                  // Flatten the studentYears object
-                  academicYear: "$studentYears.academicYear",
-                  admission: "$studentYears.admission",
-                  // Add any other necessary fields from studentYears here
-                  admissionDetails: "$studentYears.admissionDetails",
+          // Match students with studentYears containing the selected academic year and a non-null admission
+          {
+            $match: {
+              studentYears: {
+                $elemMatch: {
+                  academicYear: selectedYear,
+                  admission: { $exists: true, $ne: null }
                 }
               }
             }
-          ]).exec();
-          
+          },
+          // Unwind the studentYears array to work with individual elements
+          { $unwind: "$studentYears" },
+          // Match only studentYears for the selected academic year
+          {
+            $match: {
+              "studentYears.academicYear": selectedYear,
+              "studentYears.admission": { $exists: true, $ne: null }
+            }
+          },
+          // Lookup (populate) the admission field in studentYears
+          {
+            $lookup: {
+              from: "admissions", // The admission collection
+              localField: "studentYears.admission",
+              foreignField: "_id",
+              as: "studentYears.admissionDetails"
+            }
+          },
+          // Unwind the admissionDetails array (because lookup returns an array)
+          { $unwind: "$studentYears.admissionDetails" },
+          // Unwind agreedServices so that each agreedService is treated individually
+          { $unwind: "$studentYears.admissionDetails.agreedServices" },
+          // Lookup (populate) the service field inside agreedServices
+          {
+            $lookup: {
+              from: "services", // The service collection
+              localField: "studentYears.admissionDetails.agreedServices.service",
+              foreignField: "_id",
+              as: "studentYears.admissionDetails.agreedServices.serviceDetails"
+            }
+          },
+          // Unwind the serviceDetails array (since it's an array after lookup)
+          { $unwind: "$studentYears.admissionDetails.agreedServices.serviceDetails" },
+          // Project the necessary fields, including feeValue, feePeriod, feeStartDate, feeEndDate, isFlagged, isAuthorised, comment, and serviceDetails
+          {
+            $project: {
+              _id: 1,
+              studentName: 1, // Include studentName directly
+              academicYear: "$studentYears.academicYear", // Include academicYear
+              admission: "$studentYears.admission", // Include admission ID
+              admissionDetails: {
+                admissionYear: "$studentYears.admissionDetails.admissionYear", // Admission year
+                admissionDate: "$studentYears.admissionDetails.admissionDate", // Admission date
+                // Flatten the agreedServices object and include the relevant service details
+                agreedServices: {
+                  serviceDetails: "$studentYears.admissionDetails.agreedServices.serviceDetails", // Direct reference to service details
+                  feeValue: "$studentYears.admissionDetails.agreedServices.feeValue", // Fee value
+                  feePeriod: "$studentYears.admissionDetails.agreedServices.feePeriod", // Fee period
+                  feeStartDate: "$studentYears.admissionDetails.agreedServices.feeStartDate", // Fee start date
+                  feeMonths: "$studentYears.admissionDetails.agreedServices.feeMonths", // Fee Months
+                  feeEndDate: "$studentYears.admissionDetails.agreedServices.feeEndDate", // Fee end date
+                  isFlagged: "$studentYears.admissionDetails.agreedServices.isFlagged", // Is flagged
+                  isAuthorised: "$studentYears.admissionDetails.agreedServices.isAuthorised", // Is authorised
+                  comment: "$studentYears.admissionDetails.agreedServices.comment" // Comment
+                }
+              }
+            }
+          },
+          // Group by the student ID and merge the agreedServices into an array
+          {
+            $group: {
+              _id: "$_id", // Group by student ID
+              studentName: { $first: "$studentName" }, // Keep the student's name
+              academicYear: { $first: "$academicYear" }, // Keep the academic year
+              admission: { $first: "$admission" }, // Keep the admission ID
+              admissionDetails: {
+                $first: {
+                  admissionYear: "$admissionDetails.admissionYear", // Keep the admission year
+                  admissionDate: "$admissionDetails.admissionDate", // Keep the admission date
+                }
+              },
+              agreedServices: {
+                $push: "$admissionDetails.agreedServices" // Merge all agreedServices into an array
+              }
+            }
+          },
+          // Replace the root document with the student object
+          {
+            $project: {
+              _id: 1,
+              studentName: 1,
+              academicYear: 1,
+              admission: 1,
+              admissionDetails: {
+                admissionYear: "$admissionDetails.admissionYear",
+                admissionDate: "$admissionDetails.admissionDate",
+                agreedServices: "$agreedServices" // Populate agreedServices array
+              }
+            }
+          }
+        ]).exec();
+        
           
           
           
