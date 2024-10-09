@@ -228,33 +228,31 @@ const deleteAdmission = asyncHandler(async (req, res) => {
 
   // Does the admission exist to delete?
   const admissionToDelete = await Admission.findById(id).exec();
+// Does the admission exist to delete?
+const result = await admissionToDelete.deleteOne();
+if (result.acknowledged) {
+  const studentId = admissionToDelete.student; // Directly using the known student ID
 
-  if (!admissionToDelete) {
-    return res.status(400).json({ message: "Admission not found" });
-  }
-  
-  
-  const result = await admissionToDelete.deleteOne();
-  if( result.acknowledged){
-  await Student.updateMany(
-    { "studentYears.admission": id }, // Match students where an admission field in studentYears equals the id
-    { $unset: { "studentYears.$[elem].admission": "" } }, // Unset (remove) the admission field
-    {
-      arrayFilters: [
-        { "elem.admission": id }, // Filter array elements where admission equals the id
-      ],
-    }
+  // Update the student to unset the admission field
+  const studentUpdateResult = await Student.findOneAndUpdate(
+    { _id: studentId, "studentYears.admission": admissionToDelete._id }, // Match the specific student and admission
+    { $unset: { "studentYears.$.admission": "" } }, // Unset (remove) the admission field
+    { new: true } // Return the updated document
   );
-  const reply = `confirm: deleted ${result.deletedCount} admissions , with ID ${admissionToDelete._id} `;
 
-  return res.json(reply);
-}//if failed to delete admission
-const reply= `confirm: deleted ${result.deletedCount} admissions `
+  if (studentUpdateResult) {
+    const reply = `Confirm: deleted 1 admission, with ID ${admissionToDelete._id} and updated student ${studentUpdateResult._id}`;
+    return res.json(reply);
+  } else {
+    return res.status(400).json({ message: 'Failed to update student admission.' });
+  }
+}
+
+// If failed to delete admission
+const reply = `Confirm: deleted ${result.deletedCount} admissions`;
 return res.status(400).json(reply);
-  
 
 
-  
   
 });
 
