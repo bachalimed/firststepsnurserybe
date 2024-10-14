@@ -16,9 +16,11 @@ const studentsSchema = new mongoose.Schema(
 );
 
 const gradesSchema = new mongoose.Schema(
-  {    type: String,
-      enum: ["0", "1", "2", "3", "4", "5", "6", "7"],
-  },
+  { type: String, enum: ["0", "1", "2", "3", "4", "5", "6", "7"] },
+  { _id: false }
+);
+const sectionsSchema = new mongoose.Schema(
+  { sectionName: { type: mongoose.Schema.Types.ObjectId } },
   { _id: false }
 );
 
@@ -26,8 +28,8 @@ const SessionSchema = new mongoose.Schema(
   {
     title: {
       type: String,
-      
-      set:capitalizeFirstLetter,
+
+      set: capitalizeFirstLetter,
     },
     sessionYear: {
       type: String,
@@ -42,11 +44,11 @@ const SessionSchema = new mongoose.Schema(
     },
     description: {
       type: String,
-      set:capitalizeFirstLetter,
+      set: capitalizeFirstLetter,
     },
     subject: {
       type: String,
-      set:capitalizeFirstLetter,
+      set: capitalizeFirstLetter,
     },
     startTime: {
       type: Date,
@@ -62,23 +64,22 @@ const SessionSchema = new mongoose.Schema(
     },
     site: {
       type: String,
-      set:capitalizeFirstLetter,
+      set: capitalizeFirstLetter,
     },
     location: {
       type: String,
-      set:capitalizeFirstLetter,
-      
+      set: capitalizeFirstLetter,
     },
     trip: {
       type: String,
-      set:capitalizeFirstLetter,
-      
+      set: capitalizeFirstLetter,
     },
     classroom: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Classroom",
     },
     grades: [gradesSchema],
+    sections: [sectionsSchema],
     note: {
       type: String,
     },
@@ -107,7 +108,7 @@ const SessionSchema = new mongoose.Schema(
       type: String,
       enum: ["Planned", "Executing", "Done", "Cancelled", "Postponed"],
       default: "New",
-      set:capitalizeFirstLetter,
+      set: capitalizeFirstLetter,
     },
     creator: {
       type: mongoose.Schema.Types.ObjectId, // Reference to the user who created the session
