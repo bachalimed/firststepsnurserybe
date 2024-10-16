@@ -41,6 +41,7 @@ app.use('/students/studentsParents/students/', require('./routes/studentRoutes')
 app.use('/students/admissions/admissions/', require('./routes/admissionRoutes'))
 app.use('/students/enrolments/enrolments/', require('./routes/enrolmentRoutes'))
 app.use('/academics/sessions', require('./routes/sessionRoutes'))
+app.use('/academics/sections', require('./routes/sectionRoutes'))
 
 app.use('/students/studentsParents/studentDocuments/', require('./routes/studentDocumentsRoutes'))
 app.use('/students/studentsParents/studentDocuments/:id/', require('./routes/studentDocumentsRoutes'))

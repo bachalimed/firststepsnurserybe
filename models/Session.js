@@ -34,6 +34,7 @@ const SessionSchema = new mongoose.Schema(
     sessionYear: {
       type: String,
     },
+    
     animator: {
       type: mongoose.Schema.Types.ObjectId, // Reference to the user who created the session
       ref: "User",
@@ -64,6 +65,7 @@ const SessionSchema = new mongoose.Schema(
     },
     site: {
       type: String,
+      enum: ["School", "Nursery", "Collection", 'Drop'],
       set: capitalizeFirstLetter,
     },
     location: {
@@ -104,7 +106,7 @@ const SessionSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
-    status: {
+    sessionStatus: {
       type: String,
       enum: ["Planned", "Executing", "Done", "Cancelled", "Postponed"],
       default: "New",
