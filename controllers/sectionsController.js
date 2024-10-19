@@ -40,48 +40,67 @@ const getAllSections = asyncHandler(async (req, res) => {
           },
           {
             $lookup: {
-              from: "classrooms", // Name of the Classroom collection
+              from: "classrooms", // Classroom collection
               localField: "sectionLocation", // Field from Section schema
               foreignField: "_id", // Field from Classroom schema
-              as: "classroomDetails", // Name of the new array field to add
+              as: "classroomDetails", // Populated field
             },
           },
           {
             $unwind: {
               path: "$classroomDetails",
               preserveNullAndEmptyArrays: true,
-            }, // Unwind to flatten the structure
+            },
           },
           {
-            $unwind: "$students", // Deconstruct the students array
+            $unwind: "$students", // Unwind the students array
           },
           {
             $lookup: {
-              from: "students", // Name of the students collection
-              localField: "students", // Field from Section schema
-              foreignField: "_id", // Field from Student schema
-              as: "studentDetails", // Name of the new array field to add
+              from: "students", // Students collection
+              localField: "students",
+              foreignField: "_id",
+              as: "studentDetails",
             },
           },
           {
             $unwind: {
               path: "$studentDetails",
               preserveNullAndEmptyArrays: true,
-            }, // Unwind to flatten the structure
+            },
+          },
+          // Filter studentEducation to only include the selectedYear
+          {
+            $addFields: {
+              "studentDetails.studentEducation": {
+                $filter: {
+                  input: "$studentDetails.studentEducation",
+                  as: "education",
+                  cond: { $eq: ["$$education.schoolYear", selectedYear] },
+                },
+              },
+            },
+          },
+          // Only unwind studentEducation if it has elements (i.e., non-empty)
+          {
+            $unwind: {
+              path: "$studentDetails.studentEducation",
+              preserveNullAndEmptyArrays: true,
+            },
           },
           {
             $lookup: {
-              from: "attendedschools", // Name of the AttendedSchool collection
-              localField: "studentDetails.studentEducation.attendedSchool", // Field from Student schema
-              foreignField: "_id", // Field from AttendedSchool schema
-              as: "attendedSchoolDetails", // Name of the new array field to add
+              from: "attendedSchools", // AttendedSchool collection
+              localField: "studentDetails.studentEducation.attendedSchool", // Match attendedSchool
+              foreignField: "_id",
+              as: "attendedSchoolDetails", // Populated attendedSchool details
             },
           },
           {
             $unwind: {
               path: "$attendedSchoolDetails",
               preserveNullAndEmptyArrays: true,
-            }, // Unwind to flatten the structure
+            },
           },
           {
             $project: {
@@ -97,26 +116,22 @@ const getAllSections = asyncHandler(async (req, res) => {
                 studentIsActive: "$studentDetails.studentIsActive",
                 studentSex: "$studentDetails.studentSex",
                 studentYears: {
-                  // Directly include the contents of studentYears as an object
-                  $arrayElemAt: ["$studentDetails.studentYears", 0],
+                  $arrayElemAt: ["$studentDetails.studentYears", 0], // Directly include studentYears
                 },
                 studentEducation: {
-                  // Convert the studentEducation array to an object
-                  $arrayElemAt: [
-                    {
-                      $filter: {
-                        input: "$studentDetails.studentEducation",
-                        as: "education",
-                        cond: { $eq: ["$$education.schoolYear", selectedYear] },
+                  $cond: {
+                    if: { $ne: ["$studentDetails.studentEducation", []] }, // Only include if non-empty
+                    then: {
+                      schoolYear: "$studentDetails.studentEducation.schoolYear",
+                      note: "$studentDetails.studentEducation.note",
+                      attendedSchool: {
+                        schoolName: "$attendedSchoolDetails.schoolName",
+                        schoolCity: "$attendedSchoolDetails.schoolCity",
+                        schoolType: "$attendedSchoolDetails.schoolType",
                       },
                     },
-                    0,
-                  ],
-                },
-                attendedSchool: {
-                  schoolName: "$attendedSchoolDetails.schoolName",
-                  schoolCity: "$attendedSchoolDetails.schoolCity",
-                  schoolType: "$attendedSchoolDetails.schoolType",
+                    else: null, // Set to null if no education
+                  },
                 },
               },
             },
@@ -134,14 +149,14 @@ const getAllSections = asyncHandler(async (req, res) => {
             },
           },
         ]);
-
+      
         // Check if sections were found
         if (!sections.length) {
           return res
             .status(404)
             .json({ message: "No sections found for the selected year" });
         }
-
+      
         // Return sections as JSON
         return res.json(sections);
       } catch (error) {
