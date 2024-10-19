@@ -9,7 +9,7 @@ const mongoose = require('mongoose')
 // @route GET 'desk/classroom             
 // @access Private // later we will establish authorisations
 const getAllClassrooms = asyncHandler(async (req, res) => {
-    console.log('helloooooooo')
+   // console.log('helloooooooo')
     
         // Check if an ID is passed as a query parameter
         if (req.query.id) {

@@ -11,7 +11,8 @@ const attendedSchoolSchema = new mongoose.Schema({
 	schoolName:{type: String, required:true, index: true, set: capitalizeFirstLetter}, 
 	schoolCity:{type: String, required:true, set: capitalizeFirstLetter},
 	schoolType: {type: String, required:true},
+	schoolColor:{type: String, required:true},
 }
 	)
-module.exports = mongoose.model('attendedSchool', attendedSchoolSchema,'attendedSchools')
+module.exports = mongoose.model('AttendedSchool', attendedSchoolSchema,'attendedSchools')
 

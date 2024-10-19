@@ -68,11 +68,11 @@ const getAllAttendedSchools = asyncHandler(async (req, res) => {
 // @route POST 'desk/attendedSchool
 // @access Private
 const createNewAttendedSchool = asyncHandler(async (req, res) => {
-    const { schoolName, schoolCity, schoolType } = req?.body//this will come from front end we put all the fields o fthe collection here
-console.log(schoolName, schoolCity, schoolType)
+    const { schoolName, schoolCity, schoolType, schoolColor } = req?.body//this will come from front end we put all the fields o fthe collection here
+console.log(schoolName, schoolCity, schoolType, schoolColor)
     //Confirm data is present in the request with all required fields
         
-        if ( !schoolName || !schoolCity || !schoolType) {
+        if ( !schoolName || !schoolCity || !schoolType ||!schoolColor) {
         return res.status(400).json({ message: 'All mandatory fields are required' })//400 : bad request
     }
     
@@ -84,7 +84,7 @@ console.log(schoolName, schoolCity, schoolType)
     }
   
     
-    const attendedSchoolObject = { schoolName, schoolCity, schoolType}//construct new attendedSchool to be stored
+    const attendedSchoolObject = { schoolName, schoolCity, schoolType ,schoolColor}//construct new attendedSchool to be stored
 
     // Create and store new attendedSchool 
     const attendedSchool = await AttendedSchool.create(attendedSchoolObject)
@@ -103,10 +103,10 @@ console.log(schoolName, schoolCity, schoolType)
 // @route PATCH 'desk/attendedSchool
 // @access Private
 const updateAttendedSchool = asyncHandler(async (req, res) => {
-    const { id, schoolName, schoolCity, schoolType  } = req?.body
+    const { id, schoolName, schoolCity, schoolType, schoolColor  } = req?.body
 
     // Confirm data 
-    if (!id ||!schoolName ||! schoolCity ||! schoolType ) {
+    if (!id ||!schoolName ||! schoolCity ||! schoolType || !schoolColor) {
         return res.status(400).json({ message: 'All mandatory fields required' })
     }
 
@@ -121,6 +121,7 @@ const updateAttendedSchool = asyncHandler(async (req, res) => {
     attendedSchool.schoolName = schoolName//it will only allow updating properties that are already existant in the model
     attendedSchool.schoolCity = schoolCity
     attendedSchool.schoolType = schoolType    
+    attendedSchool.schoolColor = schoolColor    
     
     const updatedAttendedSchool = await attendedSchool.save()//save method received when we did not include lean
 

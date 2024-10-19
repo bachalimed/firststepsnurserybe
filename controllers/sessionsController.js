@@ -1,5 +1,7 @@
 // const User = require('../models/User')
 const Session = require("../models/Session");
+const AttendedSchool = require("../models/AttendedSchool");
+const Classroom = require("../models/Classroom");
 //const Employee = require('../models/Employee')//we might need the employee module in this controller
 const asyncHandler = require("express-async-handler"); //instead of using try catch
 
@@ -16,7 +18,10 @@ const getAllSessions = asyncHandler(async (req, res) => {
     const { id } = req.query;
 
     // Find a single session by its ID
-    const session = await Session.findOne({ _id: id }).lean();
+    const session = await Session.findOne({ _id: id })
+      .populate("school")
+      .populate("classroom")
+      .lean();
 
     if (!session) {
       return res.status(404).json({ message: "Session not found" });
@@ -26,14 +31,26 @@ const getAllSessions = asyncHandler(async (req, res) => {
   }
 
   // If no ID is provided, fetch all sessions
-  const sessions = await Session.find().lean();
+  const sessions = await Session.find()
+    .populate("school")
+    .populate("classroom")
+    .lean();
 
   if (!sessions.length) {
     return res.status(404).json({ message: "No sessions found" });
   }
   //console.log(sessions, "sessions");
+  const formattedSessions = sessions.map((session) => {
+    if (session.classroom) {
+      session.location = session?.classroom?.classroomLabel;
+    } else if (session.school&&session.school!=="") {
+      session.location = session.school.schoolName;
+      session.color = session.school.schoolColor;
+    }
+    return session
+  });
 
-  res.json(sessions);
+  res.json(formattedSessions);
 });
 
 //----------------------------------------------------------------------------------
@@ -67,11 +84,9 @@ const createNewSession = asyncHandler(async (req, res) => {
 
   if (session) {
     //if created
-    res
-      .status(201)
-      .json({
-        message: `New session of subject: ${session.schoolName}, created`,
-      });
+    res.status(201).json({
+      message: `New session of subject: ${session.schoolName}, created`,
+    });
   } else {
     res.status(400).json({ message: "Invalid session data received" });
   }

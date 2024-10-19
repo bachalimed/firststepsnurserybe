@@ -15,5 +15,5 @@ const classroomSchema = new mongoose.Schema({
 	
 }
 	)
-module.exports = mongoose.model('classroom', classroomSchema,'classrooms')
+module.exports = mongoose.model('Classroom', classroomSchema,'classrooms')
 

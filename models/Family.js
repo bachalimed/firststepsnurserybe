@@ -11,4 +11,4 @@ const familySchema = new mongoose.Schema({
 	children:[childrenSchema],
 	
 	})
-module.exports = mongoose.model('family', familySchema,'families')//the thrid is the name that will be used in the mongo collection
+module.exports = mongoose.model('Family', familySchema,'families')//the thrid is the name that will be used in the mongo collection

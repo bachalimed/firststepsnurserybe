@@ -63,22 +63,23 @@ const SessionSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "AttendedSchool",
     },
-    site: {
-      type: String,
-      enum: ["School", "Nursery", "Collection", 'Drop'],
-      set: capitalizeFirstLetter,
+    classroom: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Classroom",
     },
+
     location: {
       type: String,
       set: capitalizeFirstLetter,
     },
+    color: {
+      type: String,
+      default:"#ff5657"
+     
+    },
     trip: {
       type: String,
       set: capitalizeFirstLetter,
-    },
-    classroom: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Classroom",
     },
     grades: [gradesSchema],
     sections: [sectionsSchema],

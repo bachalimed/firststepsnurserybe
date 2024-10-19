@@ -38,7 +38,7 @@ const studentDocumentsListSchema = new mongoose.Schema({
   documentsAcademicYear: { type: String, required: true, index: true },
 });
 module.exports = mongoose.model(
-  "studentDocumentsList",
+  "StudentDocumentsList",
   studentDocumentsListSchema,
   "studentDocumentsLists"
 );
