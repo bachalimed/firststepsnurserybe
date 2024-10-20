@@ -5,25 +5,6 @@ function capitalizeFirstLetter(str) {
   return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
-const studentsSchema = new mongoose.Schema(
-  {
-    student: {
-      type: mongoose.Schema.Types.ObjectId, // Reference to the user who created the session
-      ref: "Student",
-    },
-  },
-  { _id: false }
-);
-
-const gradesSchema = new mongoose.Schema(
-  { type: String, enum: ["0", "1", "2", "3", "4", "5", "6", "7"] },
-  { _id: false }
-);
-const sectionsSchema = new mongoose.Schema(
-  { sectionName: { type: mongoose.Schema.Types.ObjectId } },
-  { _id: false }
-);
-
 const SessionSchema = new mongoose.Schema(
   {
     title: {
@@ -34,12 +15,15 @@ const SessionSchema = new mongoose.Schema(
     sessionYear: {
       type: String,
     },
-    
+
     animator: {
-      type: mongoose.Schema.Types.ObjectId, // Reference to the user who created the session
+      type: mongoose.Schema.Types.ObjectId,
       ref: "User",
     },
-    students: [studentsSchema],
+    student: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Student",
+    },
     sessionType: {
       type: String,
     },
@@ -67,22 +51,24 @@ const SessionSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Classroom",
     },
-
+    site: { type: String,
+      required:true,
+       set: capitalizeFirstLetter ,
+       enum:["School, Nursery,Collect, Drop"]
+      },
     location: {
       type: String,
       set: capitalizeFirstLetter,
     },
     color: {
       type: String,
-      default:"#ff5657"
-     
+      default: "#ff5657",
     },
     trip: {
       type: String,
       set: capitalizeFirstLetter,
     },
-    grades: [gradesSchema],
-    sections: [sectionsSchema],
+
     note: {
       type: String,
     },

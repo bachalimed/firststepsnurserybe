@@ -43,10 +43,13 @@ const getAllSessions = asyncHandler(async (req, res) => {
   const formattedSessions = sessions.map((session) => {
     if (session.classroom) {
       session.location = session?.classroom?.classroomLabel;
-    } else if (session.school&&session.school!=="") {
+      session.site = session?.school
+    } else  {
       session.location = session.school.schoolName;
       session.color = session.school.schoolColor;
+      session.site = session?.school
     }
+    //console.log(session)
     return session
   });
 
