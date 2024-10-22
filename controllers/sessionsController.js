@@ -52,9 +52,9 @@ const getAllSessions = asyncHandler(async (req, res) => {
     //console.log(session)
     return session
   });
-
   res.json(formattedSessions);
 });
+
 
 //----------------------------------------------------------------------------------
 // @desc Create new session

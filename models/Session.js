@@ -7,11 +7,11 @@ function capitalizeFirstLetter(str) {
 
 const SessionSchema = new mongoose.Schema(
   {
-    title: {
-      type: String,
-
-      set: capitalizeFirstLetter,
-    },
+    title: { type: String,
+      required:true,
+       set: capitalizeFirstLetter ,
+       enum:["School, Nursery,Collect, Drop"]
+      },
     sessionYear: {
       type: String,
     },
@@ -54,8 +54,9 @@ const SessionSchema = new mongoose.Schema(
     site: { type: String,
       required:true,
        set: capitalizeFirstLetter ,
-       enum:["School, Nursery,Collect, Drop"]
+      
       },
+   
     location: {
       type: String,
       set: capitalizeFirstLetter,
