@@ -208,7 +208,7 @@ const getAllSections = asyncHandler(async (req, res) => {
 // @desc Create new section
 // @route POST 'desk/section
 // @access Private
-const createNewSection = asyncHandler(async (req, res) => {
+const createNewSection = asyncHandler(async (req, res) => {/////////////////new will be with no ending date
   const { schoolName, schoolCity, schoolType } = req?.body; //this will come from front end we put all the fields o fthe collection here
   console.log(schoolName, schoolCity, schoolType);
   //Confirm data is present in the request with all required fields
@@ -246,7 +246,7 @@ const createNewSection = asyncHandler(async (req, res) => {
 // @desc Update a section
 // @route PATCH 'desk/section
 // @access Private
-const updateSection = asyncHandler(async (req, res) => {
+const updateSection = asyncHandler(async (req, res) => {// set all other related sessions to ending date where you have a student from that section in any other, the latter will have an ending date
   const { id, schoolName, schoolCity, schoolType } = req?.body;
 
   // Confirm data

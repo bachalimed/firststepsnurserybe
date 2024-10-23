@@ -48,9 +48,9 @@ const SectionSchema = new mongoose.Schema(
       type: Date,
       required: true,
     },
-    sectionTo: {
+    sectionTo: {//the current section will not have an ending date
       type: Date,
-      required: true,
+      
     },
 
     sectionLocation: {

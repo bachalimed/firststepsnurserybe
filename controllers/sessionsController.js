@@ -1,5 +1,6 @@
 // const User = require('../models/User')
 const Session = require("../models/Session");
+const Section = require("../models/Section");
 const AttendedSchool = require("../models/AttendedSchool");
 const Classroom = require("../models/Classroom");
 //const Employee = require('../models/Employee')//we might need the employee module in this controller
@@ -11,10 +12,12 @@ const mongoose = require("mongoose");
 // @route GET 'desk/session
 // @access Private // later we will establish authorisations
 const getAllSessions = asyncHandler(async (req, res) => {
-  //console.log("helloooooooo");
-
+  const {criteria,selectedYear,id  }= req.query
+  
+  console.log("helloooooooo");
+  
   // Check if an ID is passed as a query parameter
-  if (req.query.id) {
+  if (id) {
     const { id } = req.query;
 
     // Find a single session by its ID
@@ -29,8 +32,84 @@ const getAllSessions = asyncHandler(async (req, res) => {
 
     return res.json(session);
   }
+  if (selectedYear && criteria) {
+    
+    if (criteria === "schools") {
+      
+      
+      console.log(selectedYear,'selected year we re here at schools')
+      //we nneed the scheduler grouoed by schools
+      // If no ID is provided, fetch all sessions
+      const sessions = await Session.find({sessionYear:selectedYear})
+        .populate("school")
+        .populate("classroom")
+        .populate ("student", "-studentDob -studentSex -studentEducation -studentYears -studentGardien -operator -updatedAt")
+        .lean();
 
-  // If no ID is provided, fetch all sessions
+      if (!sessions.length) {
+        return res.status(404).json({ message: "No sessions found" });
+      }
+      console.log(sessions, "sessions");
+      const formattedSessions = sessions.map((session) => {
+        if (session.classroom) {
+          session.location = session?.classroom?.classroomLabel;
+          session.site = session?.school;
+        } else {
+          session.location = session.school.schoolName;
+          session.color = session.school.schoolColor;
+          session.site = session?.school;
+        }
+        //console.log(session)
+        return session;
+      });
+
+
+// add each of the sections to the session, first retrive all sections for that year and with no ending date (current)
+const sections = await Section.find({
+  $and: [
+    { sectionYear: selectedYear }, // Match sectionYear with selectedYear
+    { $or: [ { endDate: { $exists: false } }, { endDate: null } ] } // Either endDate does not exist or it's null
+  ]
+})
+.select("-sectionType -operator -sectionYear -sectionLocation")
+.lean();
+console.log(sections,'sections')
+
+if (!sections){
+  return res.status(404).json({ message: "No sections found" });
+}
+//populate the section for every session!!!!!!!!!!!!!!!we need to only keep the dates we need for the section currency, we only use the last version section
+
+formattedSessions.forEach(session => {
+  // Find the section where the student's _id is in the section's students array
+  const matchingSection = sections.find(section => 
+    section.students.some(student => student.toString() === session.student._id.toString())
+  );
+  
+  // Add the matching section to the session object as a new attribute
+  if (matchingSection) {
+    session.section = matchingSection;
+  }
+});
+console.log(formattedSessions)
+
+
+
+
+
+
+
+      return res.json(formattedSessions);
+    }
+    if (criteria === "sections") {
+      console.log("code for populating sections");
+    }
+    if (criteria === "services") {
+      console.log("code for populating services");
+    }
+  }
+
+  //if no creteria is passed
   const sessions = await Session.find()
     .populate("school")
     .populate("classroom")
@@ -43,18 +122,17 @@ const getAllSessions = asyncHandler(async (req, res) => {
   const formattedSessions = sessions.map((session) => {
     if (session.classroom) {
       session.location = session?.classroom?.classroomLabel;
-      session.site = session?.school
-    } else  {
+      session.site = session?.school;
+    } else {
       session.location = session.school.schoolName;
       session.color = session.school.schoolColor;
-      session.site = session?.school
+      session.site = session?.school;
     }
     //console.log(session)
-    return session
+    return session;
   });
-  res.json(formattedSessions);
+  return res.json(formattedSessions);
 });
-
 
 //----------------------------------------------------------------------------------
 // @desc Create new session
