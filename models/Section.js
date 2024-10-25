@@ -36,6 +36,7 @@ const SectionSchema = new mongoose.Schema(
         ref: "Student",
       },
     ],
+    sectionColor:{type: String, index: true, default:'#5978ee'},
     serviceType: {
       type: String,
     },

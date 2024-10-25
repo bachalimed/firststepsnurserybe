@@ -44,8 +44,9 @@ const studentSchema = new mongoose.Schema({
 	studentGardien:[studentGardienSchema],
 	//studentAdmissions:[studentAdmissionsSchema],
 	studentYears: [studentYearsSchema],
+	studentColor:{type: String, index: true, default:'#00bdae'},
 	studentEducation:[studentEducationSchema],		
-	
+	studentSection:{type: mongoose.Schema.Types.ObjectId, index: true, ref:'Section'},
 	operator:{type: String, index: true},
 	//studentFather:{type: mongoose.Schema.Types.ObjectId, index: true, ref:'Parent'},
 	//studentMother:{type: mongoose.Schema.Types.ObjectId, index: true, ref:'Parent'}

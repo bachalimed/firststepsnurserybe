@@ -29,6 +29,26 @@ async function getStudentsNotInFamily() {
   }
 }
 
+
+
+function flattenStudentName(student) {
+  const { firstName, middleName, lastName } = student.studentName;
+const studentSectionId = student?.studentSection?._id
+  // Combine the names and capitalize each part
+  const fullName = [
+   firstName, middleName ,   lastName ]
+    .filter(Boolean) // Remove any empty strings (in case middle name is missing)
+    .join(' '); // Join all parts with a space
+
+  // Return the modified student object with the flattened name
+  return {
+    ...student,
+    studentName: fullName,
+    studentSectionId:studentSectionId
+
+  };
+  console.log(student,'student')
+}
 // @desc Get all students
 // @route GET 'students/studentsParents/students
 // @access Private // later we will establish authorisations
@@ -184,6 +204,30 @@ const getAllStudents = asyncHandler(async (req, res) => {
           //console.log('returned res', students)
           return res.json(students);
         }
+      } else if (req.query?.criteria==="withSections"){
+        const students = await Student.find(
+          { "studentYears.academicYear": selectedYear }
+        )
+        .populate('studentSection')
+        .lean();
+        if (!students?.length) {
+          return res.status(400).json({
+            message: "No students with admissions found  for the selected academic year",
+          });
+        } else {
+          //console.log('returned res', students)
+
+
+          // flatten teh students name and studentSectionID
+
+          const flattenedStudents = students.map(flattenStudentName);
+
+          console.log(flattenedStudents,'flattenedStudents')
+
+
+          return res.json(flattenedStudents);
+        }
+    
       }
       // if (req.query?.criteria === "withEducation") {//needed for new section list form////////////////////
       //   const students = await Student.find()
@@ -204,6 +248,8 @@ const getAllStudents = asyncHandler(async (req, res) => {
         res.json(students);
       }
     }
+
+ 
     //will retreive according to the id
   } else if (req.query.id) {
     const { id } = req.query;

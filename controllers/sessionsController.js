@@ -73,7 +73,7 @@ const sections = await Section.find({
 })
 .select("-sectionType -operator -sectionYear -sectionLocation")
 .lean();
-console.log(sections,'sections')
+//console.log(sections,'sections')
 
 if (!sections){
   return res.status(404).json({ message: "No sections found" });
@@ -91,15 +91,24 @@ formattedSessions.forEach(session => {
     session.section = matchingSection;
   }
 });
-console.log(formattedSessions)
+//console.log(formattedSessions)
+
+//flatten some of the data ot be used in the schefuler
+
+const flattenedSessions = formattedSessions.map(session => ({
+  ...session,
+  sessionSectionId: session.section._id,
+  sessionStudentId: session.student._id,
+  sectionName: session.section.name, // Optional: Flatten any additional fields you need
+  studentName: session.student.name, // Optional: Flatten any additional fields you need
+}));
 
 
 
 
 
 
-
-      return res.json(formattedSessions);
+      return res.json(flattenedSessions);
     }
     if (criteria === "sections") {
       console.log("code for populating sections");
