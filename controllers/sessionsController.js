@@ -37,7 +37,7 @@ const getAllSessions = asyncHandler(async (req, res) => {
     if (criteria === "schools") {
       
       
-      console.log(selectedYear,'selected year we re here at schools')
+      //console.log(selectedYear,'selected year we re here at schools')
       //we nneed the scheduler grouoed by schools
       // If no ID is provided, fetch all sessions
       const sessions = await Session.find({sessionYear:selectedYear})
@@ -49,7 +49,7 @@ const getAllSessions = asyncHandler(async (req, res) => {
       if (!sessions.length) {
         return res.status(404).json({ message: "No sessions found" });
       }
-      console.log(sessions, "sessions");
+      //console.log(sessions, "sessions");
       const formattedSessions = sessions.map((session) => {
         if (session.classroom) {
           session.location = session?.classroom?.classroomLabel;
@@ -110,8 +110,8 @@ const flattenedSessions = formattedSessions.map(session => ({
 
       return res.json(flattenedSessions);
     }
-    if (criteria === "sections") {
-      console.log("code for populating sections");
+    if (criteria === "animators") {
+      console.log("code for populating animators");
     }
     if (criteria === "services") {
       console.log("code for populating services");

@@ -10,6 +10,35 @@ const mongoose = require("mongoose");
 // @desc Get all employees, for the given year, if year is 1000 retreive all employees
 // @route GET /hr/employees
 // @access Private // later we will establish authorisations
+
+
+
+//format for the scxheduler
+const formatUsers = (users) => {
+  return users
+    .filter(user => user.userRoles.includes('Animator'))
+    .map(user => {
+      const { 
+        userFullName: { userFirstName, userMiddleName, userLastName }, 
+        employeeData: { employeeColor },
+        ...rest 
+      } = user;
+
+      const fullName = [userFirstName, userMiddleName, userLastName]
+        .filter(Boolean) // Remove any undefined or empty names
+        .join(' ');
+
+      // Remove unwanted fields
+      const { userAddress, userContact, userDob, userPhoto, userRoles, userSex, employeeData, ...filteredUser } = rest;
+
+      return {
+        ...filteredUser,
+        userFullName: fullName, // Flattened full name
+        employeeColor // Move employeeColor to the root level
+      };
+    });
+};
+
 const getAllEmployees = asyncHandler(async (req, res) => {
   if (req.query.selectedYear) {
     const { selectedYear } = req.query; //maybe replace the conditionals with the current year that we get  from middleware
@@ -61,6 +90,7 @@ const getAllEmployees = asyncHandler(async (req, res) => {
             "employeeData.employeeId": 1, // New employeeId from Employee data
             "employeeData.employeeCurrentEmployment": 1,
             "employeeData.employeeIsActive": 1,
+            "employeeData.employeeColor": 1,
             "employeeData.employeeAssessment": 1,
             "employeeData.employeeWorkHistory": 1,
             "employeeData.employeeYears": 1,
@@ -125,6 +155,7 @@ const getAllEmployees = asyncHandler(async (req, res) => {
               $first: {
                 employeeCurrentEmployment: "$employeeData.employeeCurrentEmployment",
                 employeeIsActive: "$employeeData.employeeIsActive",
+                employeeColor: "$employeeData.employeeColor",
                 employeeAssessment: "$employeeData.employeeAssessment",
                 employeeWorkHistory: "$employeeData.employeeWorkHistory",
               },
@@ -153,6 +184,7 @@ const getAllEmployees = asyncHandler(async (req, res) => {
             employeeId: 1,
             "employeeData.employeeCurrentEmployment": 1,
             "employeeData.employeeIsActive": 1,
+            "employeeData.employeeColor": 1,
             "employeeData.employeeAssessment": 1,
             "employeeData.employeeWorkHistory": 1,
             "employeeData.employeeYears": 1, // Include employeeYears inside employeeData
@@ -166,8 +198,18 @@ const getAllEmployees = asyncHandler(async (req, res) => {
           .json({ message: "No users found with the selected year." });
       }
 
+
+      if (req.query.criteria ==="Animator"){
+// flatten the name , keep only Animators and arrange for scheduler
+
+const formattedUsers = formatUsers(users);
+
+
+return res.status(200).json(formattedUsers)
+      }
+else{
       // Return the filtered users
-      res.status(200).json(users);
+      res.status(200).json(users);}
     }
   }
 });

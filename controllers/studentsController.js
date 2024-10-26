@@ -29,25 +29,21 @@ async function getStudentsNotInFamily() {
   }
 }
 
-
-
 function flattenStudentName(student) {
   const { firstName, middleName, lastName } = student.studentName;
-const studentSectionId = student?.studentSection?._id
+  const studentSectionId = student?.studentSection?._id;
   // Combine the names and capitalize each part
-  const fullName = [
-   firstName, middleName ,   lastName ]
+  const fullName = [firstName, middleName, lastName]
     .filter(Boolean) // Remove any empty strings (in case middle name is missing)
-    .join(' '); // Join all parts with a space
+    .join(" "); // Join all parts with a space
 
   // Return the modified student object with the flattened name
   return {
     ...student,
     studentName: fullName,
-    studentSectionId:studentSectionId
-
+    studentSectionId: studentSectionId,
   };
-  console.log(student,'student')
+  console.log(student, "student");
 }
 // @desc Get all students
 // @route GET 'students/studentsParents/students
@@ -81,7 +77,8 @@ const getAllStudents = asyncHandler(async (req, res) => {
       }
     }
     if (selectedYear !== "1000") {
-      if (req.query?.criteria === "withAdmission") {//needed for new enrolment form////////////////////
+      if (req.query?.criteria === "withAdmission") {
+        //needed for new enrolment form////////////////////
         //will retrieve only the selcted year
         // const students = await Student.find({
         //     studentYears: {
@@ -98,10 +95,10 @@ const getAllStudents = asyncHandler(async (req, res) => {
               studentYears: {
                 $elemMatch: {
                   academicYear: selectedYear,
-                  admission: { $exists: true, $ne: null }
-                }
-              }
-            }
+                  admission: { $exists: true, $ne: null },
+                },
+              },
+            },
           },
           // Unwind the studentYears array to work with individual elements
           { $unwind: "$studentYears" },
@@ -109,8 +106,8 @@ const getAllStudents = asyncHandler(async (req, res) => {
           {
             $match: {
               "studentYears.academicYear": selectedYear,
-              "studentYears.admission": { $exists: true, $ne: null }
-            }
+              "studentYears.admission": { $exists: true, $ne: null },
+            },
           },
           // Lookup (populate) the admission field in studentYears
           {
@@ -118,8 +115,8 @@ const getAllStudents = asyncHandler(async (req, res) => {
               from: "admissions", // The admission collection
               localField: "studentYears.admission",
               foreignField: "_id",
-              as: "studentYears.admissionDetails"
-            }
+              as: "studentYears.admissionDetails",
+            },
           },
           // Unwind the admissionDetails array (because lookup returns an array)
           { $unwind: "$studentYears.admissionDetails" },
@@ -129,13 +126,17 @@ const getAllStudents = asyncHandler(async (req, res) => {
           {
             $lookup: {
               from: "services", // The service collection
-              localField: "studentYears.admissionDetails.agreedServices.service",
+              localField:
+                "studentYears.admissionDetails.agreedServices.service",
               foreignField: "_id",
-              as: "studentYears.admissionDetails.agreedServices.serviceDetails"
-            }
+              as: "studentYears.admissionDetails.agreedServices.serviceDetails",
+            },
           },
           // Unwind the serviceDetails array (since it's an array after lookup)
-          { $unwind: "$studentYears.admissionDetails.agreedServices.serviceDetails" },
+          {
+            $unwind:
+              "$studentYears.admissionDetails.agreedServices.serviceDetails",
+          },
           // Project the necessary fields, including feeValue, feePeriod, feeStartDate, feeEndDate, isFlagged, isAuthorised, comment, and serviceDetails
           {
             $project: {
@@ -148,18 +149,27 @@ const getAllStudents = asyncHandler(async (req, res) => {
                 admissionDate: "$studentYears.admissionDetails.admissionDate", // Admission date
                 // Flatten the agreedServices object and include the relevant service details
                 agreedServices: {
-                  serviceDetails: "$studentYears.admissionDetails.agreedServices.serviceDetails", // Direct reference to service details
-                  feeValue: "$studentYears.admissionDetails.agreedServices.feeValue", // Fee value
-                  feePeriod: "$studentYears.admissionDetails.agreedServices.feePeriod", // Fee period
-                  feeStartDate: "$studentYears.admissionDetails.agreedServices.feeStartDate", // Fee start date
-                  feeMonths: "$studentYears.admissionDetails.agreedServices.feeMonths", // Fee Months
-                  feeEndDate: "$studentYears.admissionDetails.agreedServices.feeEndDate", // Fee end date
-                  isFlagged: "$studentYears.admissionDetails.agreedServices.isFlagged", // Is flagged
-                  isAuthorised: "$studentYears.admissionDetails.agreedServices.isAuthorised", // Is authorised
-                  comment: "$studentYears.admissionDetails.agreedServices.comment" // Comment
-                }
-              }
-            }
+                  serviceDetails:
+                    "$studentYears.admissionDetails.agreedServices.serviceDetails", // Direct reference to service details
+                  feeValue:
+                    "$studentYears.admissionDetails.agreedServices.feeValue", // Fee value
+                  feePeriod:
+                    "$studentYears.admissionDetails.agreedServices.feePeriod", // Fee period
+                  feeStartDate:
+                    "$studentYears.admissionDetails.agreedServices.feeStartDate", // Fee start date
+                  feeMonths:
+                    "$studentYears.admissionDetails.agreedServices.feeMonths", // Fee Months
+                  feeEndDate:
+                    "$studentYears.admissionDetails.agreedServices.feeEndDate", // Fee end date
+                  isFlagged:
+                    "$studentYears.admissionDetails.agreedServices.isFlagged", // Is flagged
+                  isAuthorised:
+                    "$studentYears.admissionDetails.agreedServices.isAuthorised", // Is authorised
+                  comment:
+                    "$studentYears.admissionDetails.agreedServices.comment", // Comment
+                },
+              },
+            },
           },
           // Group by the student ID and merge the agreedServices into an array
           {
@@ -172,12 +182,12 @@ const getAllStudents = asyncHandler(async (req, res) => {
                 $first: {
                   admissionYear: "$admissionDetails.admissionYear", // Keep the admission year
                   admissionDate: "$admissionDetails.admissionDate", // Keep the admission date
-                }
+                },
               },
               agreedServices: {
-                $push: "$admissionDetails.agreedServices" // Merge all agreedServices into an array
-              }
-            }
+                $push: "$admissionDetails.agreedServices", // Merge all agreedServices into an array
+              },
+            },
           },
           // Replace the root document with the student object
           {
@@ -189,45 +199,48 @@ const getAllStudents = asyncHandler(async (req, res) => {
               admissionDetails: {
                 admissionYear: "$admissionDetails.admissionYear",
                 admissionDate: "$admissionDetails.admissionDate",
-                agreedServices: "$agreedServices" // Populate agreedServices array
-              }
-            }
-          }
+                agreedServices: "$agreedServices", // Populate agreedServices array
+              },
+            },
+          },
         ]).exec();
-        
-          
+
         if (!students?.length) {
           return res.status(400).json({
-            message: "No students with admissions found  for the selected academic year",
+            message:
+              "No students with admissions found  for the selected academic year",
           });
         } else {
           //console.log('returned res', students)
           return res.json(students);
         }
-      } else if (req.query?.criteria==="withSections"){
-        const students = await Student.find(
-          { "studentYears.academicYear": selectedYear }
-        )
-        .populate('studentSection')
-        .lean();
+      } else if (req.query?.criteria === "withSections") {
+        console.log("with   sectionnssssssssssssssssssssssssssssssssssss");
+        const students = await Student.find({
+          "studentYears.academicYear": selectedYear,
+        })
+          .populate(
+            "studentSection")
+            .select(
+            " -operator -studentDob -studentEducation -studentGardien -studentSex -studentYears -updatedAt"
+          )
+          .lean();
         if (!students?.length) {
           return res.status(400).json({
-            message: "No students with admissions found  for the selected academic year",
+            message:
+              "No students with admissions found  for the selected academic year",
           });
         } else {
           //console.log('returned res', students)
-
 
           // flatten teh students name and studentSectionID
 
           const flattenedStudents = students.map(flattenStudentName);
 
-          console.log(flattenedStudents,'flattenedStudents')
-
+          console.log(flattenedStudents, "flattenedStudents");
 
           return res.json(flattenedStudents);
         }
-    
       }
       // if (req.query?.criteria === "withEducation") {//needed for new section list form////////////////////
       //   const students = await Student.find()
@@ -249,7 +262,6 @@ const getAllStudents = asyncHandler(async (req, res) => {
       }
     }
 
- 
     //will retreive according to the id
   } else if (req.query.id) {
     const { id } = req.query;
