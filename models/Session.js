@@ -18,7 +18,7 @@ const SessionSchema = new mongoose.Schema(
     },
     animator: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
+      ref: "Employee",
     },
     student: {
       type: mongoose.Schema.Types.ObjectId,

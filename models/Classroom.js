@@ -10,6 +10,7 @@ const classroomSchema = new mongoose.Schema({
 	//id is already assigned automatically by mongo
 	classroomNumber:{type: Number, required:true, index: true}, 
 	classroomLabel:{type: String, required:true, set: capitalizeFirstLetter},
+	classroomColor:{type: String,  default: '#ff5627'},
 	classroomCapacity:{type: Number, required:true},
 	classroomMaxCapacity:{type: Number, required:true},
 	

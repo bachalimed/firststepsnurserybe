@@ -13,6 +13,54 @@ const mongoose = require('mongoose')
 // @route GET /admin/users              ??how to modify this route to admin/users is in serve.js and userRoutes
 // @access Private // later we will establish authorisations
 const getAllUsers = asyncHandler(async (req, res) => {
+
+    
+        if (req?.query?.id) {
+            const { id } = req.query;
+        
+            // Find the user by ID and select fields to exclude
+            const user = await User.findById(id)
+                .select('-password -userAddress -userAllowedActions -userContact -userDob -userPhoto -userIsActive -userSex -username')
+                .populate({
+                    path: 'employeeId',
+                    select: '-employeeAssessment -employeeCurrentEmployment -employeeWorkHistory -employeeYears',
+                })
+                .lean();
+        
+            // If no user is found, return error
+            if (!user) {
+                return res.status(400).json({ message: 'No user found' });
+            }
+            if (!user.userRoles.includes('Animator')) return res.status(400).json({ message: 'No animators found forthe provided user ID' })
+            // Extract and flatten properties as required
+            const { 
+                userFullName: { userFirstName, userMiddleName, userLastName } = {}, 
+                employeeId, 
+                _id, 
+                //...otherUserData 
+            } = user;
+        
+            // Combine the names into a single full name
+            const fullName = [userFirstName, userMiddleName, userLastName]
+                .filter(Boolean)
+                .join(' ');
+        
+            // Build the final user object
+            const formattedUser = {
+                //...otherUserData,        // All other user properties
+                _id:_id,
+
+                userFullName: fullName,   // Flattened full name
+                employeeColor: employeeId?.employeeColor,  // employeeColor at root level
+                employeeId: employeeId?._id                // employee _id at root level
+            };
+            
+        
+            // Send the formatted response
+           return res.json(formattedUser);
+        }
+        
+    
     // Get all users from MongoDB
     const users = await User.find().select('-password').lean()//this will not return the password or other extra data(lean)
 

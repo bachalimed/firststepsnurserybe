@@ -3,10 +3,13 @@ const Session = require("../models/Session");
 const Section = require("../models/Section");
 const AttendedSchool = require("../models/AttendedSchool");
 const Classroom = require("../models/Classroom");
+const User = require("../models/User");
 //const Employee = require('../models/Employee')//we might need the employee module in this controller
 const asyncHandler = require("express-async-handler"); //instead of using try catch
 
 const mongoose = require("mongoose");
+
+
 
 // @desc Get all session
 // @route GET 'desk/session
@@ -14,24 +17,24 @@ const mongoose = require("mongoose");
 const getAllSessions = asyncHandler(async (req, res) => {
   const {criteria,selectedYear,id  }= req.query
   
-  console.log("helloooooooo");
+  //console.log("helloooooooo");
   
   // Check if an ID is passed as a query parameter
-  if (id) {
-    const { id } = req.query;
+  // if (id) {
+  //   const { id } = req.query;
 
-    // Find a single session by its ID
-    const session = await Session.findOne({ _id: id })
-      .populate("school")
-      .populate("classroom")
-      .lean();
+  //   // Find a single session by its ID
+  //   const session = await Session.findOne({ _id: id })
+  //     .populate("school")
+  //     .populate("classroom")
+  //     .lean();
 
-    if (!session) {
-      return res.status(404).json({ message: "Session not found" });
-    }
+  //   if (!session) {
+  //     return res.status(404).json({ message: "Session not found" });
+  //   }
 
-    return res.json(session);
-  }
+  //   return res.json(session);
+  // }
   if (selectedYear && criteria) {
     
     if (criteria === "schools") {
@@ -44,6 +47,7 @@ const getAllSessions = asyncHandler(async (req, res) => {
         .populate("school")
         .populate("classroom")
         .populate ("student", "-studentDob -studentSex -studentEducation -studentYears -studentGardien -operator -updatedAt")
+        .populate('animator', '-employeeAssessment -employeeCurrentEmployment -employeeIsActive -employeeWorkHistory -employeeYears ')
         .lean();
 
       if (!sessions.length) {
@@ -95,20 +99,57 @@ formattedSessions.forEach(session => {
 
 //flatten some of the data ot be used in the schefuler
 
+
+
+
 const flattenedSessions = formattedSessions.map(session => ({
   ...session,
   sessionSectionId: session.section._id,
   sessionStudentId: session.student._id,
-  sectionName: session.section.name, // Optional: Flatten any additional fields you need
-  studentName: session.student.name, // Optional: Flatten any additional fields you need
+  sectionName: session.section.name, 
+  studentName: session.student.name, 
+  employeeColor:session.animator.employeeColor,
+  animator:session.animator._id,
+  classroomColor:session?.classroom?.classroomColor,
+  classroomLabel:session?.classroom?.classroomLabel,
+  classroomNumber:session?.classroom?.classroomNumber,
+  classroom:session?.classroom?._id,
 }));
+//add user fullname for the employee
+// Define an asynchronous function to process sessions
+const addEmployeeNamesToSessions = async (flattenedSessions) => {
+  const updatedSessions = await Promise.all(
+    flattenedSessions.map(async (session) => {
+      // Find the user with the matching employeeId
+      const user = await User.findOne({ employeeId: session.animator });
 
+      // If user is found, combine first and last names into employeeFullName
+      const employeeFullName = user
+        ? `${user.userFullName.userFirstName} ${user.userFullName.userLastName}`
+        : 'Unknown';
 
+      // Return the updated session with the new employeeFullName field
+      return { ...session, employeeFullName };
+    })
+  );
 
+  return updatedSessions;
+};
+const updatedSessions = await addEmployeeNamesToSessions(flattenedSessions);
 
+//if we need only sessions for an animator
+if (id){// if the query conatains id
+  
+  console.log(updatedSessions[3].animator, id, 'updatedSessionsssssssssssssssss')
+  const sessionsForAnimator = updatedSessions.filter(session => (session.animator).toString() === id);
+  console.log(sessionsForAnimator, 'sessionsForAnimatorrrrrrrrrrrr')
+  if (sessionsForAnimator.length===0) {
+    return res.status(404).json({ message: "No sessions found for that animator" });
+  }
+  return res.json(sessionsForAnimator); 
+}
 
-
-      return res.json(flattenedSessions);
+      return res.json(updatedSessions);
     }
     if (criteria === "animators") {
       console.log("code for populating animators");
