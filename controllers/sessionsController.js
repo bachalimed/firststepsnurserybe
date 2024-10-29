@@ -9,7 +9,25 @@ const asyncHandler = require("express-async-handler"); //instead of using try ca
 
 const mongoose = require("mongoose");
 
+// Define an asynchronous function to process sessions
+const addEmployeeNamesToSessions = async (flattenedSessions) => {
+  const updatedSessions = await Promise.all(
+    flattenedSessions.map(async (session) => {
+      // Find the user with the matching employeeId
+      const user = await User.findOne({ employeeId: session.animator });
 
+      // If user is found, combine first and last names into employeeFullName
+      const employeeFullName = user
+        ? `${user.userFullName.userFirstName} ${user.userFullName.userLastName}`
+        : 'Unknown';
+
+      // Return the updated session with the new employeeFullName field
+      return { ...session, employeeFullName };
+    })
+  );
+
+  return updatedSessions;
+};
 
 // @desc Get all session
 // @route GET 'desk/session
@@ -116,33 +134,15 @@ const flattenedSessions = formattedSessions.map(session => ({
   classroom:session?.classroom?._id,
 }));
 //add user fullname for the employee
-// Define an asynchronous function to process sessions
-const addEmployeeNamesToSessions = async (flattenedSessions) => {
-  const updatedSessions = await Promise.all(
-    flattenedSessions.map(async (session) => {
-      // Find the user with the matching employeeId
-      const user = await User.findOne({ employeeId: session.animator });
 
-      // If user is found, combine first and last names into employeeFullName
-      const employeeFullName = user
-        ? `${user.userFullName.userFirstName} ${user.userFullName.userLastName}`
-        : 'Unknown';
-
-      // Return the updated session with the new employeeFullName field
-      return { ...session, employeeFullName };
-    })
-  );
-
-  return updatedSessions;
-};
 const updatedSessions = await addEmployeeNamesToSessions(flattenedSessions);
 
 //if we need only sessions for an animator
 if (id){// if the query conatains id
   
-  console.log(updatedSessions[3].animator, id, 'updatedSessionsssssssssssssssss')
+  //console.log(updatedSessions[3].animator, id, 'updatedSessionsssssssssssssssss')
   const sessionsForAnimator = updatedSessions.filter(session => (session.animator).toString() === id);
-  console.log(sessionsForAnimator, 'sessionsForAnimatorrrrrrrrrrrr')
+  //console.log(sessionsForAnimator, 'sessionsForAnimatorrrrrrrrrrrr')
   if (sessionsForAnimator.length===0) {
     return res.status(404).json({ message: "No sessions found for that animator" });
   }

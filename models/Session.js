@@ -9,6 +9,12 @@ const SessionSchema = new mongoose.Schema(
   {
     title: {
       type: String,
+     // required: true,
+      set: capitalizeFirstLetter,
+     // enum: ["School, Nursery,Collect, Drop"],
+    },
+    sessionType: {
+      type: String,
       required: true,
       set: capitalizeFirstLetter,
       enum: ["School, Nursery,Collect, Drop"],
@@ -24,9 +30,7 @@ const SessionSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Student",
     },
-    sessionType: {
-      type: String,
-    },
+   
     description: {
       type: String,
       set: capitalizeFirstLetter,
@@ -61,18 +65,15 @@ const SessionSchema = new mongoose.Schema(
       type: String,
       default: "#ff5657",
     },
-    trip: {
-      type: String,
-      set: capitalizeFirstLetter,
-    },
-
-    note: {
-      type: String,
-    },
+    
     recurrenceRule: {
       type: String, // Recurrence rule in iCalendar (RFC 5545) format (e.g., 'FREQ=DAILY;INTERVAL=1')
     },
-    recurrenceID: {
+    
+    RecurrenceID: {
+      type: String, // To uniquely identify recurring instances
+    },
+    FollowingID: {
       type: String, // To uniquely identify recurring instances
     },
     recurrenceException: {
@@ -85,16 +86,12 @@ const SessionSchema = new mongoose.Schema(
     isBlock: {
       type: Boolean,
       default: false,
+     
     },
     isReadonly: {
       type: Boolean,
       default: false,
-    },
-    sessionStatus: {
-      type: String,
-      enum: ["Planned", "Executing", "Done", "Cancelled", "Postponed"],
-      default: "New",
-      set: capitalizeFirstLetter,
+    
     },
     creator: {
       type: mongoose.Schema.Types.ObjectId, // Reference to the user who created the session
