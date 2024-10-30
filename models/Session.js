@@ -7,12 +7,12 @@ function capitalizeFirstLetter(str) {
 
 const SessionSchema = new mongoose.Schema(
   {
-    title: {
-      type: String,
-     // required: true,
-      set: capitalizeFirstLetter,
-     // enum: ["School, Nursery,Collect, Drop"],
-    },
+    // title: {
+    //   type: String,
+    //  // required: true,
+    //   set: capitalizeFirstLetter,
+    //  // enum: ["School, Nursery,Collect, Drop"],
+    // },
     sessionType: {
       type: String,
       required: true,
@@ -55,12 +55,12 @@ const SessionSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Classroom",
     },
-    site: { type: String, required: true, set: capitalizeFirstLetter },
+    //site: { type: String, required: true, set: capitalizeFirstLetter },
 
-    location: {
-      type: String,
-      set: capitalizeFirstLetter,
-    },
+    // location: {
+    //   type: String,
+    //   set: capitalizeFirstLetter,
+    // },
     color: {
       type: String,
       default: "#ff5657",
@@ -70,10 +70,10 @@ const SessionSchema = new mongoose.Schema(
       type: String, // Recurrence rule in iCalendar (RFC 5545) format (e.g., 'FREQ=DAILY;INTERVAL=1')
     },
     
-    RecurrenceID: {
+    recurrenceID: {
       type: String, // To uniquely identify recurring instances
     },
-    FollowingID: {
+    followingID: {
       type: String, // To uniquely identify recurring instances
     },
     recurrenceException: {
@@ -94,6 +94,10 @@ const SessionSchema = new mongoose.Schema(
     
     },
     creator: {
+      type: mongoose.Schema.Types.ObjectId, // Reference to the user who created the session
+      ref: "User",
+    },
+    operator: {
       type: mongoose.Schema.Types.ObjectId, // Reference to the user who created the session
       ref: "User",
     },
