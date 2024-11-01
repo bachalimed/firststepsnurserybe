@@ -77,10 +77,10 @@ const getAllSessions = asyncHandler(async (req, res) => {
       //console.log(sessions, "sessions");
       const formattedSessions = sessions.map((session) => {
         if (session.classroom) {
-          session.location = session?.classroom?.classroomLabel;
+          session.Location = session?.classroom?.classroomLabel;
           session.site = session?.school;
         } else {
-          session.location = session.school.schoolName;
+          session.Location = session.school.schoolName;
           session.color = session.school.schoolColor;
           session.site = session?.school;
         }
@@ -179,10 +179,10 @@ const getAllSessions = asyncHandler(async (req, res) => {
   //console.log(sessions, "sessions");
   const formattedSessions = sessions.map((session) => {
     if (session.classroom) {
-      session.location = session?.classroom?.classroomLabel;
+      session.Location = session?.classroom?.classroomLabel;
       session.site = session?.school;
     } else {
-      session.location = session.school.schoolName;
+      session.Location = session.school.schoolName;
       session.color = session.school.schoolColor;
       session.site = session?.school;
     }
@@ -201,20 +201,20 @@ const createNewSession = asyncHandler(async (req, res) => {
     sessionType,
     sessionYear,
     school,
-    subject,
+    Subject,
     classroom,
     animator,
-    description,
-    endTime,
-    startTime,
-    recurrenceRule,
-    recurrenceException,
+    Description,
+    EndTime,
+    StartTime,
+    RecurrenceRule,
+    RecurrenceException,
     student,
     RecurrenceID,
     FollowingID,
-    isAllDay,
-    isBlock,
-    isReadOnly,
+    IsAllDay,
+    IsBlock,
+    IsReadOnly,
     operator,
   } = req?.body; //this will come from front end we put all the fields o fthe collection here
 
@@ -223,29 +223,29 @@ const createNewSession = asyncHandler(async (req, res) => {
     sessionType,
     sessionYear,
     school,
-    subject,
-    startTime,
-    endTime,
+    Subject,
+    StartTime,
+    EndTime,
     student,
     operator,
     classroom,
     animator,
-    description,
-    recurrenceRule,
-    recurrenceException,
+    Description,
+    RecurrenceRule,
+    RecurrenceException,
     RecurrenceID,
     FollowingID,
-    isAllDay,
-    isBlock,
-    isReadOnly
+    IsAllDay,
+    IsBlock,
+    IsReadOnly
   );
   if (
     !sessionType ||
     !sessionYear ||
     !school ||
-    !subject ||
-    !startTime ||
-    !endTime ||
+    !Subject ||
+    !StartTime ||
+    !EndTime ||
     !student ||
     !operator ||
     (school === "6714e7abe2df335eecd87750" && !animator) ||
@@ -262,38 +262,36 @@ const createNewSession = asyncHandler(async (req, res) => {
     school,
     sessionType,
     student,
-    startTime,
-    endTime,
+    StartTime,
+    EndTime,
   })
     .lean()
     .exec(); //because we re receiving only one response from mongoose
 
   if (duplicate) {
-    return res
-      .status(409)
-      .json({
-        message: `Duplicate session on: ${duplicate.startTime} - ${duplicate.endTime}, found`,
-      });
+    return res.status(409).json({
+      message: `Duplicate session on: ${duplicate.StartTime} - ${duplicate.EndTime}, found`,
+    });
   }
 
   const sessionObject = {
     sessionType,
     sessionYear,
     school,
-    subject,
+    Subject,
     classroom,
     animator,
-    description,
-    endTime,
-    startTime,
-    recurrenceRule,
-    recurrenceException,
+    Description,
+    EndTime,
+    StartTime,
+    RecurrenceRule,
+    RecurrenceException,
     student,
     RecurrenceID,
     FollowingID,
-    isAllDay,
-    isBlock,
-    isReadOnly,
+    IsAllDay,
+    IsBlock,
+    IsReadOnly,
     operator,
     creator: operator,
   }; //construct new session to be stored
@@ -311,7 +309,7 @@ const createNewSession = asyncHandler(async (req, res) => {
     //   });
     // }
     return res.status(201).json({
-      message: `New session  on: ${session.startTime} - ${session.endTime}, created`,
+      message: `New session  on: ${session.StartTime} - ${session.EndTime}, created`,
     });
   } else {
     res.status(400).json({ message: "Invalid session data received" });
@@ -322,10 +320,34 @@ const createNewSession = asyncHandler(async (req, res) => {
 // @route PATCH 'desk/session
 // @access Private
 const updateSession = asyncHandler(async (req, res) => {
-  const { id, schoolName, schoolCity, schoolType } = req?.body;
+  console.log(req.body)
+  const {
+    id,
+    extraException,
+    sessionType,
+    sessionYear,
+    animator,
+    student,
+    Description,
+    Subject,
+    StartTime,
+    EndTime,
+    school,
+    classroom,
+    RecurrenceRule,
+    RecurrenceID,
+    FollowingID,
+    RecurrenceException,
+    IsAllDay,
+    IsBlock,
+    IsReadOnly,
+    operator,
+
+    operationType,
+  } = req?.body;
 
   // Confirm data
-  if (!id || !schoolName || !schoolCity || !schoolType) {
+  if (!id) {
     return res.status(400).json({ message: "All mandatory fields required" });
   }
 
@@ -333,16 +355,109 @@ const updateSession = asyncHandler(async (req, res) => {
   const session = await Session.findById(id).exec(); //we did not lean becausse we need the save method attached to the response
 
   if (!session) {
-    return res.status(400).json({ message: "Session not found" });
+    return res.status(400).json({ message: "Session to update not found" });
   }
 
-  session.schoolName = schoolName; //it will only allow updating properties that are already existant in the model
-  session.schoolCity = schoolCity;
-  session.schoolType = schoolType;
+  switch (operationType) {
+    case "addParentWithExtraRecurrenceException": //after deletion of single event in series
+      console.log(extraException, id);
+      if (!session.RecurrenceException) {
+        session.RecurrenceException = extraException; // If empty, start with the new exception
+      } else {
+        session.RecurrenceException = `${session.RecurrenceException},${extraException}`;
+      }
 
-  const updatedSession = await session.save(); //save method received when we did not include lean
+      const updatedRecurrenceExceptionSession = await session.save(); //save method received when we did not include lean
 
-  res.json({ message: `session: ${updatedSession.schoolName}, updated` });
+      return res.json({
+        message: `session: ${updatedRecurrenceExceptionSession.StartTime} - ${updatedExceptionSession.EndTime}, updated`,
+      });
+
+    case "updateSingleEventNotInSeries": //after updating a single event NOT in series
+    console.log('we are hererrrrrrrrrrrrrre')
+
+      session.sessionType = sessionType;
+      session.sessionYear = sessionYear;
+      session.animator = animator;
+      session.student = student;
+      session.Description = Description;
+      session.Subject = Subject;
+      session.StartTime = StartTime;
+      session.EndTime = EndTime;
+      session.school = school;
+      session.classroom = classroom;
+      session.IsAllDay = IsAllDay;
+      session.IsBlock = IsBlock;
+      session.IsReadOnly = IsReadOnly;
+      session.operator = operator;
+      //session.RecurrenceID = RecurrenceID;
+      //session.FollowingID = FollowingID;
+      //session.RecurrenceRule = RecurrenceRule;
+      //session.RecurrenceException = RecurrenceException;
+
+      const updatedSessionNotInSeries = await session.save(); //save method received when we did not include lean
+
+      return res.json({
+        message: `session: ${updatedSessionNotInSeries.StartTime} - ${updatedSessionNotInSeries.EndTime}, updated`,
+      });
+    case "updateSingleEventInSeries": //after updating a single event IN series
+      session.animator = animator;
+      session.Description = Description;
+      session.Subject = Subject;
+      session.EndTime = EndTime;
+      session.StartTime = StartTime;
+      session.IsAllDay = IsAllDay;
+      session.IsBlock = IsBlock;
+      session.RecurrenceRule = RecurrenceRule;
+      session.RecurrenceException = RecurrenceException;
+      session.sessionStudentId = sessionStudentId;
+      session.student = student;
+      session.RecurrenceID = RecurrenceID;
+      session.FollowingID = FollowingID;
+      session.school = school;
+      session.classroom = classroom;
+      session.IsReadOnly = IsReadOnly;
+      session.sessionType = sessionType;
+
+      const updatedSessionInSeries = await session.save(); //save method received when we did not include lean
+      //now update the master session with the exception
+      const masterSession = Session.findOne({ _id: id });
+      if (!session.RecurrenceException) {
+        session.RecurrenceException = extraException; // If empty, start with the new exception
+      } else {
+        session.RecurrenceException = `${session.RecurrenceException},${extraException}`;
+      }
+
+      const updatedRecurrenceExceptionMasterSession = await session.save(); //save method received when we did not include lean
+
+      return res.json({
+        message: `session: ${updatedSessionInSeries.StartTime} - ${updatedSessionInSeries.EndTime}, and Master${updatedRecurrenceExceptionMasterSession.StartTime}-${updatedRecurrenceExceptionMasterSession.EndTime} updated`,
+      });
+    case "updateEntireSeries":
+      session.animator = animator;
+      session.Description = Description;
+      session.Subject = Subject;
+      session.EndTime = EndTime;
+      session.StartTime = StartTime;
+      session.IsAllDay = IsAllDay;
+      session.IsBlock = IsBlock;
+      session.RecurrenceRule = RecurrenceRule;
+      //session.RecurrenceException = RecurrenceException;
+      session.sessionStudentId = sessionStudentId;
+      session.student = student;
+      session.RecurrenceID = RecurrenceID;
+      session.FollowingID = FollowingID;
+      session.school = school;
+      session.classroom = classroom;
+      session.IsReadOnly = IsReadOnly;
+      session.sessionType = sessionType;
+
+      const updatedSessionsSeries = await session.save(); //save method received when we did not include lean
+
+      return res.json({
+        message: `session: ${updatedSessionsSeries.StartTime} - ${updatedSessionsSeries.EndTime}, updated`,
+      });
+  }
 });
 
 //--------------------------------------------------------------------------------------1
@@ -350,25 +465,24 @@ const updateSession = asyncHandler(async (req, res) => {
 // @route DELETE 'students/studentsParents/students
 // @access Private
 const deleteSession = asyncHandler(async (req, res) => {
-  const { id } = req.body;
-
+  const { id, operationType } = req.body;
   // Confirm data
   if (!id) {
     return res.status(400).json({ message: "Session ID Required" });
   }
-
   // Does the user exist to delete?
   const session = await Session.findById(id).exec();
-
   if (!session) {
     return res.status(400).json({ message: "Session not found" });
   }
-
-  const result = await session.deleteOne();
-
-  const reply = `session ${session.startTime} - ${session.endTime}, deleted`;
-
-  res.json(reply);
+  await session.deleteOne();
+  //const reply = `session ${session.StartTime} - ${session.EndTime}, deleted`;
+  if (operationType && operationType === "deleteWholeSeries") {
+    const result = await Session.deleteMany({ RecurrenceID: id });
+    return res.json({
+      message: `Deleted session with ID: ${id} and ${result.deletedCount} additional related sessions in the series `,
+    });
+  }
 });
 
 module.exports = {

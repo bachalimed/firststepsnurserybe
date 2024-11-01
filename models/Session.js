@@ -32,19 +32,19 @@ const SessionSchema = new mongoose.Schema(
       required: true,
     },
    
-    description: {
+    Description: {
       type: String,
       set: capitalizeFirstLetter,
     },
-    subject: {
+    Subject: {
       type: String,
       set: capitalizeFirstLetter,
     },
-    startTime: {
+    StartTime: {
       type: Date,
       required: true,
     },
-    endTime: {
+    EndTime: {
       type: Date,
       required: true,
     },
@@ -67,30 +67,30 @@ const SessionSchema = new mongoose.Schema(
       default: "#ff5657",
     },
     
-    recurrenceRule: {
+    RecurrenceRule: {
       type: String, // Recurrence rule in iCalendar (RFC 5545) format (e.g., 'FREQ=DAILY;INTERVAL=1')
     },
     
-    recurrenceID: {
+    RecurrenceID: {
       type: String, // To uniquely identify recurring instances
-      default: null,
+     
     },
     FollowingID: {
       type: String, // To uniquely identify recurring instances
     },
     RecurrenceException: {
-      type: [Date], // Dates to exclude from the recurrence series
+      type: String, // Dates to exclude from the recurrence series
     },
-    isAllDay: {
+    IsAllDay: {
       type: Boolean,
       default: false,
     },
-    isBlock: {
+    IsBlock: {
       type: Boolean,
       default: false,
      
     },
-    isReadonly: {
+    IsReadonly: {
       type: Boolean,
       default: false,
     
