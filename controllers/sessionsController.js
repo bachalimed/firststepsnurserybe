@@ -19,7 +19,7 @@ const addEmployeeNamesToSessions = async (flattenedSessions) => {
       // If user is found, combine first and last names into employeeFullName
       const employeeFullName = user
         ? `${user.userFullName.userFirstName} ${user.userFullName.userLastName}`
-        : 'Unknown';
+        : "Unknown";
 
       // Return the updated session with the new employeeFullName field
       return { ...session, employeeFullName };
@@ -33,10 +33,10 @@ const addEmployeeNamesToSessions = async (flattenedSessions) => {
 // @route GET 'desk/session
 // @access Private // later we will establish authorisations
 const getAllSessions = asyncHandler(async (req, res) => {
-  const {criteria,selectedYear,id  }= req.query
-  
+  const { criteria, selectedYear, id } = req.query;
+
   //console.log("helloooooooo");
-  
+
   // Check if an ID is passed as a query parameter
   // if (id) {
   //   const { id } = req.query;
@@ -54,18 +54,21 @@ const getAllSessions = asyncHandler(async (req, res) => {
   //   return res.json(session);
   // }
   if (selectedYear && criteria) {
-    
     if (criteria === "schools") {
-      
-      
       //console.log(selectedYear,'selected year we re here at schools')
       //we nneed the scheduler grouoed by schools
       // If no ID is provided, fetch all sessions
-      const sessions = await Session.find({sessionYear:selectedYear})
+      const sessions = await Session.find({ sessionYear: selectedYear })
         .populate("school")
         .populate("classroom")
-        .populate ("student", "-studentDob -studentSex -studentEducation -studentYears -studentGardien -operator -updatedAt")
-        .populate('animator', '-employeeAssessment -employeeCurrentEmployment -employeeIsActive -employeeWorkHistory -employeeYears ')
+        .populate(
+          "student",
+          "-studentDob -studentSex -studentEducation -studentYears -studentGardien -operator -updatedAt"
+        )
+        .populate(
+          "animator",
+          "-employeeAssessment -employeeCurrentEmployment -employeeIsActive -employeeWorkHistory -employeeYears "
+        )
         .lean();
 
       if (!sessions.length) {
@@ -85,69 +88,74 @@ const getAllSessions = asyncHandler(async (req, res) => {
         return session;
       });
 
+      // add each of the sections to the session, first retrive all sections for that year and with no ending date (current)
+      const sections = await Section.find({
+        $and: [
+          { sectionYear: selectedYear }, // Match sectionYear with selectedYear
+          { $or: [{ endDate: { $exists: false } }, { endDate: null }] }, // Either endDate does not exist or it's null
+        ],
+      })
+        .select("-sectionType -operator -sectionYear -sectionLocation")
+        .lean();
+      //console.log(sections,'sections')
 
-// add each of the sections to the session, first retrive all sections for that year and with no ending date (current)
-const sections = await Section.find({
-  $and: [
-    { sectionYear: selectedYear }, // Match sectionYear with selectedYear
-    { $or: [ { endDate: { $exists: false } }, { endDate: null } ] } // Either endDate does not exist or it's null
-  ]
-})
-.select("-sectionType -operator -sectionYear -sectionLocation")
-.lean();
-//console.log(sections,'sections')
+      if (!sections) {
+        return res.status(404).json({ message: "No sections found" });
+      }
+      //populate the section for every session!!!!!!!!!!!!!!!we need to only keep the dates we need for the section currency, we only use the last version section
 
-if (!sections){
-  return res.status(404).json({ message: "No sections found" });
-}
-//populate the section for every session!!!!!!!!!!!!!!!we need to only keep the dates we need for the section currency, we only use the last version section
+      formattedSessions.forEach((session) => {
+        // Find the section where the student's _id is in the section's students array
+        const matchingSection = sections.find((section) =>
+          section.students.some(
+            (student) => student.toString() === session.student._id.toString()
+          )
+        );
 
-formattedSessions.forEach(session => {
-  // Find the section where the student's _id is in the section's students array
-  const matchingSection = sections.find(section => 
-    section.students.some(student => student.toString() === session.student._id.toString())
-  );
-  
-  // Add the matching section to the session object as a new attribute
-  if (matchingSection) {
-    session.section = matchingSection;
-  }
-});
-//console.log(formattedSessions)
+        // Add the matching section to the session object as a new attribute
+        if (matchingSection) {
+          session.section = matchingSection;
+        }
+      });
+      //console.log(formattedSessions)
 
-//flatten some of the data ot be used in the schefuler
+      //flatten some of the data ot be used in the schefuler
 
+      const flattenedSessions = formattedSessions.map((session) => ({
+        ...session,
+        sessionSectionId: session.section._id,
+        sessionStudentId: session.student._id,
+        sectionName: session.section.name,
+        studentName: session.student.name,
+        employeeColor: session?.animator?.employeeColor,
+        animator: session.animator?._id,
+        classroomColor: session?.classroom?.classroomColor,
+        classroomLabel: session?.classroom?.classroomLabel,
+        classroomNumber: session?.classroom?.classroomNumber,
+        classroom: session?.classroom?._id,
+      }));
+      //add user fullname for the employee
 
+      const updatedSessions = await addEmployeeNamesToSessions(
+        flattenedSessions
+      );
 
+      //if we need only sessions for an animator
+      if (id) {
+        // if the query conatains id
 
-const flattenedSessions = formattedSessions.map(session => ({
-  ...session,
-  sessionSectionId: session.section._id,
-  sessionStudentId: session.student._id,
-  sectionName: session.section.name, 
-  studentName: session.student.name, 
-  employeeColor:session.animator.employeeColor,
-  animator:session.animator._id,
-  classroomColor:session?.classroom?.classroomColor,
-  classroomLabel:session?.classroom?.classroomLabel,
-  classroomNumber:session?.classroom?.classroomNumber,
-  classroom:session?.classroom?._id,
-}));
-//add user fullname for the employee
-
-const updatedSessions = await addEmployeeNamesToSessions(flattenedSessions);
-
-//if we need only sessions for an animator
-if (id){// if the query conatains id
-  
-  //console.log(updatedSessions[3].animator, id, 'updatedSessionsssssssssssssssss')
-  const sessionsForAnimator = updatedSessions.filter(session => (session.animator).toString() === id);
-  //console.log(sessionsForAnimator, 'sessionsForAnimatorrrrrrrrrrrr')
-  if (sessionsForAnimator.length===0) {
-    return res.status(404).json({ message: "No sessions found for that animator" });
-  }
-  return res.json(sessionsForAnimator); 
-}
+        //console.log(updatedSessions[3].animator, id, 'updatedSessionsssssssssssssssss')
+        const sessionsForAnimator = updatedSessions.filter(
+          (session) => session.animator.toString() === id
+        );
+        //console.log(sessionsForAnimator, 'sessionsForAnimatorrrrrrrrrrrr')
+        if (sessionsForAnimator.length === 0) {
+          return res
+            .status(404)
+            .json({ message: "No sessions found for that animator" });
+        }
+        return res.json(sessionsForAnimator);
+      }
 
       return res.json(updatedSessions);
     }
@@ -189,34 +197,121 @@ if (id){// if the query conatains id
 // @route POST 'desk/session
 // @access Private
 const createNewSession = asyncHandler(async (req, res) => {
-  const { schoolName, schoolCity, schoolType } = req?.body; //this will come from front end we put all the fields o fthe collection here
-  console.log(schoolName, schoolCity, schoolType);
-  //Confirm data is present in the request with all required fields
+  const {
+    sessionType,
+    sessionYear,
+    school,
+    subject,
+    classroom,
+    animator,
+    description,
+    endTime,
+    startTime,
+    recurrenceRule,
+    recurrenceException,
+    student,
+    RecurrenceID,
+    FollowingID,
+    isAllDay,
+    isBlock,
+    isReadOnly,
+    operator,
+  } = req?.body; //this will come from front end we put all the fields o fthe collection here
 
-  if (!schoolName || !schoolCity || !schoolType) {
+  //Confirm data is present in the request with all required fields
+  console.log(
+    sessionType,
+    sessionYear,
+    school,
+    subject,
+    startTime,
+    endTime,
+    student,
+    operator,
+    classroom,
+    animator,
+    description,
+    recurrenceRule,
+    recurrenceException,
+    RecurrenceID,
+    FollowingID,
+    isAllDay,
+    isBlock,
+    isReadOnly
+  );
+  if (
+    !sessionType ||
+    !sessionYear ||
+    !school ||
+    !subject ||
+    !startTime ||
+    !endTime ||
+    !student ||
+    !operator ||
+    (school === "6714e7abe2df335eecd87750" && !animator) ||
+    (school === "6714e7abe2df335eecd87750" && !classroom)
+  ) {
+    //if nursery and no animator or no classroom
     return res
       .status(400)
       .json({ message: "All mandatory fields are required" }); //400 : bad request
   }
 
   // Check for duplicate username
-  const duplicate = await Session.findOne({ schoolName }).lean().exec(); //because we re receiving only one response from mongoose
+  const duplicate = await Session.findOne({
+    school,
+    sessionType,
+    student,
+    startTime,
+    endTime,
+  })
+    .lean()
+    .exec(); //because we re receiving only one response from mongoose
 
-  if (duplicate && duplicate.schoolType == schoolType) {
+  if (duplicate) {
     return res
       .status(409)
-      .json({ message: `Duplicate session: ${duplicate.schoolName}, found` });
+      .json({
+        message: `Duplicate session on: ${duplicate.startTime} - ${duplicate.endTime}, found`,
+      });
   }
 
-  const sessionObject = { schoolName, schoolCity, schoolType }; //construct new session to be stored
+  const sessionObject = {
+    sessionType,
+    sessionYear,
+    school,
+    subject,
+    classroom,
+    animator,
+    description,
+    endTime,
+    startTime,
+    recurrenceRule,
+    recurrenceException,
+    student,
+    RecurrenceID,
+    FollowingID,
+    isAllDay,
+    isBlock,
+    isReadOnly,
+    operator,
+    creator: operator,
+  }; //construct new session to be stored
 
   // Create and store new session
   const session = await Session.create(sessionObject);
 
   if (session) {
     //if created
-    res.status(201).json({
-      message: `New session of subject: ${session.schoolName}, created`,
+    // if (session.recurrenceRule !== "") {
+    //   session.recurrenceID = session._id;
+    //   const recurrentSession = await Session.create(session);
+    //   return res.status(201).json({
+    //     message: `New session  on: ${recurrentSession.startTime} - ${recurrentSession.endTime}, created`,
+    //   });
+    // }
+    return res.status(201).json({
+      message: `New session  on: ${session.startTime} - ${session.endTime}, created`,
     });
   } else {
     res.status(400).json({ message: "Invalid session data received" });
@@ -271,7 +366,7 @@ const deleteSession = asyncHandler(async (req, res) => {
 
   const result = await session.deleteOne();
 
-  const reply = `session ${session.sessionubject}, with ID ${session._id}, deleted`;
+  const reply = `session ${session.startTime} - ${session.endTime}, deleted`;
 
   res.json(reply);
 });

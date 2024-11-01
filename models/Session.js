@@ -16,8 +16,8 @@ const SessionSchema = new mongoose.Schema(
     sessionType: {
       type: String,
       required: true,
-      set: capitalizeFirstLetter,
-      enum: ["School, Nursery,Collect, Drop"],
+      
+      enum: ["School", "Nursery","Collect", "Drop"],
     },
     sessionYear: {
       type: String,
@@ -29,6 +29,7 @@ const SessionSchema = new mongoose.Schema(
     student: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Student",
+      required: true,
     },
    
     description: {
@@ -72,11 +73,12 @@ const SessionSchema = new mongoose.Schema(
     
     recurrenceID: {
       type: String, // To uniquely identify recurring instances
+      default: null,
     },
-    followingID: {
+    FollowingID: {
       type: String, // To uniquely identify recurring instances
     },
-    recurrenceException: {
+    RecurrenceException: {
       type: [Date], // Dates to exclude from the recurrence series
     },
     isAllDay: {
@@ -100,6 +102,7 @@ const SessionSchema = new mongoose.Schema(
     operator: {
       type: mongoose.Schema.Types.ObjectId, // Reference to the user who created the session
       ref: "User",
+      required: true,
     },
     createdAt: {
       type: Date,
