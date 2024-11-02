@@ -39,6 +39,7 @@ const SessionSchema = new mongoose.Schema(
     Subject: {
       type: String,
       set: capitalizeFirstLetter,
+      required: true,
     },
     StartTime: {
       type: Date,
@@ -51,6 +52,7 @@ const SessionSchema = new mongoose.Schema(
     school: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "AttendedSchool",
+      required: true,
     },
     classroom: {
       type: mongoose.Schema.Types.ObjectId,

@@ -320,7 +320,7 @@ const createNewSession = asyncHandler(async (req, res) => {
 // @route PATCH 'desk/session
 // @access Private
 const updateSession = asyncHandler(async (req, res) => {
-  console.log(req.body)
+  console.log(req.body);
   const {
     id,
     extraException,
@@ -328,6 +328,7 @@ const updateSession = asyncHandler(async (req, res) => {
     sessionYear,
     animator,
     student,
+    sessionStudentId,
     Description,
     Subject,
     StartTime,
@@ -342,7 +343,7 @@ const updateSession = asyncHandler(async (req, res) => {
     IsBlock,
     IsReadOnly,
     operator,
-
+    color,
     operationType,
   } = req?.body;
 
@@ -359,23 +360,8 @@ const updateSession = asyncHandler(async (req, res) => {
   }
 
   switch (operationType) {
-    case "addParentWithExtraRecurrenceException": //after deletion of single event in series
-      console.log(extraException, id);
-      if (!session.RecurrenceException) {
-        session.RecurrenceException = extraException; // If empty, start with the new exception
-      } else {
-        session.RecurrenceException = `${session.RecurrenceException},${extraException}`;
-      }
-
-      const updatedRecurrenceExceptionSession = await session.save(); //save method received when we did not include lean
-
-      return res.json({
-        message: `session: ${updatedRecurrenceExceptionSession.StartTime} - ${updatedExceptionSession.EndTime}, updated`,
-      });
-
-    case "updateSingleEventNotInSeries": //after updating a single event NOT in series
-    console.log('we are hererrrrrrrrrrrrrre')
-
+    
+    case "editSession": //after updating a single event NOT in series
       session.sessionType = sessionType;
       session.sessionYear = sessionYear;
       session.animator = animator;
@@ -400,40 +386,60 @@ const updateSession = asyncHandler(async (req, res) => {
       return res.json({
         message: `session: ${updatedSessionNotInSeries.StartTime} - ${updatedSessionNotInSeries.EndTime}, updated`,
       });
-    case "updateSingleEventInSeries": //after updating a single event IN series
-      session.animator = animator;
-      session.Description = Description;
-      session.Subject = Subject;
-      session.EndTime = EndTime;
-      session.StartTime = StartTime;
-      session.IsAllDay = IsAllDay;
-      session.IsBlock = IsBlock;
-      session.RecurrenceRule = RecurrenceRule;
-      session.RecurrenceException = RecurrenceException;
-      session.sessionStudentId = sessionStudentId;
-      session.student = student;
-      session.RecurrenceID = RecurrenceID;
-      session.FollowingID = FollowingID;
-      session.school = school;
-      session.classroom = classroom;
-      session.IsReadOnly = IsReadOnly;
-      session.sessionType = sessionType;
-
-      const updatedSessionInSeries = await session.save(); //save method received when we did not include lean
-      //now update the master session with the exception
-      const masterSession = Session.findOne({ _id: id });
+    case "editOccurence": //after updating a single event IN series
+      console.log("we are hererrrrrrrrrrrrrre");
+      //update PArent with exception
       if (!session.RecurrenceException) {
         session.RecurrenceException = extraException; // If empty, start with the new exception
       } else {
-        session.RecurrenceException = `${session.RecurrenceException},${extraException}`;
+        const exceptionsArray = session.RecurrenceException.split(",");
+
+        // Check if extraException is already present in the array
+        if (!exceptionsArray.includes(extraException)) {
+          session.RecurrenceException = `${session.RecurrenceException},${extraException}`;
+        }
       }
 
-      const updatedRecurrenceExceptionMasterSession = await session.save(); //save method received when we did not include lean
+      //crete new child session
 
-      return res.json({
-        message: `session: ${updatedSessionInSeries.StartTime} - ${updatedSessionInSeries.EndTime}, and Master${updatedRecurrenceExceptionMasterSession.StartTime}-${updatedRecurrenceExceptionMasterSession.EndTime} updated`,
-      });
-    case "updateEntireSeries":
+      const newChildSession = {
+        animator: animator,
+        sessionYear: sessionYear,
+        Description: Description,
+        Subject: Subject,
+        EndTime: EndTime,
+        StartTime: StartTime,
+        IsAllDay: IsAllDay,
+        IsBlock: IsBlock,
+        operator: operator,
+        student: sessionStudentId || student._id,
+        RecurrenceID: RecurrenceID !== "" ? RecurrenceID : id, //RecurrenceID already set to parent Id earin front end
+        FollowingID: FollowingID,
+        school: school,
+        classroom: classroom,
+        IsReadOnly: IsReadOnly,
+        sessionType: sessionType,
+      };
+
+      //session.RecurrenceException = RecurrenceException;
+
+      //now  save the parent
+      const updatedMasterSessionInSeries = await session.save(); //save method received when we did not include lean
+      //save the new child
+      const newChildSessionInSeries = await Session.create(newChildSession);
+
+      if (newChildSessionInSeries && updatedMasterSessionInSeries) {
+        return res.status(201).json({
+          message: `master session: ${updatedMasterSessionInSeries.StartTime} - ${updatedMasterSessionInSeries.EndTime} created, and session${newChildSessionInSeries.StartTime}-${newChildSessionInSeries.EndTime} updated`,
+        });
+      } else {
+        return res.status(400).json({
+          message:
+            "Invalid session data received, update was not or partially done",
+        });
+      }
+
+    case "editSeries":
       session.animator = animator;
       session.Description = Description;
       session.Subject = Subject;
@@ -465,7 +471,7 @@ const updateSession = asyncHandler(async (req, res) => {
 // @route DELETE 'students/studentsParents/students
 // @access Private
 const deleteSession = asyncHandler(async (req, res) => {
-  const { id, operationType } = req.body;
+  const { id, operationType, extraException } = req.body;
   // Confirm data
   if (!id) {
     return res.status(400).json({ message: "Session ID Required" });
@@ -475,13 +481,42 @@ const deleteSession = asyncHandler(async (req, res) => {
   if (!session) {
     return res.status(400).json({ message: "Session not found" });
   }
-  await session.deleteOne();
-  //const reply = `session ${session.StartTime} - ${session.EndTime}, deleted`;
-  if (operationType && operationType === "deleteWholeSeries") {
-    const result = await Session.deleteMany({ RecurrenceID: id });
-    return res.json({
-      message: `Deleted session with ID: ${id} and ${result.deletedCount} additional related sessions in the series `,
-    });
+
+  switch (operationType) {
+    case "deleteSession": //delete single separate event
+      const ressul = await session.deleteOne();
+      res.json({
+        message: `deleted  ${ressul.deletedCount} session ${session.StartTime} - ${session.EndTime}, deleted`,
+      });
+      break;
+
+    case "deleteOccurence": //after deletion of single event in series
+      //console.log(extraException, id);
+      if (!session.RecurrenceException) {
+        session.RecurrenceException = extraException; // If empty, start with the new exception
+      } else {
+        const exceptionsArray = session.RecurrenceException.split(",");
+
+        // Check if extraException is already present in the array
+        if (!exceptionsArray.includes(extraException)) {
+          session.RecurrenceException = `${session.RecurrenceException},${extraException}`;
+        }
+      }
+      const updatedRecurrenceExceptionSession = await session.save(); //save method received when we did not include lean
+
+      res.json({
+        message: `occurence ${extraException} for Master session: ${session.StartTime} - ${session.EndTime}, deleted`,
+      });
+      break;
+
+    //const reply = `session ${session.StartTime} - ${session.EndTime}, deleted`;
+    case "deleteSeries"://delete all series even those that have been edited
+      const res1 = await session.deleteOne();
+      const result = await Session.deleteMany({ RecurrenceID: id });
+       res.json({
+        message: `Deleted ${res1.deletedCount} session with ID: ${id} and ${result.deletedCount} additional related sessions in the series `,
+      });
+      break
   }
 });
 
