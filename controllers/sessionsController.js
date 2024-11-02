@@ -29,6 +29,8 @@ const addEmployeeNamesToSessions = async (flattenedSessions) => {
   return updatedSessions;
 };
 
+
+
 // @desc Get all session
 // @route GET 'desk/session
 // @access Private // later we will establish authorisations
@@ -360,7 +362,6 @@ const updateSession = asyncHandler(async (req, res) => {
   }
 
   switch (operationType) {
-    
     case "editSession": //after updating a single event NOT in series
       session.sessionType = sessionType;
       session.sessionYear = sessionYear;
@@ -388,7 +389,7 @@ const updateSession = asyncHandler(async (req, res) => {
       });
     case "editOccurence": //after updating a single event IN series
       console.log("we are hererrrrrrrrrrrrrre");
-      //update PArent with exception
+      //update Parent with exception
       if (!session.RecurrenceException) {
         session.RecurrenceException = extraException; // If empty, start with the new exception
       } else {
@@ -439,7 +440,10 @@ const updateSession = asyncHandler(async (req, res) => {
         });
       }
 
-    case "editSeries":
+    case "editSeries": // in case we add editing of the whole series evetn altered events, we will update them,
+      // we choose to remove teh occurences recurrencIDs and remove any exception in the master, the user will manually remove any double occurence,
+
+      // check if the startTime has
       session.animator = animator;
       session.Description = Description;
       session.Subject = Subject;
@@ -448,21 +452,40 @@ const updateSession = asyncHandler(async (req, res) => {
       session.IsAllDay = IsAllDay;
       session.IsBlock = IsBlock;
       session.RecurrenceRule = RecurrenceRule;
-      //session.RecurrenceException = RecurrenceException;
-      session.sessionStudentId = sessionStudentId;
-      session.student = student;
-      session.RecurrenceID = RecurrenceID;
+      session.RecurrenceException = "";
+
+      session.student = student || sessionStudentId;
+      //session.RecurrenceID = RecurrenceID;// should not be saved becasue we are editing the master event
       session.FollowingID = FollowingID;
       session.school = school;
       session.classroom = classroom;
       session.IsReadOnly = IsReadOnly;
       session.sessionType = sessionType;
 
-      const updatedSessionsSeries = await session.save(); //save method received when we did not include lean
+      const updatedMasterSession = await session.save(); //save method received when we did not include lean
+      if (!updatedMasterSession)
+        return res.status(400).json({
+          message: "unable to update master session",
+        });
+      ///find all sessions with RecurrenceID===id to remove it
 
-      return res.json({
-        message: `session: ${updatedSessionsSeries.StartTime} - ${updatedSessionsSeries.EndTime}, updated`,
-      });
+      // Find all sessions with the given RecurrenceID
+      const sessions = await Session.find({ RecurrenceID: id });
+
+      // Update each session to set RecurrenceID to an empty string
+      if (sessions) {
+        await Session.updateMany(
+          { RecurrenceID: id },
+          { $set: { RecurrenceID: "" } }
+        );
+        return res.json({
+          message: `master session: ${updatedMasterSession.StartTime} - ${updatedMasterSession.EndTime}, and ${sessions.length} sessions updated`,
+        });
+      } else {
+        return res.status(400).json({
+          message: "unable to update occurences",
+        });
+      }
   }
 });
 
@@ -510,13 +533,13 @@ const deleteSession = asyncHandler(async (req, res) => {
       break;
 
     //const reply = `session ${session.StartTime} - ${session.EndTime}, deleted`;
-    case "deleteSeries"://delete all series even those that have been edited
+    case "deleteSeries": //delete all series even those that have been edited
       const res1 = await session.deleteOne();
       const result = await Session.deleteMany({ RecurrenceID: id });
-       res.json({
+      res.json({
         message: `Deleted ${res1.deletedCount} session with ID: ${id} and ${result.deletedCount} additional related sessions in the series `,
       });
-      break
+      break;
   }
 });
 
