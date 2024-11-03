@@ -84,10 +84,10 @@ const userSchema = new mongoose.Schema({
   },
   userContact: {
     primaryPhone: {
-      type: Number,
+      type: String,
     },
     secondaryPhone: {
-      type: Number,
+      type: String,
     },
     email: {
       type: String,

@@ -14,8 +14,8 @@ const getAllSections = asyncHandler(async (req, res) => {
   //console.log("helloooooooo");
 
   // Check if an ID is passed as a query parameter
-  if (req?.query?.id) {
-    const { id } = req.query;
+  const { id, criteria, selectedYear } = req.query;
+  if (id) {
 
     // Find a single section by its ID
     const section = await Section.findOne({ _id: id })
@@ -28,7 +28,7 @@ const getAllSections = asyncHandler(async (req, res) => {
 
     return res.json(section);
   }
-  if (req.query?.selectedYear) {
+  if (selectedYear) {
     const selectedYear = req.query?.selectedYear;
 
     if (selectedYear !== "1000") {
@@ -149,14 +149,65 @@ const getAllSections = asyncHandler(async (req, res) => {
             },
           },
         ]);
-      
+
         // Check if sections were found
         if (!sections.length) {
           return res
             .status(404)
             .json({ message: "No sections found for the selected year" });
         }
-      
+
+//rearrange for the schoolsections
+if (criteria === "forSchoolSections") {
+  //rearrange data structure for schoolsectionslist
+  // Transform data into the desired structure
+  console.log(sections,'sections')
+  let schoolIdCounter = 1; // Initialize a global counter for unique school IDs
+
+const groupedData = sections.reduce((acc, section) => {
+  section.students.forEach((student) => {
+    const schoolName = student.studentEducation.attendedSchool.schoolName;
+
+    const studentDetails = {
+      studentName: student.studentName,
+      studentSex: student.studentSex,
+      sectionLabel: section.sectionLabel,
+      sectionFrom: section.sectionFrom,
+      sectionTo: section.sectionTo,
+      classroomLabel: section.sectionLocation.classroomLabel,
+      classroomNumber: section.sectionLocation.classroomNumber,
+    };
+
+    // Check if school already exists in the accumulator
+    let schoolEntry = acc.find((school) => school.schoolName === schoolName);
+
+    if (!schoolEntry) {
+      // If school doesn't exist, create a new entry with a unique _id
+      schoolEntry = {
+        schoolName,
+        _id: schoolIdCounter.toString(), // Assign _id based on the global counter
+        students: [],
+      };
+      acc.push(schoolEntry);
+      schoolIdCounter++; // Increment the counter for the next unique school
+    }
+
+    // Add student details to the school's students array
+    schoolEntry.students.push(studentDetails);
+  });
+
+  return acc;
+}, []);
+
+  
+console.log(groupedData)
+  return res.json(groupedData);
+  
+}
+
+
+
+
         // Return sections as JSON
         return res.json(sections);
       } catch (error) {
@@ -198,6 +249,45 @@ const getAllSections = asyncHandler(async (req, res) => {
       });
       //console.log(sections, "sections");
 
+      if (criteria === "forSchoolSections") {
+        //rearrange data structure for schoolsectionslist
+        // Transform data into the desired structure
+        const groupedData = filteredSections.reduce((acc, section) => {
+          section.students.forEach((student) => {
+            const schoolName =
+              student.studentEducation.attendedSchool.schoolName;
+            const studentDetails = {
+              studentName: student.studentName,
+              studentSex: student.studentSex,
+              sectionLabel: section.sectionLabel,
+              sectionFrom: section.sectionFrom,
+              sectionTo: section.sectionTo,
+              classroomLabel: section.sectionLocation.classroomLabel,
+              classroomNumber: section.sectionLocation.classroomNumber,
+            };
+
+            // Check if school already exists in the accumulator
+            let schoolEntry = acc.find(
+              (school) => school.schoolName === schoolName
+            );
+
+            if (!schoolEntry) {
+              // If school doesn't exist, create a new entry
+              schoolEntry = { schoolName, students: [] };
+              acc.push(schoolEntry);
+            }
+
+            // Add student details to the school's students array
+            schoolEntry.students.push(studentDetails);
+          });
+
+          return acc;
+        }, []);
+
+        return res.json(groupedData);
+        console.log(groupedData);
+      }
+
       return res.json(filteredSections);
     }
   }
@@ -208,7 +298,8 @@ const getAllSections = asyncHandler(async (req, res) => {
 // @desc Create new section
 // @route POST 'desk/section
 // @access Private
-const createNewSection = asyncHandler(async (req, res) => {/////////////////new will be with no ending date
+const createNewSection = asyncHandler(async (req, res) => {
+  /////////////////new will be with no ending date
   const { schoolName, schoolCity, schoolType } = req?.body; //this will come from front end we put all the fields o fthe collection here
   console.log(schoolName, schoolCity, schoolType);
   //Confirm data is present in the request with all required fields
@@ -246,7 +337,8 @@ const createNewSection = asyncHandler(async (req, res) => {/////////////////new 
 // @desc Update a section
 // @route PATCH 'desk/section
 // @access Private
-const updateSection = asyncHandler(async (req, res) => {// set all other related sessions to ending date where you have a student from that section in any other, the latter will have an ending date
+const updateSection = asyncHandler(async (req, res) => {
+  // set all other related sessions to ending date where you have a student from that section in any other, the latter will have an ending date
   const { id, schoolName, schoolCity, schoolType } = req?.body;
 
   // Confirm data
