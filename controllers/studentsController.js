@@ -1,6 +1,9 @@
 // const User = require('../models/User')
-const Student = require("../models/Student"); //we might need the parent module in this controller
-const Family = require("../models/Family"); //we might need the parent module in this controller
+const Student = require("../models/Student");
+const Family = require("../models/Family");
+const StudentDocument = require("../models/StudentDocument");
+const path = require("path");
+const fs = require("fs");
 //const Employee = require('../models/Employee')//we might need the employee module in this controller
 const asyncHandler = require("express-async-handler"); //instead of using try catch
 const useSelectedAcademicYear = require("../middleware/setCurrentAcademicYear");
@@ -219,9 +222,8 @@ const getAllStudents = asyncHandler(async (req, res) => {
         const students = await Student.find({
           "studentYears.academicYear": selectedYear,
         })
-          .populate(
-            "studentSection")
-            .select(
+          .populate("studentSection")
+          .select(
             " -operator -studentDob -studentEducation -studentGardien -studentSex -studentYears -updatedAt"
           )
           .lean();
@@ -249,7 +251,7 @@ const getAllStudents = asyncHandler(async (req, res) => {
       //will retrieve only the selcted year
       const students = await Student.find({
         studentYears: { $elemMatch: { academicYear: selectedYear } },
-      }).lean(); //this will not return the extra data(lean)
+      }).populate("studentEducation.attendedSchool").lean(); //this will not return the extra data(lean)
       //const students = await Student.find({ studentYear: '2023/2024' }).lean()//this will not return the extra data(lean)
       //console.log('with year select',selectedYear,  students)
       if (!students?.length) {
@@ -265,8 +267,8 @@ const getAllStudents = asyncHandler(async (req, res) => {
     //will retreive according to the id
   } else if (req.query.id) {
     const { id } = req.query;
-    const student = await Student.find({ _id: id }).lean(); //this will not return the extra data(lean)//removed populate father and mother
-
+    const student = await Student.find({ _id: id }).populate("studentEducation.attendedSchool").lean(); //this will not return the extra data(lean)//removed populate father and mother
+//console.log('hereeeeeeeeeeeeeeeeeeeeeeeee')
     //console.log('with id  select')
     if (!student?.length) {
       return res
@@ -437,18 +439,45 @@ const deleteStudent = asyncHandler(async (req, res) => {
   if (!studentToDelete) {
     return res.status(400).json({ message: "Student not found" });
   }
+  //remove teh studetn documents
 
-  const result = await studentToDelete.deleteOne();
-  console.log(result, "result");
-  const reply = `confirm:  ${result} student ${
-    studentToDelete.studentName.firstName +
-    " " +
-    studentToDelete.studentName.middleName +
-    " " +
-    studentToDelete.studentName.lastName
-  }, with ID ${studentToDelete._id} deleted`;
+  // Find all documents related to the student
+  const documents = await StudentDocument.find({ studentId: id });
+  console.log(documents, "documents");
+  if (documents.length !== 0) {
+    // Delete each file associated with the documents
+    for (const doc of documents) {
+      if (doc.file && fs.existsSync(doc.file)) {
+        try {
+          console.log("Deleting file:", doc.file);
+          fs.unlinkSync(doc.file); // Delete file from the filesystem
+        } catch (fileErr) {
+          console.error("Error deleting file:", doc.file, fileErr);
+        }
+      }
+    }
+  }
+  try {
+    // Delete all documents associated with the student in the database
+    const docsDeleteResult = await StudentDocument.deleteMany({
+      studentId: id,
+    });
 
-  res.json(reply);
+    // Delete the student record itself
+    const studentDeleteResult = await studentToDelete.deleteOne();
+//now if the family has only one student, delte teh family
+
+
+
+
+    // Respond with a success message
+    res.json({
+      message: `deleted ${studentDeleteResult.deletedCount} Student: ${studentToDelete.studentName.firstName}  ${studentToDelete.studentName.middleName}  ${studentToDelete.studentName.lastName} and ${docsDeleteResult.deletedCount} associated documents`,
+    });
+  } catch (error) {
+    console.error("Error deleting student and documents:", error);
+    res.status(500).json({ message: `Internal server error:${error}` });
+  }
 });
 
 module.exports = {

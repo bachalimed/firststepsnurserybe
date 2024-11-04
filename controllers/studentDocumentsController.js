@@ -276,7 +276,7 @@ const updateStudentDocument = asyncHandler(async (req, res) => {
 // @access Private
 const deleteStudentDocument = asyncHandler(async (req, res) => {
     try {
-        const  id  = req.body.id;
+        const  {id } = req.body
         //console.log('this is teh request' , req)
        
         

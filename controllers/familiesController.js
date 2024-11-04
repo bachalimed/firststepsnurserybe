@@ -7,35 +7,6 @@ const asyncHandler = require("express-async-handler"); //instead of using try ca
 const bcrypt = require("bcrypt"); //to hash passwords before saving them
 const mongoose = require("mongoose");
 
-//will find a user for each aparent and attach parent to the user
-// const findAttachUsersToParents = async (parents) => {
-
-//     const ParentsList = []
-//     if (parents?.length) {
-//         // const users = await User.find({ isParent: { $exists: true, $ne: null } });
-//         // const users2 = await User.find({ isParent: '66be308ab56faa4450991460' });
-// // console.log('debug',users, users2);
-
-//             await Promise.all(parents.map(async (eachParent) => {
-//     //console.log('id found',eachParent._id)
-//              const user = await User.findOne({ isParent: eachParent._id })
-//             //  console.log('user found',user)
-//             if (user) {
-//                 // Attach the parent object to the user object
-//                  //await user.populate('isParent')
-//                 // console.log('user after adding parent profiel',user)
-//                 // console.log('Type of foundUsers:', typeof foundUsers)
-//                 eachParent.userProfile = user
-//             // console.log('Is array:', Array.isArray(foundUsers));
-//                   ParentsList.push(eachParent)
-//                 //console.log('usrs in controller from parents', eachParent)
-
-//             }}))
-
-//         }
-//         return ParentsList
-// }
-
 // @desc Get all parents
 // @route GET /students/studentsParents/parents
 // @access Private // later we will establish authorisations
@@ -59,7 +30,7 @@ const getAllFamilies = asyncHandler(async (req, res) => {
       )
       .lean();
 
-      console.log(families,'families retriecved')
+    console.log(families, "families retriecved");
     // families.forEach(family => {
     //     console.log('Family:', family);
     //     family.children.forEach((child, index) => {
@@ -84,28 +55,13 @@ const getAllFamilies = asyncHandler(async (req, res) => {
         )
       );
     }
-    //console.log(filteredFamilies,'filteredFamilies')
-    // const usersAndParents  = await findAttachUsersToParents(filteredFamilies)
-    // const updatedParentsArray = usersAndParents.map(family => {
-    //     if (family.userProfile.userSex === 'Male') {
-    //     // Find the partner object in the array
-    //         const partnerObject = usersAndParents.find(
-    //             p => p._id.toString() === parent.partner?.toString()
-    //         );
-
-    //         if (partnerObject) {
-    //             // Replace the partner ID with the partner object
-    //             family.partner = partnerObject;
-
-    //             return family;
-    //         }
-    //     }
-    //     return family;
-    // }).filter(family => family.userProfile.userSex !== 'Female' || !usersAndParents.some(p => p?._id?.toString() === family?.partner?._id.toString()))
+   
 
     //console.log(updatedParentsArray,'updatedParentsArray')
     if (!filteredFamilies?.length) {
-      return res.status(400).json({ message: "No families found !" });
+      return res
+        .status(400)
+        .json({ message: "No families with students found found for the selected Year !" });
     } else {
       res.json(filteredFamilies);
     }
@@ -477,47 +433,47 @@ const deleteFamily = asyncHandler(async (req, res) => {
     return res.status(400).json({ message: "family Id not provided" });
   }
 
-
   // Does the parent exist to delete?
   const family = await Family.findById(id).exec();
 
   if (!family) {
-    return res.status(400).json({ message: "Family not found for the provided id" });
+    return res
+      .status(400)
+      .json({ message: "Family not found for the provided id" });
   }
-  const {father, mother, children}=familyToDelete
+  const { father, mother, children } = familyToDelete;
   const fatherToDelete = await User.findById(father);
 
-//   if (!fatherToDelete) {
-//     return res.status(400).json({ message: "corresponding father not found" });//already not found to be deleted
-//   }
+  //   if (!fatherToDelete) {
+  //     return res.status(400).json({ message: "corresponding father not found" });//already not found to be deleted
+  //   }
   //if user is also an employee, delete only the parent collection and keep user
-  let deletedFather
-  let replyFather
+  let deletedFather;
+  let replyFather;
   if (!fatherToDelete.isEmployee) {
-     deletedFather = await fatherToDelete.deleteOne();
-     replyFather = `father ${fatherToDelete.userFullName.userFirstName} ${fatherToDelete.userFullName.userMiddleName} ${fatherToDelete.userFullName.userLastName} deleted`;
+    deletedFather = await fatherToDelete.deleteOne();
+    replyFather = `father ${fatherToDelete.userFullName.userFirstName} ${fatherToDelete.userFullName.userMiddleName} ${fatherToDelete.userFullName.userLastName} deleted`;
     //res.json(reply);
   }
-  const motherToDelete = await User.findById(mother)
-  let deletedMother
-  let replyMother
+  const motherToDelete = await User.findById(mother);
+  let deletedMother;
+  let replyMother;
   if (!motherToDelete.isEmployee) {
-     deletedMother = await motherToDelete.deleteOne();
-     replyMother = `mother ${motherToDelete.userFullName.userFirstName} ${motherToDelete.userFullName.userMiddleName} ${motherToDelete.userFullName.userLastName} deleted`;
+    deletedMother = await motherToDelete.deleteOne();
+    replyMother = `mother ${motherToDelete.userFullName.userFirstName} ${motherToDelete.userFullName.userMiddleName} ${motherToDelete.userFullName.userLastName} deleted`;
     //res.json(reply);
   }
-  const familyToDelete = await User.findById(family)
-  let deletedFamily
-  let replyFamily
-  
-     deletedFamily = await familyToDelete.deleteOne();
-     replyFamily = ` family  deleted`;
-    //res.json(reply);
-  
-    const reply = `${replyFather}, ${replyMother} ${replyFamily}`;
+  const familyToDelete = await User.findById(family);
+  let deletedFamily;
+  let replyFamily;
 
-    res.json(reply);
- 
+  deletedFamily = await familyToDelete.deleteOne();
+  replyFamily = ` family  deleted`;
+  //res.json(reply);
+
+  const reply = `${replyFather}, ${replyMother} ${replyFamily}`;
+
+  res.json(reply);
 });
 
 module.exports = {
