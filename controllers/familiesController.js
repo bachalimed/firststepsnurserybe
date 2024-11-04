@@ -16,7 +16,7 @@ const getAllFamilies = asyncHandler(async (req, res) => {
 
   if (req.query.selectedYear) {
     const { selectedYear } = req.query;
-    console.log("selectedYear in getallfamilies", selectedYear);
+    //console.log("selectedYear in getallfamilies", selectedYear);
     //retrive all families
     const families = await Family.find()
       .populate("children.child")
@@ -30,7 +30,7 @@ const getAllFamilies = asyncHandler(async (req, res) => {
       )
       .lean();
 
-    console.log(families, "families retriecved");
+    //console.log(families, "families retriecved");
     // families.forEach(family => {
     //     console.log('Family:', family);
     //     family.children.forEach((child, index) => {
@@ -55,13 +55,15 @@ const getAllFamilies = asyncHandler(async (req, res) => {
         )
       );
     }
-   
 
     //console.log(updatedParentsArray,'updatedParentsArray')
     if (!filteredFamilies?.length) {
       return res
         .status(400)
-        .json({ message: "No families with students found found for the selected Year !" });
+        .json({
+          message:
+            "No families with students found found for the selected Year !",
+        });
     } else {
       res.json(filteredFamilies);
     }
@@ -91,7 +93,7 @@ const getAllFamilies = asyncHandler(async (req, res) => {
         }
         if (family) {
           res.status(200).json(family);
-          console.log(family);
+          //console.log(family);
         }
       }
     } else {
@@ -307,25 +309,36 @@ const createNewFamily = asyncHandler(async (req, res) => {
       children: children,
       familySituation: familySituation,
     };
-    const family = await Family.create(familyObject);
-    if (family) {
-      res.status(201).json({
-        message: `New family created ${family._id},  ${
-          father.userFullName.userFirstName + ","
-        } ${father.userFullName.userMiddleName + ","} ${
-          father.userFullName.userLastName + ","
-        } 
-                and new mother ${mother.userFullName.userFirstName + ","} ${
-          mother.userFullName.userMiddleName + ","
-        } ${mother.userFullName.userLastName + ","}  created`,
-      }); //change parentYear later to show the parent full name
+    
+    const savedFamily = await Family.create(familyObject);
+    if (savedFamily) {
+      //update teh users with the familyId
+      savedFather.familyId = savedFamily._id;
+      savedMother.familyId = savedFamily._id;
+      const finalFather = await savedFather.save();
+      const finalMother = await savedMother.save();
+      if (finalFather && finalMother) {
+        return res.status(201).json({
+          message: `New family created with ID: ${savedFamily._id}. Father: ${
+            finalFather.userFullName.userFirstName || ""
+          } ${finalFather.userFullName.userMiddleName || ""} ${
+            finalFather.userFullName.userLastName || ""
+          }, and Mother: ${finalMother.userFullName.userFirstName || ""} ${
+            finalMother.userFullName.userMiddleName || ""
+          } ${finalMother.userFullName.userLastName || ""} have been created.`,
+        }); //change parentYear later to show the parent full name
+      } else {
+        return res
+          .status(400)
+          .json({ message: "unable to update users with family Id" });
+      }
     } else {
       res.status(400).json({ message: "unable to save family" });
     }
   } else {
     //delete the user already craeted to be done
 
-    res.status(400).json({ message: "unable to save user" });
+    res.status(400).json({ message: "unable to save one or two users" });
   }
 }); //we need to delete the user if the parent is not saved
 
@@ -366,7 +379,7 @@ const updateFamily = asyncHandler(async (req, res) => {
   duplicateFather.userContact = fatherContact;
 
   const savedFather = await duplicateFather.save();
-  console.log(savedFather, "savedFather");
+  //console.log(savedFather, "savedFather");
 
   const {
     _id: motherId,
@@ -396,7 +409,7 @@ const updateFamily = asyncHandler(async (req, res) => {
   duplicateMother.userContact = motherContact;
 
   const savedMother = await duplicateMother.save();
-  console.log(savedMother, "savedMother");
+  //console.log(savedMother, "savedMother");
   if (savedFather && savedMother) {
     //if father andmother updated, we update the family
     const duplicateFamily = await Family.findById(_id).exec();
@@ -405,7 +418,7 @@ const updateFamily = asyncHandler(async (req, res) => {
     duplicateFamily.familySituation = familySituation; //it will only allow updating properties that are already existant in the model
 
     const savedFamily = await duplicateFamily.save();
-    console.log(savedFamily, "savedFamily");
+    //console.log(savedFamily, "savedFamily");
     if (savedFamily) {
       res.status(201).json({
         message: `family with id ${savedFamily._id}, father ${father.userFullName.userFirstName} ${father.userFullName.userMiddleName} ${father.userFullName.userLastName}, & mother ${mother.userFullName.userFirstName} ${mother.userFullName.userMiddleName} ${mother.userFullName.userLastName} updated`,
