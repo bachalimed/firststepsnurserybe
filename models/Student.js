@@ -18,7 +18,7 @@ const studentEducationSchema = new mongoose.Schema({
 
 const studentYearsSchema = new mongoose.Schema({
 	academicYear: {type: String, index: true},
-	grade:{type: Number, required:true, index: true},
+	grade:{type: String, required:true, index: true},
 	admission:{type: mongoose.Schema.Types.ObjectId, index: true, ref:'Admission'}
 },{ _id: false })
 
