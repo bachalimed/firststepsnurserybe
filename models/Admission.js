@@ -5,7 +5,7 @@ const agreedServicesSchema= new mongoose.Schema({//fee can be changed in the mid
 	service:{type: mongoose.Schema.Types.ObjectId, required:true, index:true, ref:'Service'},
 	feeValue:{type: Number, index: true},
 	feePeriod:{type: String, required:true, index:true},
-	//feeStartDate:{type: Date, required:true, index: true},
+	feeStartDate:{type: Date, required:true, index: true},
 	feeMonths:[{type: String, required:true,  index:true}],
 	//feeEndDate:{type: Date, index: true},
 	isFlagged:{type: Boolean, required:true, index:true},
@@ -13,6 +13,7 @@ const agreedServicesSchema= new mongoose.Schema({//fee can be changed in the mid
 	authorisedBy:{type: mongoose.Schema.Types.ObjectId, index:true, ref:'User'},
 	comment:{type: String,  index:true}
 },{ _id: false })
+
 
 const admissionSchema = new mongoose.Schema({
 	//id is already assigned automatically by mongo

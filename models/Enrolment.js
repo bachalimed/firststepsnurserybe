@@ -18,6 +18,7 @@ const enrolmentSchema = new mongoose.Schema({
 	serviceFinalFee: {type: Number, index: true},
 	enrolmentYear:{type: String, required:true, index:true},
 	enrolmentMonth:{type: String, required:true, index:true},
+	enrolmentNote:{type: String,  index:true},
 	//enrolmentDuration:{type: String, required:true, index:true},
 	//enrolmentStartDate: {type: Date, required:true},
 	//enrolmentEndDate: {type: Date, required:true},

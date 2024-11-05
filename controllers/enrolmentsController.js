@@ -33,53 +33,49 @@ const getAllEnrolments = asyncHandler(async (req, res) => {
       //   .lean();
 
       const enrolments = await Enrolment.find({ enrolmentYear: selectedYear })
-    .populate(
-        "student",
-        "-studentDob -studentEducation -operator -studentGardien"
-    )
-    .populate("service", "-serviceAnchor -serviceCreator -serviceOperator")
-    .populate({
-        path: "admission",
-        select: "-admissionCreator -admissionOperator -student -updatedAt",
-        populate: {
+        .populate(
+          "student",
+          "-studentDob -studentEducation -operator -studentGardien"
+        )
+        .populate("service", "-serviceAnchor -serviceCreator -serviceOperator")
+        .populate({
+          path: "admission",
+          select: "-admissionCreator -admissionOperator -student -updatedAt",
+          populate: {
             path: "agreedServices.service",
             select: "-serviceAnchor -serviceCreator -serviceOperator",
-        },
-    })
-    .lean();
+          },
+        })
+        .lean();
 
-console.log("Fetched Enrolments:", enrolments); // Debug log
+      console.log("Fetched Enrolments:", enrolments); // Debug log
 
+      // Assuming `enrolments` is your array of enrolment objects
+      const filteredEnrolments = enrolments.map((enrolment) => {
+        // Filter agreedServices based on the condition
+        const filteredAgreedServices =
+          enrolment.admission.agreedServices.filter(
+            (serviceObj) =>
+              serviceObj.service._id.toString() ===
+                enrolment.service._id.toString() &&
+              serviceObj.feeMonths.includes(enrolment.enrolmentMonth)
+          );
 
+        // Return a new enrolment object with the filtered agreedServices
+        return {
+          ...enrolment,
+          admission: {
+            ...enrolment.admission,
+            agreedServices: filteredAgreedServices[0], //we suppose we only have one match//////
+          },
+        };
+      });
 
+      //  console.log(
+      //     "with yeaaaaaaaaaaaaaaaaaar select",
 
-// Assuming `enrolments` is your array of enrolment objects
-const filteredEnrolments = enrolments.map(enrolment => {
-  // Filter agreedServices based on the condition
-  const filteredAgreedServices = enrolment.admission.agreedServices.filter(serviceObj => 
-      (serviceObj.service._id.toString() === enrolment.service._id.toString()
-      && serviceObj.feeMonths.includes(enrolment.enrolmentMonth))
-  );
-
-  // Return a new enrolment object with the filtered agreedServices
-  return {
-      ...enrolment,
-      admission: {
-          ...enrolment.admission,
-          agreedServices: filteredAgreedServices[0],//we suppose we only have one match//////
-      }
-  };
-});
-
-
-
-
-
-    //  console.log(
-    //     "with yeaaaaaaaaaaaaaaaaaar select",
-    
-    //     transformedEnrolments
-    //   );
+      //     transformedEnrolments
+      //   );
       if (!filteredEnrolments?.length) {
         return res.status(400).json({
           message: "No enrolments found for the selected academic year",
@@ -114,7 +110,8 @@ const filteredEnrolments = enrolments.map(enrolment => {
 // @desc Create new user
 // @route POST 'enrolments/enrolmentsParents/enrolments
 // @access Private
-const createNewEnrolment = asyncHandler(async (req, res) => {//generate an invoice automatically with each new enrolment
+const createNewEnrolment = asyncHandler(async (req, res) => {
+  //generate an invoice automatically with each new enrolment
   //console.log(req.body,'request body')
 
   const {
@@ -124,6 +121,7 @@ const createNewEnrolment = asyncHandler(async (req, res) => {//generate an invoi
     enrolmentOperator,
     enrolmentYear,
     enrolmentMonth,
+    enrolmentNote,
     enrolments,
   } = req?.body; //this will come from front end we put all the fields o fthe collection here
   //console.log(enrolmentName, enrolmentDob,  enrolmentSex, enrolmentIsActive, enrolmentYears, enrolmentGardien, enrolmentEducation, lastModified)
@@ -136,14 +134,20 @@ const createNewEnrolment = asyncHandler(async (req, res) => {//generate an invoi
     !enrolmentYear ||
     !enrolmentMonth ||
     !Array.isArray(enrolments) ||
-    enrolments.length===0
+    enrolments.length === 0
   ) {
     return res.status(400).json({ message: "All fields are required" }); //400 : bad request
   }
 
   // Iterate through the enrolments array and process each enrolment object
   const enrolmentPromises = enrolments.map(async (enrolment) => {
-    const { service, serviceType, servicePeriod, serviceAuthorisedFee, serviceFinalFee } = enrolment;
+    const {
+      service,
+      serviceType,
+      servicePeriod,
+      serviceAuthorisedFee,
+      serviceFinalFee,
+    } = enrolment;
 
     // Check for duplicates: check if an enrolment already exists for the same student, admission, service, and servicePeriod
     const existingEnrolment = await Enrolment.findOne({
@@ -152,11 +156,13 @@ const createNewEnrolment = asyncHandler(async (req, res) => {//generate an invoi
       service,
       serviceType,
       enrolmentMonth,
-      enrolmentYear
+      enrolmentYear,
     });
 
     if (existingEnrolment) {
-      return { error: `Duplicate enrolment for service: ${serviceType} in period: ${enrolmentMonth} ${enrolmentYear}` };
+      return {
+        error: `Duplicate enrolment for service: ${serviceType} in period: ${enrolmentMonth} ${enrolmentYear}`,
+      };
     }
 
     // Create new enrolment object
@@ -170,6 +176,7 @@ const createNewEnrolment = asyncHandler(async (req, res) => {//generate an invoi
       serviceFinalFee,
       enrolmentYear,
       enrolmentMonth,
+      enrolmentNote,
       enrolementCreator: enrolmentCreator,
       enrolementOperator: enrolmentOperator,
     });
@@ -179,7 +186,9 @@ const createNewEnrolment = asyncHandler(async (req, res) => {//generate an invoi
       const savedEnrolment = await newEnrolment.save();
       return savedEnrolment;
     } catch (error) {
-      return { error: `Error saving enrolment for service: ${serviceType}, Error: ${error.message}` };
+      return {
+        error: `Error saving enrolment for service: ${serviceType}, Error: ${error.message}`,
+      };
     }
   });
 
@@ -188,7 +197,9 @@ const createNewEnrolment = asyncHandler(async (req, res) => {//generate an invoi
 
   // Filter out enrolments that encountered errors and return a response
   const errors = savedEnrolments.filter((enrolment) => enrolment.error);
-  const successfulEnrolments = savedEnrolments.filter((enrolment) => !enrolment.error);
+  const successfulEnrolments = savedEnrolments.filter(
+    (enrolment) => !enrolment.error
+  );
 
   if (errors.length > 0) {
     return res.status(400).json({
@@ -212,6 +223,8 @@ const updateEnrolment = asyncHandler(async (req, res) => {
     student,
     enrolmentDate,
     enrolmentYear,
+    enrolmentMonth,
+    enrolmentNote,
     enrolmentOperator,
     agreedServices,
   } = req.body;
@@ -220,6 +233,7 @@ const updateEnrolment = asyncHandler(async (req, res) => {
   if (
     !enrolmentId ||
     !student ||
+    !enrolmentMonth ||
     !enrolmentDate ||
     !enrolmentYear ||
     !enrolmentOperator ||
