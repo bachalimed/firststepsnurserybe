@@ -48,7 +48,7 @@ const getAllEnrolments = asyncHandler(async (req, res) => {
         })
         .lean();
 
-      console.log("Fetched Enrolments:", enrolments); // Debug log
+      //console.log("Fetched Enrolments:", enrolments); // Debug log
 
       // Assuming `enrolments` is your array of enrolment objects
       const filteredEnrolments = enrolments.map((enrolment) => {
@@ -228,7 +228,7 @@ const updateEnrolment = asyncHandler(async (req, res) => {
     enrolmentOperator,
     agreedServices,
   } = req.body;
-  console.log(req.body);
+  //console.log(req.body);
   // Confirm data
   if (
     !enrolmentId ||
@@ -294,7 +294,7 @@ const deleteEnrolment = asyncHandler(async (req, res) => {
   }
 
   const result = await enrolmentToDelete.deleteOne();
-  console.log(result, "result");
+  //console.log(result, "result");
   const reply = `confirm:  ${result} enrolment ${
     enrolmentToDelete.enrolmentName.firstName +
     " " +

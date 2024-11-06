@@ -214,8 +214,17 @@ const getAllStudents = asyncHandler(async (req, res) => {
               "No students with admissions found  for the selected academic year",
           });
         } else {
+          // Sort students by studentName.firstName in ascending order
+          const sortedStudents = students.sort((a, b) => {
+            const firstNameA = a.studentName.firstName.toLowerCase();
+            const firstNameB = b.studentName.firstName.toLowerCase();
+
+            if (firstNameA < firstNameB) return -1; // a comes first
+            if (firstNameA > firstNameB) return 1; // b comes first
+            return 0; // they are equal
+          });
           //console.log('returned res', students)
-          return res.json(students);
+          return res.json(sortedStudents);
         }
       } else if (req.query?.criteria === "withSections") {
         console.log("with   sectionnssssssssssssssssssssssssssssssssssss");
@@ -251,7 +260,9 @@ const getAllStudents = asyncHandler(async (req, res) => {
       //will retrieve only the selcted year
       const students = await Student.find({
         studentYears: { $elemMatch: { academicYear: selectedYear } },
-      }).populate("studentEducation.attendedSchool").lean(); //this will not return the extra data(lean)
+      })
+        .populate("studentEducation.attendedSchool")
+        .lean(); //this will not return the extra data(lean)
       //const students = await Student.find({ studentYear: '2023/2024' }).lean()//this will not return the extra data(lean)
       //console.log('with year select',selectedYear,  students)
       if (!students?.length) {
@@ -267,8 +278,10 @@ const getAllStudents = asyncHandler(async (req, res) => {
     //will retreive according to the id
   } else if (req.query.id) {
     const { id } = req.query;
-    const student = await Student.find({ _id: id }).populate("studentEducation.attendedSchool").lean(); //this will not return the extra data(lean)//removed populate father and mother
-//console.log('hereeeeeeeeeeeeeeeeeeeeeeeee')
+    const student = await Student.find({ _id: id })
+      .populate("studentEducation.attendedSchool")
+      .lean(); //this will not return the extra data(lean)//removed populate father and mother
+    //console.log('hereeeeeeeeeeeeeeeeeeeeeeeee')
     //console.log('with id  select')
     if (!student?.length) {
       return res
@@ -465,10 +478,7 @@ const deleteStudent = asyncHandler(async (req, res) => {
 
     // Delete the student record itself
     const studentDeleteResult = await studentToDelete.deleteOne();
-//now if the family has only one student, delte teh family
-
-
-
+    //now if the family has only one student, delte teh family
 
     // Respond with a success message
     res.json({
