@@ -16,7 +16,6 @@ const getAllSections = asyncHandler(async (req, res) => {
   // Check if an ID is passed as a query parameter
   const { id, criteria, selectedYear } = req.query;
   if (id) {
-
     // Find a single section by its ID
     const section = await Section.findOne({ _id: id })
       .populate("students", "-operator -studentDob -studentGardien -updatedAt")
@@ -28,9 +27,24 @@ const getAllSections = asyncHandler(async (req, res) => {
 
     return res.json(section);
   }
-  if (selectedYear) {
-    const selectedYear = req.query?.selectedYear;
+//for nursery sections, we need animators with the data
+if(selectedYear !=="1000" && criteria==="withAnimators"){
+  console.log("we re heeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeere")
 
+
+
+
+
+
+  
+}
+
+
+
+
+
+
+  if (selectedYear) {
     if (selectedYear !== "1000") {
       try {
         // Use aggregate to perform the query
@@ -156,59 +170,57 @@ const getAllSections = asyncHandler(async (req, res) => {
             .status(404)
             .json({ message: "No sections found for the selected year" });
         }
+        // we already imported the sections and now we will restructure
+        //rearrange for the schoolsections
+        if (criteria === "forSchoolSections") {
+          //rearrange data structure for schoolsectionslist
+          // Transform data into the desired structure
+          //console.log(sections, "sections");
+          let schoolIdCounter = 1; // Initialize a global counter for unique school IDs
 
-//rearrange for the schoolsections
-if (criteria === "forSchoolSections") {
-  //rearrange data structure for schoolsectionslist
-  // Transform data into the desired structure
-  console.log(sections,'sections')
-  let schoolIdCounter = 1; // Initialize a global counter for unique school IDs
+          const groupedData = sections.reduce((acc, section) => {
+            section.students.forEach((student) => {
+              const schoolName =
+                student.studentEducation.attendedSchool.schoolName;
 
-const groupedData = sections.reduce((acc, section) => {
-  section.students.forEach((student) => {
-    const schoolName = student.studentEducation.attendedSchool.schoolName;
+              const studentDetails = {
+                studentName: student.studentName,
+                studentSex: student.studentSex,
+                sectionLabel: section.sectionLabel,
+                sectionFrom: section.sectionFrom,
+                sectionTo: section.sectionTo,
+                classroomLabel: section.sectionLocation.classroomLabel,
+                classroomNumber: section.sectionLocation.classroomNumber,
+              };
 
-    const studentDetails = {
-      studentName: student.studentName,
-      studentSex: student.studentSex,
-      sectionLabel: section.sectionLabel,
-      sectionFrom: section.sectionFrom,
-      sectionTo: section.sectionTo,
-      classroomLabel: section.sectionLocation.classroomLabel,
-      classroomNumber: section.sectionLocation.classroomNumber,
-    };
+              // Check if school already exists in the accumulator
+              let schoolEntry = acc.find(
+                (school) => school.schoolName === schoolName
+              );
 
-    // Check if school already exists in the accumulator
-    let schoolEntry = acc.find((school) => school.schoolName === schoolName);
+              if (!schoolEntry) {
+                // If school doesn't exist, create a new entry with a unique _id
+                schoolEntry = {
+                  schoolName,
+                  _id: schoolIdCounter.toString(), // Assign _id based on the global counter
+                  students: [],
+                };
+                acc.push(schoolEntry);
+                schoolIdCounter++; // Increment the counter for the next unique school
+              }
 
-    if (!schoolEntry) {
-      // If school doesn't exist, create a new entry with a unique _id
-      schoolEntry = {
-        schoolName,
-        _id: schoolIdCounter.toString(), // Assign _id based on the global counter
-        students: [],
-      };
-      acc.push(schoolEntry);
-      schoolIdCounter++; // Increment the counter for the next unique school
-    }
+              // Add student details to the school's students array
+              schoolEntry.students.push(studentDetails);
+            });
 
-    // Add student details to the school's students array
-    schoolEntry.students.push(studentDetails);
-  });
+            return acc;
+          }, []);
 
-  return acc;
-}, []);
+          //console.log(groupedData);
+          return res.json(groupedData);
+        }
 
-  
-console.log(groupedData)
-  return res.json(groupedData);
-  
-}
-
-
-
-
-        // Return sections as JSON
+        // if selected Year but no criteria ,Return sections 
         return res.json(sections);
       } catch (error) {
         console.error("Error fetching sections:", error);
@@ -216,7 +228,7 @@ console.log(groupedData)
           .status(500)
           .json({ message: "Server error while fetching sections" });
       }
-    } else {
+    } else {//standard retreive
       const sections = await Section.find()
         .populate(
           "students",
@@ -284,8 +296,8 @@ console.log(groupedData)
           return acc;
         }, []);
 
+        //console.log(groupedData);
         return res.json(groupedData);
-        console.log(groupedData);
       }
 
       return res.json(filteredSections);
@@ -300,26 +312,71 @@ console.log(groupedData)
 // @access Private
 const createNewSection = asyncHandler(async (req, res) => {
   /////////////////new will be with no ending date
-  const { schoolName, schoolCity, schoolType } = req?.body; //this will come from front end we put all the fields o fthe collection here
-  console.log(schoolName, schoolCity, schoolType);
+  console.log(req?.body);
+  const {
+    sectionLabel,
+    sectionYear,
+    students,
+    sectionColor,
+    sectionType,
+    sectionFrom,
+    sectionTo,
+    sectionAnimator,
+    sectionLocation,
+    operator,
+    creator,
+  } = req?.body; //this will come from front end we put all the fields o fthe collection here
+
   //Confirm data is present in the request with all required fields
 
-  if (!schoolName || !schoolCity || !schoolType) {
+  if (
+    !sectionLabel ||
+    !sectionYear ||
+    !students ||
+    students.length === 0 ||
+    !sectionColor ||
+    !sectionType ||
+    !sectionFrom ||
+    !sectionAnimator ||
+    !sectionLocation ||
+    !operator ||
+    !creator
+  ) {
     return res
       .status(400)
       .json({ message: "All mandatory fields are required" }); //400 : bad request
   }
 
   // Check for duplicate username
-  const duplicate = await Section.findOne({ schoolName }).lean().exec(); //because we re receiving only one response from mongoose
+  const duplicate = await Section.findOne({
+    sectionYear,
+    sectionType,
+    sectionLabel,
+  })
+    .lean()
+    .exec(); //because we re receiving only one response from mongoose
 
-  if (duplicate && duplicate.schoolType == schoolType) {
+  if (duplicate) {
     return res
       .status(409)
-      .json({ message: `Duplicate section: ${duplicate.schoolName}, found` });
+      .json({
+        message: `Duplicate section: ${duplicate.sectionLabel}  ${duplicate.sectionType} , found for ${duplicate.sectionYear}`,
+      });
   }
 
-  const sectionObject = { schoolName, schoolCity, schoolType }; //construct new section to be stored
+  const sectionObject = {
+    sectionLabel,
+    sectionYear,
+    students,
+    sectionColor,
+    sectionType,
+    sectionFrom,
+    sectionTo,
+    sectionAnimator,
+    sectionLocation,
+    operator,
+    creator,
+  }; //construct new section to be stored
 
   // Create and store new section
   const section = await Section.create(sectionObject);
@@ -327,7 +384,7 @@ const createNewSection = asyncHandler(async (req, res) => {
   if (section) {
     //if created
     res.status(201).json({
-      message: `New section of subject: ${section.schoolName}, created`,
+      message: `New section ${duplicate.sectionLabel} , ${duplicate.sectionType} , found for ${duplicate.sectionYear}, created`,
     });
   } else {
     res.status(400).json({ message: "Invalid section data received" });

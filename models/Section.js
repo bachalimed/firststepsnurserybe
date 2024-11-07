@@ -5,58 +5,73 @@ function capitalizeFirstLetter(str) {
   return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
-const studentsSchema = new mongoose.Schema(
-  {
-    student: {
-      type: mongoose.Schema.Types.ObjectId, // Reference to the user who created the section
-      ref: "Student",
-    },
-  },
-  { _id: false }
-);
+// const studentsSchema = new mongoose.Schema(
+//   {
+//     student: {
+//       type: mongoose.Schema.Types.ObjectId, // Reference to the user who created the section
+//       ref: "Student",
+//     },
+//   },
+//   { _id: false }
+// );
 
 const SectionSchema = new mongoose.Schema(
   {
-    sectionType: {
-      type: String,
+    // sectionType: {
+    //   type: String,
 
+    //   set: capitalizeFirstLetter,
+    // },
+    sectionLabel: {
+      type: String,
+      required:true,
       set: capitalizeFirstLetter,
     },
     sectionYear: {
       type: String,
+      required:true,
+    },
+    sectionAnimator: {
+      type: mongoose.Schema.Types.ObjectId, // Reference to the user who created the section
+      ref: "Employee",
+      required:true,
     },
 
-    operator: {
-      type: mongoose.Schema.Types.ObjectId, // Reference to the user who created the section
-      ref: "User",
-    },
     students: [
       {
         type: mongoose.Schema.Types.ObjectId, // Reference to the user who created the section
         ref: "Student",
       },
     ],
-    sectionColor:{type: String, index: true, default:'#5978ee'},
-    serviceType: {
+    sectionColor: { type: String, index: true, default: "#5978ee" },
+    sectionType: {
       type: String,
-    },
-    sectionLabel: {
-      type: String,
-      set: capitalizeFirstLetter,
     },
 
     sectionFrom: {
       type: Date,
       required: true,
     },
-    sectionTo: {//the current section will not have an ending date
+    sectionTo: {
+      //the current section will not have an ending date
       type: Date,
-      
+      default: null,
     },
 
     sectionLocation: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Classroom",
+      required:true,
+    },
+    operator: {
+      type: mongoose.Schema.Types.ObjectId, // Reference to the user who created the section
+      ref: "User",
+      required:true,
+    },
+    creator: {
+      type: mongoose.Schema.Types.ObjectId, // Reference to the user who created the section
+      ref: "User",
+      required:true,
     },
   },
 

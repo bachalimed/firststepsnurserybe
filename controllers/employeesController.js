@@ -11,38 +11,45 @@ const mongoose = require("mongoose");
 // @route GET /hr/employees
 // @access Private // later we will establish authorisations
 
-
-
 //format for the scxheduler
 const formatUsers = (users) => {
   return users
-    .filter(user => user.userRoles.includes('Animator'))
-    .map(user => {
-      const { 
-        userFullName: { userFirstName, userMiddleName, userLastName }, 
+    .filter((user) => user.userRoles.includes("Animator"))
+    .map((user) => {
+      const {
+        userFullName: { userFirstName, userMiddleName, userLastName },
         employeeData: { employeeColor },
-        ...rest 
+        ...rest
       } = user;
 
       const fullName = [userFirstName, userMiddleName, userLastName]
         .filter(Boolean) // Remove any undefined or empty names
-        .join(' ');
+        .join(" ");
 
       // Remove unwanted fields
-      const { userAddress, userContact, userDob, userPhoto, userRoles, userSex, employeeData, ...filteredUser } = rest;
+      const {
+        userAddress,
+        userContact,
+        userDob,
+        userPhoto,
+        userRoles,
+        userSex,
+        employeeData,
+        ...filteredUser
+      } = rest;
 
       return {
         ...filteredUser,
         userFullName: fullName, // Flattened full name
-        employeeColor // Move employeeColor to the root level
+        employeeColor, // Move employeeColor to the root level
       };
     });
 };
 
 const getAllEmployees = asyncHandler(async (req, res) => {
-  if (req.query.selectedYear) {
-    const { selectedYear } = req.query; //maybe replace the conditionals with the current year that we get  from middleware
-    console.log(selectedYear, "sleected year inback")
+  const { selectedYear, criteria } = req.query; //maybe replace the conditionals with the current year that we get  from middleware
+  if (selectedYear) {
+    console.log(selectedYear, "sleected year inback");
     //will retrive all teh students
     if (selectedYear === "1000") {
       // Aggregation pipeline to retrieve users with matching employeeYears.academicYear
@@ -97,14 +104,14 @@ const getAllEmployees = asyncHandler(async (req, res) => {
           },
         },
       ]);
-      
-      
+
       if (!users?.length) {
         return res.status(400).json({ message: "No employees found!" });
       }
-      if(users) {
-        console.log(users,'users')
-        return res.status(200).json(users)}
+      if (users) {
+        console.log(users, "users");
+        return res.status(200).json(users);
+      }
     } else {
       //will retrieve only the employees for the selcted year
 
@@ -153,7 +160,8 @@ const getAllEmployees = asyncHandler(async (req, res) => {
             employeeId: { $first: "$employeeId" },
             employeeData: {
               $first: {
-                employeeCurrentEmployment: "$employeeData.employeeCurrentEmployment",
+                employeeCurrentEmployment:
+                  "$employeeData.employeeCurrentEmployment",
                 employeeIsActive: "$employeeData.employeeIsActive",
                 employeeColor: "$employeeData.employeeColor",
                 employeeAssessment: "$employeeData.employeeAssessment",
@@ -198,18 +206,16 @@ const getAllEmployees = asyncHandler(async (req, res) => {
           .json({ message: "No users found with the selected year." });
       }
 
+      if (criteria === "Animator") {
+        // flatten the name , keep only Animators and arrange for scheduler
 
-      if (req.query.criteria ==="Animator"){
-// flatten the name , keep only Animators and arrange for scheduler
+        const formattedUsers = formatUsers(users);
 
-const formattedUsers = formatUsers(users);
-
-
-return res.status(200).json(formattedUsers)
+        return res.status(200).json(formattedUsers);
+      } else {
+        // Return the filtered users
+        res.status(200).json(users);
       }
-else{
-      // Return the filtered users
-      res.status(200).json(users);}
     }
   }
 });
@@ -220,9 +226,9 @@ else{
 //@access Private
 //first we save the studentsm then employee then user
 const createNewEmployee = asyncHandler(async (req, res) => {
-if (!req.body){
-    return res.status(400).json({ message: "No Data received" })
-}
+  if (!req.body) {
+    return res.status(400).json({ message: "No Data received" });
+  }
 
   const {
     userFullName,
@@ -241,11 +247,26 @@ if (!req.body){
     employeeWorkHistory,
     employeeAssessment,
   } = req?.body; //this will come from front end we put all the fields ofthe collection here
-console.log(employeeCurrentEmployment,'employeeCurrentEmployment')
+  console.log(employeeCurrentEmployment, "employeeCurrentEmployment");
   //Confirm data for employee is present in the request with all required fields, data for user will be checked by the user controller
-  if (!userFullName.userFirstName || !userFullName.userLastName || !username || !password || !userSex || !userDob || !userRoles.length>0 ||
-     !userAddress.house|| !userAddress.street|| !userAddress.city|| !userContact.primaryPhone|| !employeeCurrentEmployment.contractType || !employeeCurrentEmployment.position
-     || !employeeCurrentEmployment.joinDate || !employeeCurrentEmployment.salaryPackage.basic || !employeeYears.length>0) {
+  if (
+    !userFullName.userFirstName ||
+    !userFullName.userLastName ||
+    !username ||
+    !password ||
+    !userSex ||
+    !userDob ||
+    !userRoles.length > 0 ||
+    !userAddress.house ||
+    !userAddress.street ||
+    !userAddress.city ||
+    !userContact.primaryPhone ||
+    !employeeCurrentEmployment.contractType ||
+    !employeeCurrentEmployment.position ||
+    !employeeCurrentEmployment.joinDate ||
+    !employeeCurrentEmployment.salaryPackage.basic ||
+    !employeeYears.length > 0
+  ) {
     return res.status(400).json({ message: "All fields are required" }); //400 : bad request
   }
   // Check for duplicate employee by checking duplicate fullname, but we can have a returning employee, we will later check the dates of entry and departure to update them properly
@@ -253,8 +274,6 @@ console.log(employeeCurrentEmployment,'employeeCurrentEmployment')
   // if (duplicateemployee) {
   //     return res.status(409).json({ message: `Duplicate employee name found:${duplicateemployee.userFullName.userFirstName} ` })//get the  name from  collection
   // }
-
- 
 
   // Check for duplicate username
   const duplicateUsername = await User.findOne({ username }).lean().exec(); //because we re receiving only one response from mongoose
@@ -283,7 +302,7 @@ console.log(employeeCurrentEmployment,'employeeCurrentEmployment')
     employeeIsActive,
     employeeYears,
     employeeWorkHistory,
-    employeeAssessment
+    employeeAssessment,
   }; //construct new employee to be stored
 
   //  store new employee
@@ -299,20 +318,20 @@ console.log(employeeCurrentEmployment,'employeeCurrentEmployment')
     // Create and store new user
     //const createdEmployee = await Employee.findOne({_id:id }).lean()
     const employeeId = savedEmployee._id;
-    console.log(employeeId,'saved  employeeId');
-
+    console.log(employeeId, "saved  employeeId");
 
     const userObject = {
-        userFullName,
-        username,
-        password:hashedPwd,
-        userSex,
-        userDob,
-        userAllowedActions,
-        userIsActive,
-        userRoles,
-        userAddress,
-        userContact,
+      userFullName,
+      username,
+      password: hashedPwd,
+      userSex,
+      userDob,
+      userAllowedActions,
+      userIsActive,
+      userRoles,
+      userAddress,
+      userContact,
+      employeeId,
     }; //construct new user to be stored
 
     const savedUser = await User.create(userObject);
@@ -321,29 +340,27 @@ console.log(employeeCurrentEmployment,'employeeCurrentEmployment')
       //if created
 
       //the following line res is not being executed and was causing the error [ERR_HTTP_HEADERS_SENT, now we send both res for user and parent  together in ne line
-      res
-        .status(201)
-        .json({
-          message: `New user ${username + ","} and new employee ${
-            userFullName.userFirstName +
-            " " +
-            userFullName.userMiddleName +
-            " " +
-            userFullName.userLastName +
-            ","
-          } created`,
-        }); 
+      return res.status(201).json({
+        message: `New user ${username + ","} and new employee ${
+          userFullName.userFirstName +
+          " " +
+          userFullName.userMiddleName +
+          " " +
+          userFullName.userLastName +
+          ","
+        } created`,
+      });
     } else {
       //delete the user already craeted to be done
 
-      res.status(400).json({ message: "Invalid employee data received" });
+      return res
+        .status(400)
+        .json({ message: "Invalid employee data received" });
     }
   } else {
     res.status(400).json({ message: "Invalid user data received" });
   }
 }); //we need to delete the user if the parent is not saved
-
-
 
 const getEmployeeDetails = asyncHandler(async (req, res) => {
   const { userId } = req.params;
@@ -377,17 +394,13 @@ module.exports = {
   getEmployeeDetails,
 };
 
-
-
-
-
 // @desc Update a employee, we will retrieve all information from user and parent and update and save in both collections
 // @route PATCH /hr/employees
 // @access Private
 const updateEmployee = asyncHandler(async (req, res) => {
-  if (!req.body){
-    return res.status(400).json({ message: "No Data received" })
-}
+  if (!req.body) {
+    return res.status(400).json({ message: "No Data received" });
+  }
 
   const {
     userId,
@@ -405,7 +418,7 @@ const updateEmployee = asyncHandler(async (req, res) => {
     employeeAssessment,
   } = req?.body; //this will come from front end we put all the fields ofthe collection here
 
- console.log(
+  console.log(
     userId,
     employeeId,
     userFullName,
@@ -418,19 +431,35 @@ const updateEmployee = asyncHandler(async (req, res) => {
     employeeIsActive,
     employeeYears,
     employeeWorkHistory,
-    employeeAssessment)
+    employeeAssessment
+  );
   //Confirm data for employee is present in the request with all required fields, data for user will be checked by the user controller
-  if (!userId || !userFullName.userFirstName || !userFullName.userLastName || !userSex || !userDob || !userRoles.length>0 || !employeeId ||
-     !userAddress.house|| !userAddress.street|| !userAddress.city|| !userContact.primaryPhone|| !employeeCurrentEmployment.contractType || !employeeCurrentEmployment.position
-     || !employeeCurrentEmployment.joinDate || !employeeCurrentEmployment.salaryPackage.basic || !employeeYears.length>0) {
+  if (
+    !userId ||
+    !userFullName.userFirstName ||
+    !userFullName.userLastName ||
+    !userSex ||
+    !userDob ||
+    !userRoles.length > 0 ||
+    !employeeId ||
+    !userAddress.house ||
+    !userAddress.street ||
+    !userAddress.city ||
+    !userContact.primaryPhone ||
+    !employeeCurrentEmployment.contractType ||
+    !employeeCurrentEmployment.position ||
+    !employeeCurrentEmployment.joinDate ||
+    !employeeCurrentEmployment.salaryPackage.basic ||
+    !employeeYears.length > 0
+  ) {
     return res.status(400).json({ message: "All fields are required" }); //400 : bad request
   }
- 
-  //no need to check for duplicate username because it was not edited in empoloyee edit 
- 
+
+  //no need to check for duplicate username because it was not edited in empoloyee edit
+
   // Does the user exist to update?
   const user = await User.findById(userId).exec(); //we did not lean because we need the save method attached to the response
-  
+
   if (!user) {
     return res.status(400).json({ message: "User not found" });
   }
@@ -439,11 +468,10 @@ const updateEmployee = asyncHandler(async (req, res) => {
     return res.status(400).json({ message: "Employee not found" });
   }
 
-
   user.userFullName = userFullName; //it will only allow updating properties that are already existant in the model
   user.userRoles = userRoles;
   user.employeeId = employeeId;
-  user.userSex = userSex
+  user.userSex = userSex;
   user.userDob = userDob;
   user.userRoles = userRoles;
   //user.userPhoto = userPhoto;
@@ -454,20 +482,15 @@ const updateEmployee = asyncHandler(async (req, res) => {
   employee.employeeWorkHistory = employeeWorkHistory;
   employee.employeeIsActive = employeeIsActive;
   employee.employeeYears = employeeYears;
-  
 
   const updatedUser = await user.save(); //save method received when we did not include lean
 
   // res.json({ message: `${updatedUser.username} updated` })
 
   if (updatedUser) {
-   
-
     const updatedEmployee = await employee.save();
 
     if (updatedEmployee) {
-     
-
       res.json({
         message: ` ${updatedUser.username} updated, and employee ${
           updatedUser.userFullName.userFirstName +

@@ -46,7 +46,7 @@ function flattenStudentName(student) {
     studentName: fullName,
     studentSectionId: studentSectionId,
   };
-  console.log(student, "student");
+  
 }
 // @desc Get all students
 // @route GET 'students/studentsParents/students
@@ -54,8 +54,8 @@ function flattenStudentName(student) {
 const getAllStudents = asyncHandler(async (req, res) => {
   // Get all students from MongoDB
   //console.log('teh request', req.query)
-  if (req.query.selectedYear) {
-    const { selectedYear } = req.query; //maybe replace the conditionals with the current year that we get  from middleware
+  const { selectedYear, criteria ,id} = req.query; //maybe replace the conditionals with the current year that we get  from middleware
+  if (selectedYear) {
     //console.log(selectedYear, "sleected year inback")
     //will retrive all teh students
     if (selectedYear === "1000") {
@@ -226,7 +226,7 @@ const getAllStudents = asyncHandler(async (req, res) => {
           //console.log('returned res', students)
           return res.json(sortedStudents);
         }
-      } else if (req.query?.criteria === "withSections") {
+      } else if (criteria === "withSections") {
         console.log("with   sectionnssssssssssssssssssssssssssssssssssss");
         const students = await Student.find({
           "studentYears.academicYear": selectedYear,
@@ -270,14 +270,23 @@ const getAllStudents = asyncHandler(async (req, res) => {
           message: "No students found  for the selected academic year",
         });
       } else {
+        const sortedStudents = students.sort((a, b) => {
+          const firstNameA = a.studentName.firstName.toLowerCase();
+          const firstNameB = b.studentName.firstName.toLowerCase();
+
+          if (firstNameA < firstNameB) return -1; // a comes first
+          if (firstNameA > firstNameB) return 1; // b comes first
+          return 0; // they are equal
+        });
         //console.log('returned res', students)
-        res.json(students);
+        return res.json(sortedStudents);
+
       }
     }
 
     //will retreive according to the id
-  } else if (req.query.id) {
-    const { id } = req.query;
+  } else if (id) {
+    
     const student = await Student.find({ _id: id })
       .populate("studentEducation.attendedSchool")
       .lean(); //this will not return the extra data(lean)//removed populate father and mother
@@ -289,15 +298,24 @@ const getAllStudents = asyncHandler(async (req, res) => {
         .json({ message: "No student found for the Id provided" });
     }
     //console.log('returned res', student)
+
     res.json(student);
-  } else {
+  } else {//none of previous conditions////////////////////
     const students = await Student.find().lean(); //this will not return the extra data(lean)
     //console.log('with no select')
     if (!students?.length) {
       return res.status(400).json({ message: "No students found" });
     }
+    const sortedStudents = students.sort((a, b) => {
+      const firstNameA = a.studentName.firstName.toLowerCase();
+      const firstNameB = b.studentName.firstName.toLowerCase();
+
+      if (firstNameA < firstNameB) return -1; // a comes first
+      if (firstNameA > firstNameB) return 1; // b comes first
+      return 0; // they are equal
+    });
     //console.log('returned res', students)
-    res.json(students);
+    return res.json(sortedStudents);
   }
 
   // If no students
