@@ -12,8 +12,8 @@ const mongoose = require("mongoose");
 const getAllEnrolments = asyncHandler(async (req, res) => {
   // Check if the request has selectedYear or id query parameters
   //console.log('getting the query', req.query)
-  if (req.query.selectedYear) {
-    const { selectedYear } = req.query;
+  const { selectedYear ,id} = req.query;
+  if (selectedYear) {
 
     if (selectedYear === "1000") {
       // Fetch all enrolments if selectedYear is '1000'
@@ -83,14 +83,14 @@ const getAllEnrolments = asyncHandler(async (req, res) => {
       }
       return res.json(filteredEnrolments);
     }
-  } else if (req.query.id) {
+  } else if (id) {
     // Fetch enrolment by ID
-    const { id } = req.query;
+   // const { id } = req.query;
     const enrolment = await Enrolment.find({ _id: id })
       .populate("student")
       .lean();
     //console.log('admssion with id', enrolment)
-    if (!enrolment?.length) {
+    if (!enrolment) {
       return res
         .status(400)
         .json({ message: "No enrolment found for the provided Id" });
