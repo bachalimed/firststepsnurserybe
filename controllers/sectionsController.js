@@ -1,5 +1,6 @@
 // const User = require('../models/User')
 const Section = require("../models/Section");
+const Student = require("../models/Student");
 const AttendedSchool = require("../models/AttendedSchool");
 
 //const Employee = require('../models/Employee')//we might need the employee module in this controller
@@ -16,7 +17,7 @@ const getAllSections = asyncHandler(async (req, res) => {
   // Check if an ID is passed as a query parameter
   const { id, criteria, selectedYear } = req.query;
   if (id) {
-    console.log("nowwwwwwwwwwwwwwwwwwwwwww here");
+    //console.log("nowwwwwwwwwwwwwwwwwwwwwww here");
 
     // Find a single section by its ID
     const section = await Section.findOne({ _id: id })
@@ -32,9 +33,9 @@ const getAllSections = asyncHandler(async (req, res) => {
   }
   //for nursery sections, we need animators with the data
   if (selectedYear !== "1000" && criteria === "withAnimators") {
-    console.log(
-      "we re heeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeere"
-    );
+    //console.log(
+    // "we re heeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeere"
+    // );
 
     try {
       const sections = await Section.aggregate([
@@ -549,9 +550,18 @@ const createNewSection = asyncHandler(async (req, res) => {
   const section = await Section.create(sectionObject);
 
   if (section) {
-    //if created
+    // Get the new section ID
+    const newSectionId = section._id;
+
+    // Update each student in section.students with studentSection = newSectionId
+    await Student.updateMany(
+      { _id: { $in: section.students } }, // Filter: only students in section.students array
+      { $set: { studentSection: newSectionId } } // Update: set studentSection to newSectionId
+    );
+
+    // If created and students updated
     res.status(201).json({
-      message: `New section ${duplicate.sectionLabel} , ${duplicate.sectionType} , found for ${duplicate.sectionYear}, created`,
+      message: `New section ${section.sectionLabel}, ${section.sectionType}, for ${section.sectionYear} created and students updated`,
     });
   } else {
     res.status(400).json({ message: "Invalid section data received" });
@@ -562,6 +572,7 @@ const createNewSection = asyncHandler(async (req, res) => {
 // @route PATCH 'desk/section
 // @access Private
 const updateSection = asyncHandler(async (req, res) => {
+  ////////////update teh students while updating and creating and deleting.
   // set all other related sessions to ending date where you have a student from that section in any other, the latter will have an ending date
   const {
     id,
@@ -572,7 +583,7 @@ const updateSection = asyncHandler(async (req, res) => {
     sectionColor,
     sectionType,
     sectionFrom,
-   // sectionTo,
+    // sectionTo,
     sectionAnimator,
     sectionLocation,
     operator,
@@ -581,7 +592,7 @@ const updateSection = asyncHandler(async (req, res) => {
   // Confirm data
   if (
     !sectionLabel ||
-    isChangeFlag === undefined ||  // Checks if isChangeFlag is undefined
+    isChangeFlag === undefined || // Checks if isChangeFlag is undefined
     !sectionYear ||
     !students ||
     students.length === 0 ||
@@ -595,14 +606,14 @@ const updateSection = asyncHandler(async (req, res) => {
   ) {
     return res.status(400).json({ message: "All mandatory fields required" });
   }
-//check for duplcate 
- // Check for duplicate, no need because we can have same attributes but different students
-//  const duplicateSection = await Section.findOne({ sectionLabel,}).lean().exec();
+  //check for duplcate
+  // Check for duplicate, no need because we can have same attributes but different students
+  //  const duplicateSection = await Section.findOne({ sectionLabel,}).lean().exec();
 
-//  // Allow updates to the original service
-//  if (duplicateSection?._id.toString() !== id) {
-//    return res.status(409).json({ message: "Duplicate section found with the same Label" });
-//  }
+  //  // Allow updates to the original service
+  //  if (duplicateSection?._id.toString() !== id) {
+  //    return res.status(409).json({ message: "Duplicate section found with the same Label" });
+  //  }
 
   // Does the section exist to update?
   const sectionToUpdate = await Section.findById(id).exec(); //we did not lean becausse we need the save method attached to the response
@@ -614,7 +625,7 @@ const updateSection = asyncHandler(async (req, res) => {
     //if there was a change we set sectionTo and create a new section with new data
     sectionToUpdate.sectionTo = sectionFrom; //the starting dat aof new section is ending date of old section
 
-//console.log(sectionToUpdate,'sectionToUpdate')
+    //console.log(sectionToUpdate,'sectionToUpdate')
     const updatedSection = await sectionToUpdate.save(); //save old section
     const newSectionObject = {
       sectionLabel,
@@ -634,49 +645,51 @@ const updateSection = asyncHandler(async (req, res) => {
     const newSection = await Section.create(newSectionObject);
 
     if (newSection) {
-      //if created
+      // Update students with new section ID
+      await Student.updateMany(
+        { _id: { $in: students } },
+        { $set: { studentSection: newSection._id } }
+      );
+
       res.status(201).json({
-        message: `section: ${updatedSection.sectionLabel}, updated and ${newSection.sectionLabel} created`,
+        message: `Section: ${updatedSection.sectionLabel} updated and ${newSection.sectionLabel} created`,
       });
     } else {
       return res.status(400).json({ message: "Invalid section data received" });
     }
-
-    
   }
-  if (isChangeFlag === undefined && !isChangeFlag) {
+  if (isChangeFlag !== undefined && !isChangeFlag) {
+    //no students were changed so we only update the curretn section
     //if there was a change we set sectionTo and create a new section with new data
-      sectionToUpdate.sectionTo = sectionTo //it will only allow updating properties that are already existant in the model
-      sectionToUpdate.sectionLabel=sectionLabel
-      sectionToUpdate.sectionYear=sectionYear
-      //sectionToUpdate.students,
-      sectionToUpdate.sectionColor=sectionColor
-      sectionToUpdate.sectionType=sectionType
-      sectionToUpdate.sectionFrom=sectionFrom
-      //sectionTo,
-      sectionToUpdate.sectionAnimator=sectionAnimator
-      sectionToUpdate.sectionLocation=sectionLocation
-      sectionToUpdate.operator=operator
-      
-   
+    // sectionToUpdate.sectionTo = sectionTo //it will only allow updating properties that are already existant in the model
+    sectionToUpdate.sectionLabel = sectionLabel;
+    sectionToUpdate.sectionYear = sectionYear;
+    //sectionToUpdate.students, //because no student swere added or removed
+    sectionToUpdate.sectionColor = sectionColor;
+    sectionToUpdate.sectionType = sectionType;
+    sectionToUpdate.sectionFrom = sectionFrom;
+    //sectionTo,
+    sectionToUpdate.sectionAnimator = sectionAnimator;
+    sectionToUpdate.sectionLocation = sectionLocation;
+    sectionToUpdate.operator = operator;
 
     // update section
-     const updatedSection = await sectionToUpdate.save(); //save old section
+    const updatedSection = await sectionToUpdate.save(); //save old section
 
     if (updatedSection) {
-      //if created
+      // Update students with the updated section's ID
+      await Student.updateMany(
+        { _id: { $in: students } },
+        { $set: { studentSection: updatedSection._id } }
+      );
+
       res.status(201).json({
-        message: ` section ${updatedSection.sectionLabel}  updated`,
+        message: `Section ${updatedSection.sectionLabel} updated`,
       });
     } else {
       return res.status(400).json({ message: "Invalid section data received" });
     }
-
-   
   }
-
-
-
 });
 
 //--------------------------------------------------------------------------------------1
@@ -684,6 +697,7 @@ const updateSection = asyncHandler(async (req, res) => {
 // @route DELETE 'students/studentsParents/students
 // @access Private
 const deleteSection = asyncHandler(async (req, res) => {
+  ///
   const { id } = req.body;
 
   // Confirm data
@@ -697,10 +711,16 @@ const deleteSection = asyncHandler(async (req, res) => {
   if (!section) {
     return res.status(400).json({ message: "Section not found" });
   }
+  // Remove the section from students' `studentSection` field
+  await Student.updateMany(
+    { studentSection: id },
+    { $unset: { studentSection: "" } }
+  );
 
+  // Delete the section
   const result = await section.deleteOne();
 
-  const reply = `section ${section.sectionubject}, with ID ${section._id}, deleted`;
+  const reply = `Section ${section.sectionLabel}, with ID ${section._id}, deleted`;
 
   res.json(reply);
 });

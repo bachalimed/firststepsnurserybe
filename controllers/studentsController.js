@@ -248,7 +248,7 @@ const getAllStudents = asyncHandler(async (req, res) => {
 
           const flattenedStudents = students.map(flattenStudentName);
 
-          //console.log(flattenedStudents, "flattenedStudents");
+          console.log(flattenedStudents, "flattenedStudents");
 
           return res.json(flattenedStudents);
         }

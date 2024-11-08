@@ -55,9 +55,9 @@ const getAllSessions = asyncHandler(async (req, res) => {
 
   //   return res.json(session);
   // }
-  if (selectedYear && criteria) {
-    if (criteria === "schools") {
-      //console.log(selectedYear,'selected year we re here at schools')
+  
+    if (criteria === "schools" && selectedYear ) {
+      console.log(selectedYear,'selected year we re here at schools')
       //we nneed the scheduler grouoed by schools
       // If no ID is provided, fetch all sessions
       const sessions = await Session.find({ sessionYear: selectedYear })
@@ -125,7 +125,7 @@ const getAllSessions = asyncHandler(async (req, res) => {
 
       const flattenedSessions = formattedSessions.map((session) => ({
         ...session,
-        sessionSectionId: session.section._id,
+        sessionSectionId: session.section._id,// this generated anerror at some popint because of wrong session data manually generated
         sessionStudentId: session.student._id,
         sectionName: session.section.name,
         studentName: session.student.name,
@@ -148,7 +148,7 @@ const getAllSessions = asyncHandler(async (req, res) => {
 
         //console.log(updatedSessions[3].animator, id, 'updatedSessionsssssssssssssssss')
         const sessionsForAnimator = updatedSessions.filter(
-          (session) => session.animator.toString() === id
+          (session) => session?.animator?.toString() === id
         );
         //console.log(sessionsForAnimator, 'sessionsForAnimatorrrrrrrrrrrr')
         if (sessionsForAnimator.length === 0) {
@@ -161,15 +161,15 @@ const getAllSessions = asyncHandler(async (req, res) => {
 
       return res.json(updatedSessions);
     }
-    if (criteria === "animators") {
+    if (criteria === "animators" && selectedYear) {
       console.log("code for populating animators");
     }
-    if (criteria === "services") {
+    if (criteria === "services" && selectedYear) {
       console.log("code for populating services");
     }
-  }
+ 
 
-  //if no creteria is passed
+  //if no creteria  or selectedYear is passed
   const sessions = await Session.find()
     .populate("school")
     .populate("classroom")
