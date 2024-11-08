@@ -31,7 +31,180 @@ const getAllSections = asyncHandler(async (req, res) => {
 if(selectedYear !=="1000" && criteria==="withAnimators"){
   console.log("we re heeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeere")
 
+  try {
+    const sections = await Section.aggregate([
+        { $match: { sectionYear: selectedYear } }, // Match sections by sectionYear
 
+        // Lookup for Classroom details
+        {
+            $lookup: {
+                from: "classrooms",
+                localField: "sectionLocation",
+                foreignField: "_id",
+                as: "classroomDetails",
+            },
+        },
+        {
+            $unwind: {
+                path: "$classroomDetails",
+                preserveNullAndEmptyArrays: true,
+            },
+        },
+
+        // Unwind students array and lookup for Student details
+        { $unwind: "$students" },
+        {
+            $lookup: {
+                from: "students",
+                localField: "students",
+                foreignField: "_id",
+                as: "studentDetails",
+            },
+        },
+        {
+            $unwind: {
+                path: "$studentDetails",
+                preserveNullAndEmptyArrays: true,
+            },
+        },
+
+        // Filter studentEducation by selectedYear
+        {
+            $addFields: {
+                "studentDetails.studentEducation": {
+                    $filter: {
+                        input: "$studentDetails.studentEducation",
+                        as: "education",
+                        cond: { $eq: ["$$education.schoolYear", selectedYear] },
+                    },
+                },
+            },
+        },
+        {
+            $unwind: {
+                path: "$studentDetails.studentEducation",
+                preserveNullAndEmptyArrays: true,
+            },
+        },
+
+        // Lookup for attended school details
+        {
+            $lookup: {
+                from: "attendedSchools",
+                localField: "studentDetails.studentEducation.attendedSchool",
+                foreignField: "_id",
+                as: "attendedSchoolDetails",
+            },
+        },
+        {
+            $unwind: {
+                path: "$attendedSchoolDetails",
+                preserveNullAndEmptyArrays: true,
+            },
+        },
+
+        // Lookup for Employee details
+        {
+            $lookup: {
+                from: "employees",
+                localField: "sectionAnimator",
+                foreignField: "_id",
+                as: "animatorDetails",
+            },
+        },
+        {
+            $unwind: {
+                path: "$animatorDetails",
+                preserveNullAndEmptyArrays: true,
+            },
+        },
+
+        // Lookup from Users collection where employeeId in Users matches _id in Employees
+        {
+            $lookup: {
+                from: "users",
+                localField: "animatorDetails._id", // employee's _id
+                foreignField: "employeeId", // user employeeId field
+                as: "animatorUserDetails",
+            },
+        },
+        {
+            $unwind: {
+                path: "$animatorUserDetails",
+                preserveNullAndEmptyArrays: true,
+            },
+        },
+
+        // Projecting the required fields
+        {
+            $project: {
+                _id: 1,
+                sectionType: 1,
+                sectionLabel: 1,
+                sectionFrom: 1,
+                sectionTo: 1,
+                sectionAnimator: {
+                    employeeIsActive: "$animatorDetails.employeeIsActive",
+                    employeeYears: "$animatorDetails.employeeYears",
+                    userFullName: "$animatorUserDetails.userFullName",
+                    userIsActive: "$animatorUserDetails.userIsActive",
+                    userRoles: "$animatorUserDetails.userRoles",
+                },
+                sectionYear: 1,
+                sectionLocation: "$classroomDetails",
+                studentDetails: {
+                    studentName: "$studentDetails.studentName",
+                    studentIsActive: "$studentDetails.studentIsActive",
+                    studentSex: "$studentDetails.studentSex",
+                    studentYears: {
+                        $arrayElemAt: ["$studentDetails.studentYears", 0],
+                    },
+                    studentEducation: {
+                        $cond: {
+                            if: { $ne: ["$studentDetails.studentEducation", []] },
+                            then: {
+                                schoolYear: "$studentDetails.studentEducation.schoolYear",
+                                note: "$studentDetails.studentEducation.note",
+                                attendedSchool: {
+                                    schoolName: "$attendedSchoolDetails.schoolName",
+                                    schoolCity: "$attendedSchoolDetails.schoolCity",
+                                    schoolType: "$attendedSchoolDetails.schoolType",
+                                },
+                            },
+                            else: null,
+                        },
+                    },
+                },
+            },
+        },
+
+        // Grouping sections and students back into arrays
+        {
+            $group: {
+                _id: "$_id",
+                sectionType: { $first: "$sectionType" },
+                sectionLabel: { $first: "$sectionLabel" },
+                sectionFrom: { $first: "$sectionFrom" },
+                sectionTo: { $first: "$sectionTo" },
+                sectionAnimator: { $first: "$sectionAnimator" },
+                sectionYear: { $first: "$sectionYear" },
+                sectionLocation: { $first: "$sectionLocation" },
+                students: { $push: "$studentDetails" },
+            },
+        },
+    ]);
+
+    if (!sections.length) {
+        return res.status(404).json({ message: "No sections found for the selected year" });
+    }
+
+    return res.status(200).json(sections);
+} catch (error) {
+    console.error("Error fetching sections:", error);
+    return res.status(500).json({ message: "An error occurred" });
+}
+
+  
 
 
 
