@@ -233,7 +233,7 @@ const getAllStudents = asyncHandler(async (req, res) => {
         })
           .populate("studentSection")
           .select(
-            " -operator -studentDob -studentEducation -studentGardien -studentSex -studentYears -updatedAt"
+            " -operator -studentDob  -studentGardien -studentSex -studentYears -updatedAt"
           )
           .lean();
         if (!students?.length) {
@@ -248,7 +248,7 @@ const getAllStudents = asyncHandler(async (req, res) => {
 
           const flattenedStudents = students.map(flattenStudentName);
 
-          console.log(flattenedStudents, "flattenedStudents");
+         // console.log(flattenedStudents, "flattenedStudents");
 
           return res.json(flattenedStudents);
         }

@@ -60,7 +60,7 @@ const getAllSessions = asyncHandler(async (req, res) => {
     // Step 1: Retrieve sessions with school and student populated
     const sessions = await Session.find({ sessionYear: selectedYear })
       .populate("school")
-      .populate("student", "-studentDob -studentSex -studentEducation -studentYears -studentGardien -operator -updatedAt")
+      .populate("student", "-studentDob -studentSex  -studentYears -studentGardien -operator -updatedAt")
       .lean();
   
     if (!sessions.length) {
@@ -72,7 +72,7 @@ const getAllSessions = asyncHandler(async (req, res) => {
       sectionYear: selectedYear,
       $or: [{ endDate: { $exists: false } }, { endDate: null }],
     })
-      .select("students sectionAnimator sectionLocation name")
+      .select("students sectionAnimator sectionLocation name ")
       .populate("sectionAnimator", "-employeeAssessment -employeeCurrentEmployment -employeeIsActive -employeeWorkHistory -employeeYears")
       .populate("sectionLocation", "-sectionType -operator -sectionYear")
       .lean();
@@ -81,7 +81,26 @@ const getAllSessions = asyncHandler(async (req, res) => {
       return res.status(404).json({ message: "No sections found" });
     }
   
-    // Step 3: Match sections to sessions by student ID and build the final data structure
+    // Step 3: Gather all attendedSchool IDs for selectedYear
+    const attendedSchoolIds = [];
+    sessions.forEach(session => {
+      const studentEducation = session.student.studentEducation || [];
+      const educationForYear = studentEducation.find(edu => edu.schoolYear === selectedYear);
+      if (educationForYear && educationForYear.attendedSchool) {
+        attendedSchoolIds.push(educationForYear.attendedSchool);
+      }
+    });
+  
+    // Fetch attended schools by these IDs
+    const attendedSchools = await AttendedSchool.find({ _id: { $in: attendedSchoolIds } }).lean();
+    
+    // Step 4: Map attendedSchools by ID for easy access
+    const attendedSchoolMap = attendedSchools.reduce((acc, school) => {
+      acc[school._id.toString()] = school;
+      return acc;
+    }, {});
+  //console.log(attendedSchoolMap,'attendedSchoolMap')
+    // Step 5: Build final data structure with `attendedSchool` and other details
     const formattedSessions = sessions.map((session) => {
       const matchingSection = sections.find((section) =>
         section.students.some((student) => student.toString() === session.student._id.toString())
@@ -97,15 +116,22 @@ const getAllSessions = asyncHandler(async (req, res) => {
         session.employeeColor = matchingSection.sectionAnimator?.employeeColor;
       }
   
-      // Adjusting location and color based on session type
+      // Set location and color based on session type
       session.Location = session.sessionType === "Nursery" ? session?.classroomLabel : session.school.schoolName;
       session.color = session.sessionType === "Nursery" ? session?.classroomColor : session.school.schoolColor;
       session.site = session?.school;
   
+      // Add attendedSchool based on student's education information for the selected year
+      const studentEducation = session.student.studentEducation || [];
+      const educationForYear = studentEducation.find(edu => edu.schoolYear === selectedYear);
+      if (educationForYear && educationForYear.attendedSchool) {
+        session.attendedSchool = attendedSchoolMap[educationForYear.attendedSchool.toString()] || null;
+        
+      }
+  
       return session;
     });
-  
-    // Step 4: Flatten the structure for scheduler
+    // Step 6: Flatten the structure for scheduler
     const flattenedSessions = formattedSessions.map((session) => ({
       ...session,
       sessionSectionId: session.section?._id,
@@ -114,9 +140,10 @@ const getAllSessions = asyncHandler(async (req, res) => {
       studentName: session.student.name,
       animator: session.animator,
       classroom: session.classroom,
+      attendedSchool: session.attendedSchool, // Included in final flattened structure
     }));
   
-    // Step 5: Add employee names for each session
+    // Step 7: Add employee names for each session
     const updatedSessions = await addEmployeeNamesToSessions(flattenedSessions);
   
     // If querying by animator ID
@@ -130,6 +157,7 @@ const getAllSessions = asyncHandler(async (req, res) => {
   
     return res.json(updatedSessions);
   }
+  
   
   // if (criteria === "schools" && selectedYear) {
   //   console.log(selectedYear, "selected year we re here at schools");
