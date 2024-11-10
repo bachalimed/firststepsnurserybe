@@ -22,7 +22,7 @@ const SessionSchema = new mongoose.Schema(
     sessionYear: {
       type: String,
     },
-    animator: {
+    animator: {//is only required for nursery type
       type: mongoose.Schema.Types.ObjectId,
       ref: "Employee",
     },

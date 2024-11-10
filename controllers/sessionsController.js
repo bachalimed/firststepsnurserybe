@@ -221,26 +221,26 @@ const createNewSession = asyncHandler(async (req, res) => {
   } = req?.body; //this will come from front end we put all the fields o fthe collection here
 
   //Confirm data is present in the request with all required fields
-  console.log(
-    sessionType,
-    sessionYear,
-    school,
-    Subject,
-    StartTime,
-    EndTime,
-    student,
-    operator,
-    classroom,
-    animator,
-    Description,
-    RecurrenceRule,
-    RecurrenceException,
-    RecurrenceID,
-    FollowingID,
-    IsAllDay,
-    IsBlock,
-    IsReadOnly
-  );
+  // console.log(
+  //   sessionType,
+  //   sessionYear,
+  //   school,
+  //   Subject,
+  //   StartTime,
+  //   EndTime,
+  //   student,
+  //   operator,
+  //   classroom,
+  //   animator,
+  //   Description,
+  //   RecurrenceRule,
+  //   RecurrenceException,
+  //   RecurrenceID,
+  //   FollowingID,
+  //   IsAllDay,
+  //   IsBlock,
+  //   IsReadOnly
+  // );
   if (
     !sessionType ||
     !sessionYear ||
@@ -249,10 +249,12 @@ const createNewSession = asyncHandler(async (req, res) => {
     !StartTime ||
     !EndTime ||
     !student ||
-    !operator ||
-    (school === "6714e7abe2df335eecd87750" && !animator) ||
-    (school === "6714e7abe2df335eecd87750" && !classroom)
-  ) {
+    !operator 
+    //|| 
+    // (school === "6714e7abe2df335eecd87750" && !animator) ||
+    // (school === "6714e7abe2df335eecd87750" && !classroom)// removed because the animator and classroom will come from section itself
+  )
+   {
     //if nursery and no animator or no classroom
     return res
       .status(400)
@@ -276,6 +278,8 @@ const createNewSession = asyncHandler(async (req, res) => {
     });
   }
 
+  
+
   const sessionObject = {
     sessionType,
     sessionYear,
@@ -298,6 +302,10 @@ const createNewSession = asyncHandler(async (req, res) => {
     creator: operator,
   }; //construct new session to be stored
 
+  // //will set isblock if the subject is lunch
+  // if (sessionObject.Subject==="Lunch1" || sessionObject.Subject==="Lunch2"){
+  //   sessionObject.IsBlock=true
+  // }
   // Create and store new session
   const session = await Session.create(sessionObject);
 
@@ -362,7 +370,7 @@ const updateSession = asyncHandler(async (req, res) => {
   }
 
   switch (operationType) {
-    case "editSession": //after updating a single event NOT in series
+    case "editSession": //after updating a single event NOT in series but can give way to series also
       session.sessionType = sessionType;
       session.sessionYear = sessionYear;
       session.animator = animator;
@@ -377,10 +385,15 @@ const updateSession = asyncHandler(async (req, res) => {
       session.IsBlock = IsBlock;
       session.IsReadOnly = IsReadOnly;
       session.operator = operator;
+      session.RecurrenceRule = RecurrenceRule;
       //session.RecurrenceID = RecurrenceID;
       //session.FollowingID = FollowingID;
-      //session.RecurrenceRule = RecurrenceRule;
       //session.RecurrenceException = RecurrenceException;
+
+  //      //will set isblock if the subject is lunch
+  // if (session.Subject==="Lunch1" || session.Subject==="Lunch2"){
+  //   session.IsBlock=true
+  // }
 
       const updatedSessionNotInSeries = await session.save(); //save method received when we did not include lean
 
