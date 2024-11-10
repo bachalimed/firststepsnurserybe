@@ -22,10 +22,10 @@ const SessionSchema = new mongoose.Schema(
     sessionYear: {
       type: String,
     },
-    animator: {//is only required for nursery type
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Employee",
-    },
+    // animator: {//is only required for nursery type
+    //   type: mongoose.Schema.Types.ObjectId,
+    //   ref: "Employee",
+    // },
     student: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Student",
@@ -54,10 +54,10 @@ const SessionSchema = new mongoose.Schema(
       ref: "AttendedSchool",
       required: true,
     },
-    classroom: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Classroom",
-    },
+    // classroom: {
+    //   type: mongoose.Schema.Types.ObjectId,
+    //   ref: "Classroom",
+    // },
     //site: { type: String, required: true, set: capitalizeFirstLetter },
 
     // location: {

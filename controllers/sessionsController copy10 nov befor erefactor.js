@@ -55,185 +55,108 @@ const getAllSessions = asyncHandler(async (req, res) => {
   // }
 
   if (criteria === "schools" && selectedYear) {
-    console.log(selectedYear, 'selected year we re here at schools');
-  
-    // Step 1: Retrieve sessions with school and student populated
+    console.log(selectedYear, "selected year we re here at schools");
+    //we nneed the scheduler grouoed by schools
+    // If no ID is provided, fetch all sessions
     const sessions = await Session.find({ sessionYear: selectedYear })
       .populate("school")
-      .populate("student", "-studentDob -studentSex -studentEducation -studentYears -studentGardien -operator -updatedAt")
+      .populate("classroom")
+      .populate(
+        "student",
+        "-studentDob -studentSex -studentEducation -studentYears -studentGardien -operator -updatedAt"
+      )
+      .populate(
+        "animator",
+        "-employeeAssessment -employeeCurrentEmployment -employeeIsActive -employeeWorkHistory -employeeYears "
+      )
       .lean();
-  
+
     if (!sessions.length) {
       return res.status(404).json({ message: "No sessions found" });
     }
-  
-    // Step 2: Retrieve sections for the selected year without an end date
-    const sections = await Section.find({
-      sectionYear: selectedYear,
-      $or: [{ endDate: { $exists: false } }, { endDate: null }],
-    })
-      .select("students sectionAnimator sectionLocation name")
-      .populate("sectionAnimator", "-employeeAssessment -employeeCurrentEmployment -employeeIsActive -employeeWorkHistory -employeeYears")
-      .populate("sectionLocation", "-sectionType -operator -sectionYear")
-      .lean();
-  
-    if (!sections.length) {
-      return res.status(404).json({ message: "No sections found" });
-    }
-  
-    // Step 3: Match sections to sessions by student ID and build the final data structure
+    //console.log(sessions, "sessions");
     const formattedSessions = sessions.map((session) => {
-      const matchingSection = sections.find((section) =>
-        section.students.some((student) => student.toString() === session.student._id.toString())
-      );
-  
-      if (matchingSection) {
-        session.section = matchingSection;
-        session.animator = matchingSection.sectionAnimator?._id;
-        session.classroom = matchingSection.sectionLocation?._id;
-        session.classroomLabel = matchingSection.sectionLocation?.classroomLabel;
-        session.classroomColor = matchingSection.sectionLocation?.classroomColor;
-        session.classroomNumber = matchingSection.sectionLocation?.classroomNumber;
-        session.employeeColor = matchingSection.sectionAnimator?.employeeColor;
+      if (session.classroom) {
+        session.Location = session?.classroom?.classroomLabel;
+        session.site = session?.school;
+      } else {
+        session.Location = session.school.schoolName;
+        session.color = session.school.schoolColor;
+        session.site = session?.school;
       }
-  
-      // Adjusting location and color based on session type
-      session.Location = session.sessionType === "Nursery" ? session?.classroomLabel : session.school.schoolName;
-      session.color = session.sessionType === "Nursery" ? session?.classroomColor : session.school.schoolColor;
-      session.site = session?.school;
-  
+      //console.log(session)
       return session;
     });
-  
-    // Step 4: Flatten the structure for scheduler
+
+    // add each of the sections to the session, first retrive all sections for that year and with no ending date (current)
+    const sections = await Section.find({
+      $and: [
+        { sectionYear: selectedYear }, // Match sectionYear with selectedYear
+        { $or: [{ endDate: { $exists: false } }, { endDate: null }] }, // Either endDate does not exist or it's null
+      ],
+    })
+      .select("-sectionType -operator -sectionYear -sectionLocation")
+      .lean();
+    //console.log(sections,'sections')
+
+    if (!sections) {
+      return res.status(404).json({ message: "No sections found" });
+    }
+    //populate the section for every session!!!!!!!!!!!!!!!we need to only keep the dates we need for the section currency, we only use the last version section
+
+    formattedSessions.forEach((session) => {
+      // Find the section where the student's _id is in the section's students array
+      const matchingSection = sections.find((section) =>
+        section.students.some(
+          (student) => student.toString() === session.student._id.toString()
+        )
+      );
+
+      // Add the matching section to the session object as a new attribute
+      if (matchingSection) {
+        session.section = matchingSection;
+      }
+    });
+    //console.log(formattedSessions)
+
+    //flatten some of the data ot be used in the schefuler
+
     const flattenedSessions = formattedSessions.map((session) => ({
       ...session,
-      sessionSectionId: session.section?._id,
+      sessionSectionId: session.section._id, // this generated anerror at some popint because of wrong session data manually generated
       sessionStudentId: session.student._id,
-      sectionName: session.section?.name,
+      sectionName: session.section.name,
       studentName: session.student.name,
-      animator: session.animator,
-      classroom: session.classroom,
+      employeeColor: session?.animator?.employeeColor,
+      animator: session.animator?._id,
+      classroomColor: session?.classroom?.classroomColor,
+      classroomLabel: session?.classroom?.classroomLabel,
+      classroomNumber: session?.classroom?.classroomNumber,
+      classroom: session?.classroom?._id,
     }));
-  
-    // Step 5: Add employee names for each session
+    //add user fullname for the employee
+
     const updatedSessions = await addEmployeeNamesToSessions(flattenedSessions);
-  
-    // If querying by animator ID
+
+    //if we need only sessions for an animator
     if (id) {
-      const sessionsForAnimator = updatedSessions.filter((session) => session.animator?.toString() === id);
-      if (!sessionsForAnimator.length) {
-        return res.status(404).json({ message: "No sessions found for that animator" });
+      // if the query conatains id
+
+      //console.log(updatedSessions[3].animator, id, 'updatedSessionsssssssssssssssss')
+      const sessionsForAnimator = updatedSessions.filter(
+        (session) => session?.animator?.toString() === id
+      );
+      //console.log(sessionsForAnimator, 'sessionsForAnimatorrrrrrrrrrrr')
+      if (sessionsForAnimator.length === 0) {
+        return res
+          .status(404)
+          .json({ message: "No sessions found for that animator" });
       }
       return res.json(sessionsForAnimator);
     }
-  
+
     return res.json(updatedSessions);
   }
-  
-  // if (criteria === "schools" && selectedYear) {
-  //   console.log(selectedYear, "selected year we re here at schools");
-  //   //we nneed the scheduler grouoed by schools
-  //   // If no ID is provided, fetch all sessions
-  //   const sessions = await Session.find({ sessionYear: selectedYear })
-  //     .populate("school")
-  //     .populate("classroom")
-  //     .populate(
-  //       "student",
-  //       "-studentDob -studentSex -studentEducation -studentYears -studentGardien -operator -updatedAt"
-  //     )
-  //     .populate(
-  //       "animator",
-  //       "-employeeAssessment -employeeCurrentEmployment -employeeIsActive -employeeWorkHistory -employeeYears "
-  //     )
-  //     .lean();
-
-  //   if (!sessions.length) {
-  //     return res.status(404).json({ message: "No sessions found" });
-  //   }
-  //   //console.log(sessions, "sessions");
-  //   const formattedSessions = sessions.map((session) => {
-  //     if (session.classroom) {
-  //       session.Location = session?.classroom?.classroomLabel;
-  //       session.site = session?.school;
-  //     } else {
-  //       session.Location = session.school.schoolName;
-  //       session.color = session.school.schoolColor;
-  //       session.site = session?.school;
-  //     }
-  //     //console.log(session)
-  //     return session;
-  //   });
-
-  //   // add each of the sections to the session, first retrive all sections for that year and with no ending date (current)
-  //   const sections = await Section.find({
-  //     $and: [
-  //       { sectionYear: selectedYear }, // Match sectionYear with selectedYear
-  //       { $or: [{ endDate: { $exists: false } }, { endDate: null }] }, // Either endDate does not exist or it's null
-  //     ],
-  //   })
-  //     .select("-sectionType -operator -sectionYear -sectionLocation")
-  //     .lean();
-  //   //console.log(sections,'sections')
-
-  //   if (!sections) {
-  //     return res.status(404).json({ message: "No sections found" });
-  //   }
-  //   //populate the section for every session!!!!!!!!!!!!!!!we need to only keep the dates we need for the section currency, we only use the last version section
-
-  //   formattedSessions.forEach((session) => {
-  //     // Find the section where the student's _id is in the section's students array
-  //     const matchingSection = sections.find((section) =>
-  //       section.students.some(
-  //         (student) => student.toString() === session.student._id.toString()
-  //       )
-  //     );
-
-  //     // Add the matching section to the session object as a new attribute
-  //     if (matchingSection) {
-  //       session.section = matchingSection;
-  //     }
-  //   });
-  //   //console.log(formattedSessions)
-
-  //   //flatten some of the data ot be used in the schefuler
-
-  //   const flattenedSessions = formattedSessions.map((session) => ({
-  //     ...session,
-  //     sessionSectionId: session.section._id, // this generated anerror at some popint because of wrong session data manually generated
-  //     sessionStudentId: session.student._id,
-  //     sectionName: session.section.name,
-  //     studentName: session.student.name,
-  //     employeeColor: session?.animator?.employeeColor,
-  //     animator: session.animator?._id,
-  //     classroomColor: session?.classroom?.classroomColor,
-  //     classroomLabel: session?.classroom?.classroomLabel,
-  //     classroomNumber: session?.classroom?.classroomNumber,
-  //     classroom: session?.classroom?._id,
-  //   }));
-  //   //add user fullname for the employee
-
-  //   const updatedSessions = await addEmployeeNamesToSessions(flattenedSessions);
-
-  //   //if we need only sessions for an animator
-  //   if (id) {
-  //     // if the query conatains id
-
-  //     //console.log(updatedSessions[3].animator, id, 'updatedSessionsssssssssssssssss')
-  //     const sessionsForAnimator = updatedSessions.filter(
-  //       (session) => session?.animator?.toString() === id
-  //     );
-  //     //console.log(sessionsForAnimator, 'sessionsForAnimatorrrrrrrrrrrr')
-  //     if (sessionsForAnimator.length === 0) {
-  //       return res
-  //         .status(404)
-  //         .json({ message: "No sessions found for that animator" });
-  //     }
-  //     return res.json(sessionsForAnimator);
-  //   }
-
-  //   return res.json(updatedSessions);
-  // }
   if (criteria === "animators" && selectedYear) {
     console.log("code for populating animators");
   }
