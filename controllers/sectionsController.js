@@ -296,8 +296,10 @@ const getAllSections = asyncHandler(async (req, res) => {
               sectionLocation: "$classroomDetails", // Include populated Classroom details
               studentDetails: {
                 studentName: "$studentDetails.studentName",
+                
                 studentIsActive: "$studentDetails.studentIsActive",
                 studentSex: "$studentDetails.studentSex",
+                _id: "$studentDetails._id",
                 studentYears: {
                   $arrayElemAt: ["$studentDetails.studentYears", 0], // Directly include studentYears
                 },

@@ -55,7 +55,7 @@ const getAllSessions = asyncHandler(async (req, res) => {
   // }
 
   if (criteria === "schools" && selectedYear) {
-    console.log(selectedYear, 'selected year we re here at schools');
+   // console.log(selectedYear, 'selected year we re here at schools');
   
     // Step 1: Retrieve sessions with school and student populated
     const sessions = await Session.find({ sessionYear: selectedYear })
