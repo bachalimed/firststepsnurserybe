@@ -12,7 +12,7 @@ const assignmentsSchema = new mongoose.Schema(
     schools: [{
       type: mongoose.Schema.Types.ObjectId,
       ref: "School",
-      required: true,
+      
     }],
   },
   { _id: false }
@@ -21,7 +21,7 @@ const assignmentsSchema = new mongoose.Schema(
 
 const AnimatorsAssignmentSchema = new mongoose.Schema(
   {
-    assignementYear: {
+    assignmentYear: {
       type: String,
       required: true,
     },
@@ -43,7 +43,7 @@ const AnimatorsAssignmentSchema = new mongoose.Schema(
     operator: {
       type: mongoose.Schema.Types.ObjectId, // Reference to the user who created the animatorsAssignment
       ref: "User",
-      required: true,
+      
     },
     createdAt: {
       type: Date,
