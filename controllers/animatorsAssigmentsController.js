@@ -82,7 +82,11 @@ const createNewAnimatorsAssigment = asyncHandler(async (req, res) => {
   }
 
   // Check for duplicate username
-  const duplicate = await AnimatorsAssigment.findOne({ assignmentYear, assignedFrom,assignedTo })
+  const duplicate = await AnimatorsAssigment.findOne({
+    assignmentYear,
+    assignedFrom,
+    assignedTo,
+  })
     .lean()
     .exec(); //because we re receiving only one response from mongoose
 
@@ -92,12 +96,14 @@ const createNewAnimatorsAssigment = asyncHandler(async (req, res) => {
     });
   }
 
-  const animatorsAssigmentObject = { assignmentYear,
+  const animatorsAssigmentObject = {
+    assignmentYear,
     assignments,
     assignedFrom,
     assignedTo,
     creator,
-    operator }; //construct new animatorsAssigment to be stored
+    operator,
+  }; //construct new animatorsAssigment to be stored
 
   // Create and store new animatorsAssigment
   const animatorsAssigment = await AnimatorsAssigment.create(
@@ -120,13 +126,29 @@ const createNewAnimatorsAssigment = asyncHandler(async (req, res) => {
 // @route PATCH 'desk/animatorsAssigment
 // @access Private
 const updateAnimatorsAssigment = asyncHandler(async (req, res) => {
-  const { id, schoolName, schoolCity, schoolType } = req?.body;
+  const {
+    id,
+    assignmentYear,
+    assignments,
+    assignedFrom,
+    assignedTo,
+    operator,
+  } = req?.body;
 
   // Confirm data
-  if (!id || !schoolName || !schoolCity || !schoolType) {
-    return res.status(400).json({ message: "All mandatory fields required" });
+  if (
+    !id ||
+    !assignmentYear ||
+    !assignments ||
+    assignments.length < 1 ||
+    !assignedFrom ||
+    !assignedTo ||
+    !operator
+  ) {
+    return res
+      .status(400)
+      .json({ message: "All mandatory fields are required" }); //400 : bad request
   }
-
   // Does the animatorsAssigment exist to update?
   const animatorsAssigment = await AnimatorsAssigment.findById(id).exec(); //we did not lean becausse we need the save method attached to the response
 
@@ -134,14 +156,16 @@ const updateAnimatorsAssigment = asyncHandler(async (req, res) => {
     return res.status(400).json({ message: "AnimatorsAssigment not found" });
   }
 
-  animatorsAssigment.schoolName = schoolName; //it will only allow updating properties that are already existant in the model
-  animatorsAssigment.schoolCity = schoolCity;
-  animatorsAssigment.schoolType = schoolType;
+  animatorsAssigment.assignmentYear = assignmentYear; //it will only allow updating properties that are already existant in the model
+  animatorsAssigment.assignments = assignments;
+  animatorsAssigment.assignedFrom = assignedFrom;
+  animatorsAssigment.assignedTo = assignedTo;
+  animatorsAssigment.operator = operator;
 
   const updatedAnimatorsAssigment = await animatorsAssigment.save(); //save method received when we did not include lean
 
   res.json({
-    message: `animatorsAssigment: ${updatedAnimatorsAssigment.schoolName}, updated`,
+    message: `animatorsAssigment: ${updatedAnimatorsAssigment.assignedFrom} -  ${updatedAnimatorsAssigment.assignedTo}, updated`,
   });
 });
 
