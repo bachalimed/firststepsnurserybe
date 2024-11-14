@@ -46,7 +46,7 @@ const employeeWorkHistorySchema = new mongoose.Schema(
 
 const employeeSchema = new mongoose.Schema({
   	employeeCurrentEmployment: {
-		//position: { type: String, required: true, set: capitalizeFirstLetter, },
+		position: { type: String, required: true, set: capitalizeFirstLetter, },
 		employeeColor: { type: String, default:'#597833' },
 		joinDate: { type: Date, required: true },
 		contractType: { type: String, required: true, set: capitalizeFirstLetter, },

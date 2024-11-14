@@ -112,7 +112,8 @@ const getAllEmployees = asyncHandler(async (req, res) => {
         console.log(users, "users");
         return res.status(200).json(users);
       }
-    } else {
+    } 
+    if(selectedYear !== "1000") {
       //will retrieve only the employees for the selcted year
 
       // Aggregation pipeline to retrieve users with matching employeeYears.academicYear
