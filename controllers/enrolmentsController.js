@@ -12,80 +12,129 @@ const mongoose = require("mongoose");
 const getAllEnrolments = asyncHandler(async (req, res) => {
   // Check if the request has selectedYear or id query parameters
   //console.log('getting the query', req.query)
-  const { selectedYear ,id} = req.query;
-  if (selectedYear) {
+  const { selectedYear, id, selectedMonth } = req.query;
 
-    if (selectedYear === "1000") {
-      // Fetch all enrolments if selectedYear is '1000'
-      const enrolments = await Enrolment.find().lean();
-      if (!enrolments?.length) {
-        return res.status(400).json({ message: "No enrolments found!" });
-      }
-      return res.json(enrolments);
-    } else {
-      // Fetch enrolments for the selected year
-      //console.log("with yearrrrrrrrrrrrrrrrrrr select", selectedYear);
-      //const enrolments = await Enrolment.find()
-      // const enrolments = await Enrolment.find({ enrolmentYear: selectedYear })
-      //   .populate("student", "-studentDob -studentEducation -operator -studentGardien") // Exclude these fields
-      //   //.populate("service", "-serviceAnchor -serviceCreator -serviceOperator")
-      //   .populate("admission", "-admissionCreator -admissionOperator")
-      //   .lean();
-
-      const enrolments = await Enrolment.find({ enrolmentYear: selectedYear })
-        .populate(
-          "student",
-          "-studentDob -studentEducation -operator -studentGardien"
-        )
-        .populate("service", "-serviceAnchor -serviceCreator -serviceOperator")
-        .populate({
-          path: "admission",
-          select: "-admissionCreator -admissionOperator -student -updatedAt",
-          populate: {
-            path: "agreedServices.service",
-            select: "-serviceAnchor -serviceCreator -serviceOperator",
-          },
-        })
-        .lean();
-
-      //console.log("Fetched Enrolments:", enrolments); // Debug log
-
-      // Assuming `enrolments` is your array of enrolment objects
-      const filteredEnrolments = enrolments.map((enrolment) => {
-        // Filter agreedServices based on the condition
-        const filteredAgreedServices =
-          enrolment.admission.agreedServices.filter(
-            (serviceObj) =>
-              serviceObj.service._id.toString() ===
-                enrolment.service._id.toString() &&
-              serviceObj.feeMonths.includes(enrolment.enrolmentMonth)
-          );
-
-        // Return a new enrolment object with the filtered agreedServices
-        return {
-          ...enrolment,
-          admission: {
-            ...enrolment.admission,
-            agreedServices: filteredAgreedServices[0], //we suppose we only have one match//////
-          },
-        };
-      });
-
-      //  console.log(
-      //     "with yeaaaaaaaaaaaaaaaaaar select",
-
-      //     transformedEnrolments
-      //   );
-      if (!filteredEnrolments?.length) {
-        return res.status(400).json({
-          message: "No enrolments found for the selected academic year",
-        });
-      }
-      return res.json(filteredEnrolments);
+  if (selectedYear === "1000") {
+    // Fetch all enrolments if selectedYear is '1000'
+    const enrolments = await Enrolment.find().lean();
+    if (!enrolments?.length) {
+      return res.status(400).json({ message: "No enrolments found!" });
     }
-  } else if (id) {
+    return res.json(enrolments);
+  }
+
+  if (selectedYear !== "1000" && selectedMonth) {
+    
+    //newInvoiceform
+    const enrolments = await Enrolment.find({ enrolmentYear: selectedYear, enrolmentMonth: selectedMonth})
+      .populate(
+        "student",
+        "-studentDob -studentEducation -operator -studentGardien"
+      )
+      .populate("service", "-serviceAnchor -serviceCreator -serviceOperator")
+      .populate({
+        path: "admission",
+        select: "-admissionCreator -admissionOperator -student -updatedAt",
+        populate: {
+          path: "agreedServices.service",
+          select: "-serviceAnchor -serviceCreator -serviceOperator",
+        },
+      })
+      .populate("enrolmentInvoice")
+      .lean();
+
+    //console.log("Fetched Enrolments:", enrolments); // Debug log
+
+    // Assuming `enrolments` is your array of enrolment objects
+    const filteredEnrolments = enrolments.map((enrolment) => {
+      // Filter agreedServices based on the condition
+      const filteredAgreedServices = enrolment.admission.agreedServices.filter(
+        (serviceObj) =>
+          serviceObj.service._id.toString() ===
+            enrolment.service._id.toString() &&
+          serviceObj.feeMonths.includes(enrolment.enrolmentMonth)
+      );
+
+      // Return a new enrolment object with the filtered agreedServices
+      return {
+        ...enrolment,
+        admission: {
+          ...enrolment.admission,
+          agreedServices: filteredAgreedServices[0], //we suppose we only have one match//////
+        },
+      };
+    });
+
+    //  console.log(
+    //     "with yeaaaaaaaaaaaaaaaaaar select",
+
+    //     transformedEnrolments
+    //   );
+    if (!filteredEnrolments?.length) {
+      return res.status(400).json({
+        message: "No enrolments found for the selected academic year",
+      });
+    }
+    return res.json(filteredEnrolments);
+  }
+
+  if (selectedYear !== "1000") {
+ 
+
+    const enrolments = await Enrolment.find({ enrolmentYear: selectedYear })
+      .populate(
+        "student",
+        "-studentDob -studentEducation -operator -studentGardien"
+      )
+      .populate("service", "-serviceAnchor -serviceCreator -serviceOperator")
+      .populate({
+        path: "admission",
+        select: "-admissionCreator -admissionOperator -student -updatedAt",
+        populate: {
+          path: "agreedServices.service",
+          select: "-serviceAnchor -serviceCreator -serviceOperator",
+        },
+      })
+      .populate("enrolmentInvoice")
+      .lean();
+
+    //console.log("Fetched Enrolments:", enrolments); // Debug log
+
+    // Assuming `enrolments` is your array of enrolment objects
+    const filteredEnrolments = enrolments.map((enrolment) => {
+      // Filter agreedServices based on the condition
+      const filteredAgreedServices = enrolment.admission.agreedServices.filter(
+        (serviceObj) =>
+          serviceObj.service._id.toString() ===
+            enrolment.service._id.toString() &&
+          serviceObj.feeMonths.includes(enrolment.enrolmentMonth)
+      );
+
+      // Return a new enrolment object with the filtered agreedServices
+      return {
+        ...enrolment,
+        admission: {
+          ...enrolment.admission,
+          agreedServices: filteredAgreedServices[0], //we suppose we only have one match//////
+        },
+      };
+    });
+
+    //  console.log(
+    //     "with yeaaaaaaaaaaaaaaaaaar select",
+
+    //     transformedEnrolments
+    //   );
+    if (!filteredEnrolments?.length) {
+      return res.status(400).json({
+        message: "No enrolments found for the selected academic year",
+      });
+    }
+    return res.json(filteredEnrolments);
+  }
+  if (id) {
     // Fetch enrolment by ID
-   // const { id } = req.query;
+    // const { id } = req.query;
     const enrolment = await Enrolment.find({ _id: id })
       .populate("student")
       .lean();

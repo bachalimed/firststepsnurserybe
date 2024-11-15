@@ -24,7 +24,7 @@ const enrolmentSchema = new mongoose.Schema({
 	//enrolmentEndDate: {type: Date, required:true},
 	enrolementSuspension:[enrolementSuspensionSchema],
 	
-	enrolmentInvoice:{type: mongoose.Schema.Types.ObjectId,  index:true, ref:''},
+	enrolmentInvoice:{type: mongoose.Schema.Types.ObjectId,  index:true, ref:'Invoice'},
 	enrolmentPayment:{type: mongoose.Schema.Types.ObjectId,   index:true, ref:''},
 	enrolementOperator:{type: mongoose.Schema.Types.ObjectId, required:true, index:true, ref:'User'},
 	enrolementCreator:{type: mongoose.Schema.Types.ObjectId, required:true, index:true, ref:'User'},

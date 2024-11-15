@@ -47,6 +47,7 @@ app.use('/academics/animatorsAssignments/', require('./routes/animatorsAssignmen
 app.use('/students/studentsParents/studentDocuments/', require('./routes/studentDocumentsRoutes'))
 app.use('/students/studentsParents/studentDocuments/:id/', require('./routes/studentDocumentsRoutes'))
 
+app.use('/finances/invoices/', require('./routes/invoiceRoutes'))
 
 app.use('/hr/employees', require('./routes/employeeRoutes'))
 
