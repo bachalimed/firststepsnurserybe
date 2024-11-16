@@ -33,6 +33,7 @@ const invoiceSchema = new mongoose.Schema(
     invoiceAuthorisedAmount: { type: String, index: true, required: true },
     invoiceDiscountAmount: { type: String, index: true },
     invoiceDiscountType: { type: String, index: true },
+    invoiceDiscountNote: { type: String, index: true },
     invoiceCreator: {
       type: mongoose.Schema.Types.ObjectId,
       index: true,

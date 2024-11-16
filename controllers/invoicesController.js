@@ -47,10 +47,30 @@ const getAllInvoices = asyncHandler(async (req, res) => {
     const invoice = await Invoice.findOne({ _id: id }).lean();
 
     if (!invoice) {
-      return res.status(404).json({ message: " invoice not found" });
+      return res.status(404).json({ message: "Invoice not found" });
     }
 
-    return res.json(invoice);
+    // Find enrolments with `enrolmentInvoice` matching the current invoice's `_id`
+    const enrolments = await Enrolment.find({
+      enrolmentInvoice: invoice._id,
+    })
+      .select(
+        "serviceFinalFee serviceType servicePeriod serviceAuthorisedFee enrolmentMonth enrolmentYear student"
+      )
+      .populate({
+        path: "student",
+        select: "studentName _id", // Populate the student to get studentName and _id
+      })
+      .lean();
+
+    // Attach the found enrolments to the invoice object
+    const enrichedInvoice = {
+      ...invoice,
+      enrolments,
+    };
+
+    // Return the enriched invoice
+    return res.json(enrichedInvoice);
   }
 
   if (selectedYear !== "1000" && selectedMonth) {
@@ -190,7 +210,7 @@ const createNewInvoice = asyncHandler(async (req, res) => {
           .status(400)
           .json({ message: "All mandatory data is required" });
       }
-      if (element.enrolmentInvoice ) {
+      if (element.enrolmentInvoice) {
         return res
           .status(400)
           .json({ message: `enrolment   ${element?.id} already invoiced` });
@@ -199,11 +219,9 @@ const createNewInvoice = asyncHandler(async (req, res) => {
         invoiceEnrolment: element?.id,
       }).lean();
       if (duplicate) {
-        return res
-          .status(400)
-          .json({
-            message: `duplicate invoice for the enrolment ${element?.id} `,
-          });
+        return res.status(400).json({
+          message: `duplicate invoice for the enrolment ${element?.id} `,
+        });
       }
       // Attempt to save the invoice
       const savedInvoice = await Invoice.create(invoiceObj);
@@ -239,27 +257,55 @@ const createNewInvoice = asyncHandler(async (req, res) => {
 // @route PATCH 'desk/invoice
 // @access Private
 const updateInvoice = asyncHandler(async (req, res) => {
-  const { id, invoiceName, invoiceCity, invoiceType } = req?.body;
+  const {
+    id,
+    invoiceYear,
+    invoiceMonth,
+    invoiceEnrolment,
+    invoiceDueDate,
+    invoiceIssueDate,
+    invoiceIsFullyPaid,
+    invoiceAmount,
+    invoiceAuthorisedAmount,
+    invoiceDiscountAmount,
+    invoiceDiscountType,
+    invoiceDiscountNote,
+    invoiceOperator,
+  } = req?.body;
 
   // Confirm data
-  if (!id || !invoiceName || !invoiceCity || !invoiceType) {
+  if (
+    !id ||
+    !invoiceYear ||
+    !invoiceMonth ||
+    !invoiceEnrolment ||
+    !invoiceDueDate ||
+    !invoiceIssueDate ||
+    !invoiceAmount ||
+    !invoiceAuthorisedAmount ||
+    !invoiceOperator
+  ) {
     return res.status(400).json({ message: "All mandatory fields required" });
   }
 
   // Does the invoice exist to update?
   const invoice = await Invoice.findById(id).exec(); //we did not lean becausse we need the save method attached to the response
 
-  if (!invoice) {
+  if (!invoice ) {
     return res.status(400).json({ message: "Invoice not found" });
   }
 
-  invoice.invoiceName = invoiceName; //it will only allow updating properties that are already existant in the model
-  invoice.invoiceCity = invoiceCity;
-  invoice.invoiceType = invoiceType;
-
+    (invoice.invoiceDueDate = invoiceDueDate),
+    (invoice.invoiceIsFullyPaid = invoiceIsFullyPaid),
+    (invoice.invoiceAmount = invoiceAmount),
+    (invoice.invoiceAuthorisedAmount = invoiceAuthorisedAmount),
+    (invoice.invoiceDiscountAmount = invoiceDiscountAmount),
+    (invoice.invoiceDiscountType = invoiceDiscountType),
+    (invoice.invoiceDiscountNote = invoiceDiscountNote),
+    (invoice.invoiceOperator = invoiceOperator);
   const updatedInvoice = await invoice.save(); //save method received when we did not include lean
 
-  res.json({ message: `invoice: ${updatedInvoice.invoiceName}, updated` });
+  res.json({ message: `invoice due on: ${updatedInvoice.invoiceDueDate}, for  ${updatedInvoice.invoiceAmount} updated` });
 });
 
 //--------------------------------------------------------------------------------------1
@@ -282,10 +328,22 @@ const deleteInvoice = asyncHandler(async (req, res) => {
   }
 
   const result = await invoice.deleteOne();
+ // Remove the enrolmentInvoice from the associated enrolment
+ const updatedEnrolment = await Enrolment.findByIdAndUpdate(
+  invoice.invoiceEnrolment,
+  { $unset: { enrolmentInvoice: "" } }, // Remove enrolmentInvoice field
+  { new: true }
+);
 
-  const reply = `invoice ${invoice.invoiceubject}, with ID ${invoice._id}, deleted`;
+if (!updatedEnrolment) {
+  return res.status(400).json({ message: "Enrolment not found" });
+}
 
-  res.json(reply);
+ // Response message
+ const reply = `Invoice  with ID ${invoice._id}, deleted and associated enrolment ${invoiceEnrolment._id}`;
+
+ // Send the response
+ res.json(reply);
 });
 
 module.exports = {
