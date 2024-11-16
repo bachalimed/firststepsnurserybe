@@ -40,9 +40,10 @@ const calculateDueDate = (enrolmentMonth, enrolmentYear) => {
 // @access Private // later we will establish authorisations
 const getAllInvoices = asyncHandler(async (req, res) => {
   // console.log('helloooooooo')
-  const { id, selectedYear, selectedMonth } = req.query;
+  const { id, selectedYear, selectedMonth, criteria } = req.query;
   // Check if an ID is passed as a query parameter
   if (id) {
+    
     // Find a single  invoice by its ID
     const invoice = await Invoice.findOne({ _id: id }).lean();
 
@@ -117,6 +118,14 @@ const getAllInvoices = asyncHandler(async (req, res) => {
       console.error("Error retrieving invoices:", error);
       return res.status(500).json({ message: "Error retrieving invoices" });
     }
+  }
+  if (selectedYear !== "1000"&& criteria==="Unpaid") {// for newPaymentFOrm, we need the unpaid invoices with their enrolment and student info
+console.log("We re hereeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeerrrr")
+
+
+
+
+
   }
   if (selectedYear === "1000") {
     // If no ID is provided, fetch all  invoices

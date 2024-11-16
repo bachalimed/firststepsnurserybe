@@ -25,7 +25,7 @@ const enrolmentSchema = new mongoose.Schema({
 	enrolementSuspension:[enrolementSuspensionSchema],
 	
 	enrolmentInvoice:{type: mongoose.Schema.Types.ObjectId,  index:true, ref:'Invoice'},
-	enrolmentPayment:{type: mongoose.Schema.Types.ObjectId,   index:true, ref:''},
+	//enrolmentPayment:{type: mongoose.Schema.Types.ObjectId,   index:true, ref:'Payment'},//we get it from invoice and its payments
 	enrolementOperator:{type: mongoose.Schema.Types.ObjectId, required:true, index:true, ref:'User'},
 	enrolementCreator:{type: mongoose.Schema.Types.ObjectId, required:true, index:true, ref:'User'},
 	

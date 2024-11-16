@@ -48,6 +48,7 @@ app.use('/students/studentsParents/studentDocuments/', require('./routes/student
 app.use('/students/studentsParents/studentDocuments/:id/', require('./routes/studentDocumentsRoutes'))
 
 app.use('/finances/invoices/', require('./routes/invoiceRoutes'))
+app.use('/finances/payments/', require('./routes/paymentRoutes'))
 
 app.use('/hr/employees', require('./routes/employeeRoutes'))
 

@@ -12,7 +12,7 @@ const mongoose = require("mongoose");
 const getAllEnrolments = asyncHandler(async (req, res) => {
   // Check if the request has selectedYear or id query parameters
   //console.log('getting the query', req.query)
-  const { selectedYear, id, selectedMonth } = req.query;
+  const { selectedYear, id, selectedMonth, criteria } = req.query;
 
   if (selectedYear === "1000") {
     // Fetch all enrolments if selectedYear is '1000'
@@ -24,9 +24,11 @@ const getAllEnrolments = asyncHandler(async (req, res) => {
   }
 
   if (selectedYear !== "1000" && selectedMonth) {
-    
     //newInvoiceform
-    const enrolments = await Enrolment.find({ enrolmentYear: selectedYear, enrolmentMonth: selectedMonth})
+    const enrolments = await Enrolment.find({
+      enrolmentYear: selectedYear,
+      enrolmentMonth: selectedMonth,
+    })
       .populate(
         "student",
         "-studentDob -studentEducation -operator -studentGardien"
@@ -77,10 +79,68 @@ const getAllEnrolments = asyncHandler(async (req, res) => {
     }
     return res.json(filteredEnrolments);
   }
+  if (selectedYear !== "1000" && criteria === "UnpaidInvoices") {
+
+    console.log("weeeeeeeeeeeeeeeeeeeeeeeeeeee")
+    //for newpaymentform to retrieve the studetn with unpaid invoices and their enrolments
+
+    try {
+      // Query enrolments for the selected year and populate related data
+      const enrolments = await Enrolment.find({
+        enrolmentYear: selectedYear,
+      })
+        .populate({
+          path: "student",
+          select: "studentName _id", // Populate student to get studentName and _id
+        })
+        .populate({
+          path: "enrolmentInvoice", // Populate the related invoice
+        })
+        .lean();
+  
+      // Filter enrolments to only include those with fully paid invoices
+      const filteredEnrolments = enrolments.filter(
+        (enrolment) => enrolment.enrolmentInvoice?.invoiceIsFullyPaid === false
+      );
+  
+      // Restructure data by grouping enrolments by student
+      const groupedByStudent = {};
+  
+      filteredEnrolments.forEach((enrolment) => {
+        const _id = enrolment.student._id.toString();
+        const studentName = enrolment.student.studentName;
+  
+        // Initialize the student group if it doesn't exist
+        if (!groupedByStudent[_id]) {
+          groupedByStudent[_id] = {
+            _id,
+            studentName,
+            enrolments: [],
+          };
+        }
+  
+        // Add the enrolment to the student's enrolments array without the `enrolmentInvoice` field
+        const { enrolmentInvoice, ...enrolmentDataWithoutInvoice } = enrolment;
+  
+        // Include only the necessary invoice data under `invoice`
+        groupedByStudent[_id].enrolments.push({
+          ...enrolmentDataWithoutInvoice,
+          invoice: enrolmentInvoice, // Attach the invoice data
+        });
+      });
+  
+      // Convert the grouped object to an array format
+      const result = Object.values(groupedByStudent);
+  
+      // Return the result
+      return res.json(result);
+    } catch (error) {
+      console.error("Error retrieving enrolments:", error);
+      return res.status(500).json({ message: "Error retrieving enrolments" });
+    }
+  }
 
   if (selectedYear !== "1000") {
- 
-
     const enrolments = await Enrolment.find({ enrolmentYear: selectedYear })
       .populate(
         "student",
