@@ -1,12 +1,16 @@
 const mongoose = require("mongoose");
 
-const PaymentSchema = new mongoose.Schema(
+const paymentSchema = new mongoose.Schema(
   {
     paymentYear: {
       type: String,
       required: true,
     },
-
+    paymentStudent: {
+      type: mongoose.Schema.Types.ObjectId,
+        ref: "Student",
+        required: true,
+    },
     paymentAmount: {
       type: String,
       required: true,
@@ -24,9 +28,9 @@ const PaymentSchema = new mongoose.Schema(
     paymentType: {
       type: String,
       required: true,
-      enum: ["Cash", "Cheque", "Bank Transfer", "Online Payment"],
+      //enum: ["Cash", "Cheque", "Bank Transfer", "Online Payment"],
     },
-    paymentTypeReference: {
+    paymentReference: {
       type: String,
     },
     paymentDate: {
@@ -55,7 +59,6 @@ const PaymentSchema = new mongoose.Schema(
   }
 );
 
-// Index for faster queries on recurring Payments
-PaymentSchema.index({ startTime: 1, endTime: 1 });
 
-module.exports = mongoose.model("Payment", PaymentSchema, "Payments");
+
+module.exports = mongoose.model("Payment", paymentSchema, "payments");

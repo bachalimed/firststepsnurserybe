@@ -14,18 +14,7 @@ const invoiceSchema = new mongoose.Schema(
       required: true,
       set: capitalizeFirstLetter,
     },
-    invoiceEnrolment: {
-      type: mongoose.Schema.Types.ObjectId,
-      index: true,
-      required: true,
-      ref: "Enrolment",
-    },
-    // invoiceStudent: {
-    //   type: mongoose.Schema.Types.ObjectId,
-    //   index: true,
-    //   required: true,
-    //   ref: "Student",
-    // },
+
     invoiceDueDate: { type: Date, index: true, required: true },
     invoiceIssueDate: { type: Date, index: true, required: true },
     invoiceIsFullyPaid: { type: Boolean, index: true },
@@ -34,6 +23,18 @@ const invoiceSchema = new mongoose.Schema(
     invoiceDiscountAmount: { type: String, index: true },
     invoiceDiscountType: { type: String, index: true },
     invoiceDiscountNote: { type: String, index: true },
+    invoiceEnrolment: {
+      type: mongoose.Schema.Types.ObjectId,
+      index: true,
+      required: true,
+
+      ref: "Enrolment",
+    },
+    invoicePayment: {
+      type: mongoose.Schema.Types.ObjectId,
+      index: true,
+      ref: "Payment",
+    },
     invoiceCreator: {
       type: mongoose.Schema.Types.ObjectId,
       index: true,

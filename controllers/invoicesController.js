@@ -82,7 +82,13 @@ const getAllInvoices = asyncHandler(async (req, res) => {
       const invoices = await Invoice.find({
         invoiceYear: selectedYear,
         invoiceMonth: selectedMonth,
-      }).lean();
+      })
+      .populate({
+        path: "invoicePayment",
+        select: "paymentDate  _id", 
+      })
+      .lean();
+      
 
       if (!invoices || invoices.length === 0) {
         return res.status(404).json({ message: "No invoices found" });
@@ -96,13 +102,13 @@ const getAllInvoices = asyncHandler(async (req, res) => {
             enrolmentInvoice: invoice._id,
           })
             .select(
-              "serviceFinalFee serviceType servicePeriod serviceAuthorisedFee enrolmentMonth enrolmentYear student"
+              "serviceFinalFee  serviceType servicePeriod serviceAuthorisedFee enrolmentMonth enrolmentYear student"
             )
             .populate({
               path: "student",
               select: "studentName _id", // Populate the student to get studentName and _id
             })
-            .lean();
+           
 
           // Attach the found enrolments to the invoice object
           return {

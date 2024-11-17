@@ -1,6 +1,6 @@
 // const User = require('../models/User')
 const Payment = require("../models/Payment");
-const Student = require("../models/Student");
+const Invoice = require("../models/Invoice");
 const AttendedSchool = require("../models/AttendedSchool");
 
 //const Employee = require('../models/Employee')//we might need the employee module in this controller
@@ -16,19 +16,30 @@ const getAllPayments = asyncHandler(async (req, res) => {
 
   // Check if an ID is passed as a query parameter
   const { id, criteria, selectedYear } = req.query;
+
+  if (selectedYear !== "1000") {
+    // Find a single payment by its ID
+    const payments = await Payment.find()
+  .populate({
+    path: 'paymentStudent',
+    select: 'student_id studentName' // Selects only the fields you want from the student
+  })
+  .populate({
+    path: 'paymentInvoices', // This will populate the paymentInvoices array
+    select: '_id invoiceYear invoiceMonth invoiceDueDate invoiceIsFullyPaid invoiceAuthorisedAmount invoiceDiscountAmount invoiceAmount' // Include everything from Invoice (_id will be automatically included)
+  })
+  .lean();
+
+
+    if (!payments) {
+      return res.status(400).json({ message: "Payment not found" });
+    }
+
+    // Return the payment inside an array
+    return res.json(payments); //we need it inside  an array to avoid response data error
+  }
   
- 
 
- 
-    if (selectedYear !== "1000") {
-      console.log("hell")
-
-       
-
-        
-      
-    } 
-  
   if (id) {
     //console.log("nowwwwwwwwwwwwwwwwwwwwwww here");
 
@@ -53,90 +64,91 @@ const getAllPayments = asyncHandler(async (req, res) => {
 // @access Private
 const createNewPayment = asyncHandler(async (req, res) => {
   /////////////////new will be with no ending date
-  console.log(req?.body);
+  //console.log(req?.body);
   const {
-    paymentLabel,
     paymentYear,
-    students,
-    paymentColor,
+    paymentStudent,
+    paymentAmount,
+    paymentInvoices,
+    paymentNote,
     paymentType,
-    paymentFrom,
-    paymentTo,
-    paymentAnimator,
-    paymentLocation,
-    operator,
-    creator,
+    paymentReference,
+    paymentDate,
+    paymentOperator,
   } = req?.body; //this will come from front end we put all the fields o fthe collection here
 
   //Confirm data is present in the request with all required fields
 
   if (
-    !paymentLabel ||
     !paymentYear ||
-    !students ||
-    students.length === 0 ||
-    !paymentColor ||
+    !paymentStudent ||
+    !paymentAmount ||
+    !paymentInvoices ||
     !paymentType ||
-    !paymentFrom ||
-    !paymentAnimator ||
-    !paymentLocation ||
-    !operator ||
-    !creator
+    !paymentDate ||
+    !paymentOperator
   ) {
     return res
       .status(400)
       .json({ message: "All mandatory fields are required" }); //400 : bad request
   }
 
-  // Check for duplicate username
+  // Check for duplicate payment or invoices paid previously
   const duplicate = await Payment.findOne({
     paymentYear,
-    paymentType,
-    paymentLabel,
-  })
-    .lean()
-    .exec(); //because we re receiving only one response from mongoose
+    paymentStudent,
+    paymentInvoices: { $in: paymentInvoices },
+  });
 
   if (duplicate) {
     return res.status(409).json({
-      message: `Duplicate payment: ${duplicate.paymentLabel}  ${duplicate.paymentType} , found for ${duplicate.paymentYear}`,
+      message: `Duplicate payment or some invoices already paid for  ${duplicate.paymentInvoices} on  ${duplicate.paymentDate}}`,
     });
   }
 
   const paymentObject = {
-    paymentLabel,
-    paymentYear,
-    students,
-    paymentColor,
-    paymentType,
-    paymentFrom,
-    paymentTo,
-    paymentAnimator,
-    paymentLocation,
-    operator,
-    creator,
+    paymentYear: paymentYear,
+    paymentStudent: paymentStudent,
+    paymentAmount: paymentAmount,
+    paymentInvoices: paymentInvoices,
+    paymentNote: paymentNote,
+    paymentType: paymentType,
+    paymentReference: paymentReference,
+    paymentDate: paymentDate,
+    paymentOperator: paymentOperator,
+    paymentCreator: paymentOperator,
+    paymentRecordDate: new Date(),
   }; //construct new payment to be stored
 
   // Create and store new payment
   const payment = await Payment.create(paymentObject);
-
+  if (!payment) {
+    return res.status(400).json({ message: "Invalid payment data received No payment saved" });
+  }
   if (payment) {
+    console.log(payment,'payment')
+    // Update each Invoice in Payment.paymentInvoices with newPaymentId and set fully paid to true
     // Get the new payment ID
     const newPaymentId = payment._id;
 
-    // Update each student in payment.students with studentPayment = newPaymentId
-    await Student.updateMany(
-      { _id: { $in: payment.students } }, // Filter: only students in payment.students array
-      { $set: { studentPayment: newPaymentId } } // Update: set studentPayment to newPaymentId
+    const invoiceIDs = payment.paymentInvoices;
+
+    // Update each Invoice in paymentInvoices with newPaymentId
+    await Invoice.updateMany(
+      { _id: { $in: invoiceIDs } }, // Filter invoices by IDs in the invoiceIDs array
+      { 
+        $set: { 
+          invoicePayment: newPaymentId, 
+          invoiceIsFullyPaid: true 
+        } 
+      }
     );
 
     // If created and students updated
-    res.status(201).json({
-      message: `New payment ${payment.paymentLabel}, ${payment.paymentType}, for ${payment.paymentYear} created and students updated`,
+    return res.status(201).json({
+      message: `New payment  ${payment._id} of  ${payment.paymentAmount} for ${payment.paymentInvoices} created and ${payment.paymentInvoices.length} Invoices updated`,
     });
-  } else {
-    res.status(400).json({ message: "Invalid payment data received" });
-  }
+  } 
 });
 
 // @desc Update a payment
@@ -280,20 +292,27 @@ const deletePayment = asyncHandler(async (req, res) => {
   const payment = await Payment.findById(id).exec();
 
   if (!payment) {
-    return res.status(400).json({ message: "Payment not found" });
+    return res.status(400).json({ message: "Payment to delete not found" });
   }
   // Remove the payment from students' `studentPayment` field
-  await Student.updateMany(
-    { studentPayment: id },
-    { $unset: { studentPayment: "" } }
+  await Invoice.updateMany(
+    { invoicePayment: id }, // Condition: Find invoices where invoicePayment equals the provided id
+    {
+      $unset: { studentPayment: "" }, // Unset the studentPayment field
+      $set: { 
+        invoicePayment: null,         // Set invoicePayment to an empty value (you could use null if preferred)
+        invoiceIsFullyPaid: false   // Set invoiceIsFullyPaid to false
+      }
+    }
   );
+  
 
   // Delete the payment
   const result = await payment.deleteOne();
 
-  const reply = `Payment ${payment.paymentLabel}, with ID ${payment._id}, deleted`;
+  const reply = `Payment of ${payment.paymentAmount}, with ID ${payment._id}, deleted and invoices updated`;
 
-  res.json(reply);
+  return res.json(reply);
 });
 
 module.exports = {
