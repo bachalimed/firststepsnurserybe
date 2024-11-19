@@ -71,7 +71,7 @@ const getAllFamilies = asyncHandler(async (req, res) => {
     const { id } = req.query;
     if (req.query.criteria) {
       const criteria = req.query.criteria;
-      console.log("in teh criteria", criteria);
+      //console.log("in teh criteria", criteria);
       if (criteria == "Dry") {
         //console.log("in teh dry");
         const family = await Family.find({ _id: id })
@@ -138,7 +138,7 @@ const getFamilyById = asyncHandler(async (req, res) => {
   //console.log("hellloooww");
   try {
     const { id, criteria } = req.params;
-    console.log(id, criteria);
+    //console.log(id, criteria);
 
     const path = "children.child";
     const selection = "_id studentName";

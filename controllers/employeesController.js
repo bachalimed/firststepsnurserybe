@@ -47,7 +47,7 @@ const formatUsers = (users) => {
 };
 
 const getAllEmployees = asyncHandler(async (req, res) => {
-  const { selectedYear, criteria } = req.query; //maybe replace the conditionals with the current year that we get  from middleware
+  const { selectedYear, criteria, id } = req.query; //maybe replace the conditionals with the current year that we get  from middleware
   if (selectedYear) {
     console.log(selectedYear, "sleected year inback");
     //will retrive all teh students
@@ -112,8 +112,8 @@ const getAllEmployees = asyncHandler(async (req, res) => {
         console.log(users, "users");
         return res.status(200).json(users);
       }
-    } 
-    if(selectedYear !== "1000") {
+    }
+    if (selectedYear !== "1000") {
       //will retrieve only the employees for the selcted year
 
       // Aggregation pipeline to retrieve users with matching employeeYears.academicYear
@@ -218,6 +218,18 @@ const getAllEmployees = asyncHandler(async (req, res) => {
         res.status(200).json(users);
       }
     }
+  }
+  if (id) {
+    // Aggregation pipeline to retrieve a specific user by employeeId and matching selected academic year
+    console.log(id);
+    const user = await User.findOne({ _id: id }).populate("employeeId").lean();
+
+    if (!user) {
+      return res
+        .status(404)
+        .json({ message: "No user found with the provided id." });
+    }
+    return res.status(200).json(user);
   }
 });
 
@@ -394,6 +406,9 @@ const getEmployeeDetails = asyncHandler(async (req, res) => {
 module.exports = {
   getEmployeeDetails,
 };
+
+
+
 
 // @desc Update a employee, we will retrieve all information from user and parent and update and save in both collections
 // @route PATCH /hr/employees

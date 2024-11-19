@@ -1,6 +1,9 @@
 // const User = require('../models/User')
 const StudentDocument = require('../models/StudentDocument')
 const StudentDocumentsList = require('../models/StudentDocumentsList')
+const Family = require('../models/Family')
+const Student = require('../models/Student')
+
 const path = require('path');
 const fs = require('fs');
 const mime = require('mime-types');
@@ -15,9 +18,9 @@ const mongoose = require('mongoose')
 // @route GET 'desk/studentDocuments             
 // @access Private // later we will establish authorisations
 const getAllStudentDocuments = asyncHandler(async (req, res) => {
-
-     console.log('now get studetn by year&id')
-    if(req.query.studentId&&req.query.year){ 
+const {studentId,year, familyId,criteria} = req.query
+     //console.log('now get studetn by year&id')
+    if(studentId&&year){ 
         //console.log('showing request query params',req.query.studentId,req.query.year)
         const {studentId, year}= req.query
        
@@ -35,7 +38,7 @@ const getAllStudentDocuments = asyncHandler(async (req, res) => {
   
         // Check if documents are found and send response
         if (studentDocuments.length || studentDocumentsList.length) {
-            console.log('studentDocuments',studentDocuments,'studentDocumentsList',studentDocumentsList)
+           // console.log('studentDocuments',studentDocuments,'studentDocumentsList',studentDocumentsList)
             const listing =studentDocumentsList[0].documentsList
             
             responseData = listing.map(item => {
@@ -53,7 +56,7 @@ const getAllStudentDocuments = asyncHandler(async (req, res) => {
                     studentDocumentId: matchingDocument ? matchingDocument._id : null, // Add studentDocumentId if found, otherwise null
                 };
             });
-            console.log('responseData',responseData)
+            //console.log('responseData',responseData)
           return res.json(responseData);
         }
         // If no documents found we return an empty array toallow user to upload from table
@@ -62,15 +65,155 @@ const getAllStudentDocuments = asyncHandler(async (req, res) => {
         console.error('Error fetching documents:', error);
         return res.status(500).json({ message: 'Error fetching documents' });
       }
-    } else {
-      // Handle case where query parameters are missing
-      return res.status(400).json({ message: 'studentId and year query parameters are required' });
+    } if (familyId && year && criteria === "OnlyPhotos") {
+        //console.log(familyId, criteria);
+        try {
+          // Step 1: Retrieve family data
+          const family = await Family.findById(familyId).lean(); // Fetch family by ID
+    
+          if (!family) {
+            throw new Error("Family not found");
+          }
+    
+          // Step 2: Fetch the student documents for the given year and document titles
+          const titles = ["Father Photo", "Mother Photo", "Student Photo"]; // Define the titles you're interested in
+          const studentDocumentsListt = await fetchStudentDocuments(year, titles); // Fetch documents
+    
+        //   console.log(
+        //     studentDocumentsListt[0],
+        //     "studentDocumentlistttttttttttttttttttttttt 00"
+        //   );
+          // Step 3: Loop over the children and attach relevant documents (Father, Mother, and Student Photo)
+          const fatherPhoto = await StudentDocument.findOne({
+            studentId: family.children[0].child, // Assuming you're looking for the first child in the family
+            studentDocumentReference: {
+              $in: studentDocumentsListt.flatMap(
+                (item) =>
+                  // Access the `documentsList` array and filter for documents with `documentTitle === 'Father Photo'`
+                  item.documentsList
+                    .filter((document) => document.documentTitle === "Father Photo")
+                    .map((document) => document.documentReference) // Get the `documentReference` for those documents
+              ),
+            },
+          }).lean();
+    
+          // console.log(fatherPhoto,'fatherPhoto')
+    
+          const motherPhoto = await StudentDocument.findOne({
+            studentId: family.children[0].child, // Assuming you're looking for the first child in the family
+            studentDocumentReference: {
+              $in: studentDocumentsListt.flatMap(
+                (item) =>
+                  // Access the `documentsList` array and filter for documents with `documentTitle === 'Father Photo'`
+                  item.documentsList
+                    .filter((document) => document.documentTitle === "Mother Photo")
+                    .map((document) => document.documentReference) // Get the `documentReference` for those documents
+              ),
+            },
+          }).lean();
+    
+          // Attach father and mother photos to the family data
+          if (fatherPhoto) {
+            family.fatherPhotoId = fatherPhoto?._id; // Or any other way you want to append
+          }
+    
+          if (motherPhoto) {
+            family.motherPhotoId = motherPhoto?._id;
+          }
+    
+          // Async function to flatten studentPhotos and append them directly under the `family` object
+await family.children.reduce(async (accPromise, child) => {
+    // Resolve the accumulator promise
+    await accPromise;
+  
+    // Find the relevant StudentDocument for the current child
+    const studentPhoto = await StudentDocument.findOne({
+      studentId: child.child, // Assuming `child.child` is the correct field for the student ID
+      studentDocumentReference: {
+        $in: studentDocumentsListt.flatMap(
+          (item) =>
+            // Access the `documentsList` array and filter for documents with `documentTitle === 'Student Photo'`
+            item.documentsList
+              .filter((document) => document.documentTitle === "Student Photo")
+              .map((document) => document.documentReference) // Get the `documentReference` for those documents
+        ),
+      },
+    }).lean();
+  
+    // Append the studentPhoto ID to the `family` object directly
+    if (!family.studentPhotos) {
+      family.studentPhotos = {}; // Initialize `studentPhotos` if not already present
     }
-  })
+  
+    // Add the photo information directly under `family.studentPhotos`
+    family[`child${family.children.indexOf(child) + 1}Id`] = child.child;
+    family[`child${family.children.indexOf(child) + 1}PhotoId`] = studentPhoto ? studentPhoto._id : null;
+  
+    // Also update the child object itself if needed
+    if (studentPhoto) {
+      child.studentPhoto = studentPhoto._id;
+    }
+  
+    // Return a resolved promise to continue the next iteration
+    return Promise.resolve();
+  }, Promise.resolve());
+  
+    family.children=null
+          
+    
+          // Step 4: Return the modified family data
+    
+          return res.json(family);
+        } catch (error) {
+          console.error("Error fetching family data with documents:", error);
+          throw error;
+        }
+      } else {
+        // Handle case where query parameters are missing
+    
+        return res
+          .status(400)
+          .json({ message: "query parameters are required" });
+      }
+    });
+    
 
 
 
 
+
+    const fetchStudentDocuments = async (year, titles) => {
+        try {
+          // Fetch the student documents that match the year
+          const studentDocumentsListt = await StudentDocumentsList.find({
+            documentsAcademicYear: year,
+          }).lean();
+      
+          // Filter the documentsList array for each document to only include the specified titles
+          const filteredDocuments = studentDocumentsListt.map((doc) => {
+            // Filter the documentsList to include only the titles in the 'titles' array
+            doc.documentsList = doc.documentsList.filter((document) =>
+              titles.includes(document.documentTitle)
+            );
+      
+            return doc;
+          });
+      
+          //console.log(filteredDocuments, 'filteredDocuments'); // Log the filtered documents
+          return filteredDocuments;
+        } catch (error) {
+          console.error("Error fetching student documents:", error);
+          throw error;
+        }
+      }; 
+    
+    
+   
+  
+
+
+
+//query the file directly
   const getFileById = asyncHandler(async (req, res) => {
     try {const { id } = req.params
 console.log('now in the controller to get by doc id', id)

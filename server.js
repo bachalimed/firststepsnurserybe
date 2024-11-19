@@ -50,6 +50,8 @@ app.use('/students/studentsParents/studentDocuments/:id/', require('./routes/stu
 app.use('/finances/invoices/', require('./routes/invoiceRoutes'))
 app.use('/finances/payments/', require('./routes/paymentRoutes'))
 
+app.use('/hr/employees/employeeDocuments/', require('./routes/employeeDocumentsRoutes'))
+app.use('/hr/employees/employeeDocuments/:id/', require('./routes/employeeDocumentsRoutes'))
 app.use('/hr/employees', require('./routes/employeeRoutes'))
 
 
@@ -58,6 +60,7 @@ app.use('/desk/tasks', require('./routes/taskRoutes'))
 app.use('/settings/academicsSet/academicYears/', require('./routes/academicYearRoutes'))
 app.use('/settings/academicsSet/attendedSchools/', require('./routes/attendedSchoolRoutes'))
 app.use('/settings/studentsSet/studentDocumentsLists/', require('./routes/studentDocumentsListRoutes'))
+app.use('/settings/hrSet/employeeDocumentsLists/', require('./routes/employeeDocumentsListRoutes'))
 app.use('/settings/studentsSet/services/', require('./routes/serviceRoutes'))
 app.use('/settings/academicsSet/classrooms/', require('./routes/classroomRoutes'))
 

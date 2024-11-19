@@ -9,9 +9,19 @@ const mongoose = require("mongoose");
 // @route GET /admin/users              ??how to modify this route to admin/users is in serve.js and userRoutes
 // @access Private // later we will establish authorisations
 const getAllUsers = asyncHandler(async (req, res) => {
-  if (req?.query?.id) {
-    const { id } = req.query;
+  const { id, criteria } = req.query;
+  if (id && criteria === "userDetails") {
+    // Get all users from MongoDB
+    const user = await User.findById(id).select("-password").lean(); //this will not return the password or other extra data(lean)
 
+    // If no users
+    if (!user) {
+      return res.status(400).json({ message: "user not found" });
+    }
+    return res.json(user);
+  }
+
+  if (id) {
     // Find the user by ID and select fields to exclude
     const user = await User.findById(id)
       .select(
@@ -260,7 +270,7 @@ const deleteUser = asyncHandler(async (req, res) => {
 
   const result = await user.deleteOne();
 
-  const reply = `Username ${result.username} with ID ${result._id} deleted`;
+  const reply = `Username ${user.username} with ID ${user._id} deleted`;
 
   res.json(reply);
 });

@@ -46,251 +46,243 @@ function flattenStudentName(student) {
     studentName: fullName,
     studentSectionId: studentSectionId,
   };
-  
 }
 // @desc Get all students
 // @route GET 'students/studentsParents/students
 // @access Private // later we will establish authorisations
 const getAllStudents = asyncHandler(async (req, res) => {
-  // Get all students from MongoDB
   //console.log('teh request', req.query)
-  const { selectedYear, criteria ,id} = req.query; //maybe replace the conditionals with the current year that we get  from middleware
-  if (selectedYear) {
-    //console.log(selectedYear, "sleected year inback")
-    //will retrive all teh students
-    if (selectedYear === "1000") {
-      const students = await Student.find().lean();
-      if (!students?.length) {
-        return res.status(400).json({ message: "No students found!" });
-      } else {
-        //console.log('returned res', students)
+  const { selectedYear, criteria, id } = req.query; //maybe replace the conditionals with the current year that we get  from middleware
 
-        // if students found, we check if the criteria : 'No Family 'is present
-        if (req.query.criteria && req.query.criteria === "No Family") {
-          getStudentsNotInFamily()
-            .then((students) => {
-              res.json(students);
-            })
-            .catch((error) => {
-              console.error(error);
-            });
-        } else {
-          res.json(students);
-        }
+  //console.log(selectedYear, "sleected year inback")
+  //will retrive all teh students
+  if (selectedYear === "1000") {
+    const students = await Student.find().lean();
+    if (!students?.length) {
+      return res.status(400).json({ message: "No students found!" });
+    } else {
+      //console.log('returned res', students)
+
+      // if students found, we check if the criteria : 'No Family 'is present
+      if (req.query.criteria && req.query.criteria === "No Family") {
+        getStudentsNotInFamily()
+          .then((students) => {
+            res.json(students);
+          })
+          .catch((error) => {
+            console.error(error);
+          });
+      } else {
+        res.json(students);
       }
     }
-    if (selectedYear !== "1000") {
-      if (req.query?.criteria === "withAdmission") {
-        //needed for new enrolment form////////////////////
-        //will retrieve only the selcted year
-        // const students = await Student.find({
-        //     studentYears: {
-        //       $elemMatch: {
-        //         academicYear: selectedYear,  // Match academicYear to selectedYear
-        //         admission: { $exists: true, $ne: null }, // Ensure admission exists and is not null
-        //       },
-        //     },
-        //   }).lean(); //this will not return the extra data(lean)
-        const students = await Student.aggregate([
-          // Match students with studentYears containing the selected academic year and a non-null admission
-          {
-            $match: {
-              studentYears: {
-                $elemMatch: {
-                  academicYear: selectedYear,
-                  admission: { $exists: true, $ne: null },
-                },
-              },
-            },
-          },
-          // Unwind the studentYears array to work with individual elements
-          { $unwind: "$studentYears" },
-          // Match only studentYears for the selected academic year
-          {
-            $match: {
-              "studentYears.academicYear": selectedYear,
-              "studentYears.admission": { $exists: true, $ne: null },
-            },
-          },
-          // Lookup (populate) the admission field in studentYears
-          {
-            $lookup: {
-              from: "admissions", // The admission collection
-              localField: "studentYears.admission",
-              foreignField: "_id",
-              as: "studentYears.admissionDetails",
-            },
-          },
-          // Unwind the admissionDetails array (because lookup returns an array)
-          { $unwind: "$studentYears.admissionDetails" },
-          // Unwind agreedServices so that each agreedService is treated individually
-          { $unwind: "$studentYears.admissionDetails.agreedServices" },
-          // Lookup (populate) the service field inside agreedServices
-          {
-            $lookup: {
-              from: "services", // The service collection
-              localField:
-                "studentYears.admissionDetails.agreedServices.service",
-              foreignField: "_id",
-              as: "studentYears.admissionDetails.agreedServices.serviceDetails",
-            },
-          },
-          // Unwind the serviceDetails array (since it's an array after lookup)
-          {
-            $unwind:
-              "$studentYears.admissionDetails.agreedServices.serviceDetails",
-          },
-          // Project the necessary fields, including feeValue, feePeriod, feeStartDate, feeEndDate, isFlagged, isAuthorised, comment, and serviceDetails
-          {
-            $project: {
-              _id: 1,
-              studentName: 1, // Include studentName directly
-              academicYear: "$studentYears.academicYear", // Include academicYear
-              admission: "$studentYears.admission", // Include admission ID
-              admissionDetails: {
-                admissionYear: "$studentYears.admissionDetails.admissionYear", // Admission year
-                admissionDate: "$studentYears.admissionDetails.admissionDate", // Admission date
-                // Flatten the agreedServices object and include the relevant service details
-                agreedServices: {
-                  serviceDetails:
-                    "$studentYears.admissionDetails.agreedServices.serviceDetails", // Direct reference to service details
-                  feeValue:
-                    "$studentYears.admissionDetails.agreedServices.feeValue", // Fee value
-                  feePeriod:
-                    "$studentYears.admissionDetails.agreedServices.feePeriod", // Fee period
-                  feeStartDate:
-                    "$studentYears.admissionDetails.agreedServices.feeStartDate", // Fee start date
-                  feeMonths:
-                    "$studentYears.admissionDetails.agreedServices.feeMonths", // Fee Months
-                  feeEndDate:
-                    "$studentYears.admissionDetails.agreedServices.feeEndDate", // Fee end date
-                  isFlagged:
-                    "$studentYears.admissionDetails.agreedServices.isFlagged", // Is flagged
-                  isAuthorised:
-                    "$studentYears.admissionDetails.agreedServices.isAuthorised", // Is authorised
-                  comment:
-                    "$studentYears.admissionDetails.agreedServices.comment", // Comment
-                },
-              },
-            },
-          },
-          // Group by the student ID and merge the agreedServices into an array
-          {
-            $group: {
-              _id: "$_id", // Group by student ID
-              studentName: { $first: "$studentName" }, // Keep the student's name
-              academicYear: { $first: "$academicYear" }, // Keep the academic year
-              admission: { $first: "$admission" }, // Keep the admission ID
-              admissionDetails: {
-                $first: {
-                  admissionYear: "$admissionDetails.admissionYear", // Keep the admission year
-                  admissionDate: "$admissionDetails.admissionDate", // Keep the admission date
-                },
-              },
-              agreedServices: {
-                $push: "$admissionDetails.agreedServices", // Merge all agreedServices into an array
-              },
-            },
-          },
-          // Replace the root document with the student object
-          {
-            $project: {
-              _id: 1,
-              studentName: 1,
-              academicYear: 1,
-              admission: 1,
-              admissionDetails: {
-                admissionYear: "$admissionDetails.admissionYear",
-                admissionDate: "$admissionDetails.admissionDate",
-                agreedServices: "$agreedServices", // Populate agreedServices array
-              },
-            },
-          },
-        ]).exec();
+  }
+  if (selectedYear !== "1000" && criteria === "withSections") {
+    console.log("with   sectionnssssssssssssssssssssssssssssssssssss");
+    const students = await Student.find({
+      "studentYears.academicYear": selectedYear,
+    })
+      .populate("studentSection")
+      .select(
+        " -operator -studentDob  -studentGardien -studentSex -studentYears -updatedAt"
+      )
+      .lean();
+    if (!students?.length) {
+      return res.status(400).json({
+        message:
+          "No students with admissions found  for the selected academic year",
+      });
+    } else {
+      //console.log('returned res', students)
 
-        if (!students?.length) {
-          return res.status(400).json({
-            message:
-              "No students with admissions found  for the selected academic year",
-          });
-        } else {
-          // Sort students by studentName.firstName in ascending order
-          const sortedStudents = students.sort((a, b) => {
-            const firstNameA = a.studentName.firstName.toLowerCase();
-            const firstNameB = b.studentName.firstName.toLowerCase();
+      // flatten teh students name and studentSectionID
 
-            if (firstNameA < firstNameB) return -1; // a comes first
-            if (firstNameA > firstNameB) return 1; // b comes first
-            return 0; // they are equal
-          });
-          //console.log('returned res', students)
-          return res.json(sortedStudents);
-        }
-      } else if (criteria === "withSections") {
-        console.log("with   sectionnssssssssssssssssssssssssssssssssssss");
-        const students = await Student.find({
+      const flattenedStudents = students.map(flattenStudentName);
+
+      // console.log(flattenedStudents, "flattenedStudents");
+
+      return res.json(flattenedStudents);
+    }
+  }
+  if (selectedYear !== "1000" && criteria === "withAdmission") {
+    //needed for new enrolment form////////////////////
+    //will retrieve only the selcted year
+    // const students = await Student.find({
+    //     studentYears: {
+    //       $elemMatch: {
+    //         academicYear: selectedYear,  // Match academicYear to selectedYear
+    //         admission: { $exists: true, $ne: null }, // Ensure admission exists and is not null
+    //       },
+    //     },
+    //   }).lean(); //this will not return the extra data(lean)
+    const students = await Student.aggregate([
+      // Match students with studentYears containing the selected academic year and a non-null admission
+      {
+        $match: {
+          studentYears: {
+            $elemMatch: {
+              academicYear: selectedYear,
+              admission: { $exists: true, $ne: null },
+            },
+          },
+        },
+      },
+      // Unwind the studentYears array to work with individual elements
+      { $unwind: "$studentYears" },
+      // Match only studentYears for the selected academic year
+      {
+        $match: {
           "studentYears.academicYear": selectedYear,
-        })
-          .populate("studentSection")
-          .select(
-            " -operator -studentDob  -studentGardien -studentSex -studentYears -updatedAt"
-          )
-          .lean();
-        if (!students?.length) {
-          return res.status(400).json({
-            message:
-              "No students with admissions found  for the selected academic year",
-          });
-        } else {
-          //console.log('returned res', students)
+          "studentYears.admission": { $exists: true, $ne: null },
+        },
+      },
+      // Lookup (populate) the admission field in studentYears
+      {
+        $lookup: {
+          from: "admissions", // The admission collection
+          localField: "studentYears.admission",
+          foreignField: "_id",
+          as: "studentYears.admissionDetails",
+        },
+      },
+      // Unwind the admissionDetails array (because lookup returns an array)
+      { $unwind: "$studentYears.admissionDetails" },
+      // Unwind agreedServices so that each agreedService is treated individually
+      { $unwind: "$studentYears.admissionDetails.agreedServices" },
+      // Lookup (populate) the service field inside agreedServices
+      {
+        $lookup: {
+          from: "services", // The service collection
+          localField: "studentYears.admissionDetails.agreedServices.service",
+          foreignField: "_id",
+          as: "studentYears.admissionDetails.agreedServices.serviceDetails",
+        },
+      },
+      // Unwind the serviceDetails array (since it's an array after lookup)
+      {
+        $unwind: "$studentYears.admissionDetails.agreedServices.serviceDetails",
+      },
+      // Project the necessary fields, including feeValue, feePeriod, feeStartDate, feeEndDate, isFlagged, isAuthorised, comment, and serviceDetails
+      {
+        $project: {
+          _id: 1,
+          studentName: 1, // Include studentName directly
+          academicYear: "$studentYears.academicYear", // Include academicYear
+          admission: "$studentYears.admission", // Include admission ID
+          admissionDetails: {
+            admissionYear: "$studentYears.admissionDetails.admissionYear", // Admission year
+            admissionDate: "$studentYears.admissionDetails.admissionDate", // Admission date
+            // Flatten the agreedServices object and include the relevant service details
+            agreedServices: {
+              serviceDetails:
+                "$studentYears.admissionDetails.agreedServices.serviceDetails", // Direct reference to service details
+              feeValue:
+                "$studentYears.admissionDetails.agreedServices.feeValue", // Fee value
+              feePeriod:
+                "$studentYears.admissionDetails.agreedServices.feePeriod", // Fee period
+              feeStartDate:
+                "$studentYears.admissionDetails.agreedServices.feeStartDate", // Fee start date
+              feeMonths:
+                "$studentYears.admissionDetails.agreedServices.feeMonths", // Fee Months
+              feeEndDate:
+                "$studentYears.admissionDetails.agreedServices.feeEndDate", // Fee end date
+              isFlagged:
+                "$studentYears.admissionDetails.agreedServices.isFlagged", // Is flagged
+              isAuthorised:
+                "$studentYears.admissionDetails.agreedServices.isAuthorised", // Is authorised
+              comment: "$studentYears.admissionDetails.agreedServices.comment", // Comment
+            },
+          },
+        },
+      },
+      // Group by the student ID and merge the agreedServices into an array
+      {
+        $group: {
+          _id: "$_id", // Group by student ID
+          studentName: { $first: "$studentName" }, // Keep the student's name
+          academicYear: { $first: "$academicYear" }, // Keep the academic year
+          admission: { $first: "$admission" }, // Keep the admission ID
+          admissionDetails: {
+            $first: {
+              admissionYear: "$admissionDetails.admissionYear", // Keep the admission year
+              admissionDate: "$admissionDetails.admissionDate", // Keep the admission date
+            },
+          },
+          agreedServices: {
+            $push: "$admissionDetails.agreedServices", // Merge all agreedServices into an array
+          },
+        },
+      },
+      // Replace the root document with the student object
+      {
+        $project: {
+          _id: 1,
+          studentName: 1,
+          academicYear: 1,
+          admission: 1,
+          admissionDetails: {
+            admissionYear: "$admissionDetails.admissionYear",
+            admissionDate: "$admissionDetails.admissionDate",
+            agreedServices: "$agreedServices", // Populate agreedServices array
+          },
+        },
+      },
+    ]).exec();
 
-          // flatten teh students name and studentSectionID
+    if (!students?.length) {
+      return res.status(400).json({
+        message:
+          "No students with admissions found  for the selected academic year",
+      });
+    } else {
+      // Sort students by studentName.firstName in ascending order
+      const sortedStudents = students.sort((a, b) => {
+        const firstNameA = a.studentName.firstName.toLowerCase();
+        const firstNameB = b.studentName.firstName.toLowerCase();
 
-          const flattenedStudents = students.map(flattenStudentName);
-
-         // console.log(flattenedStudents, "flattenedStudents");
-
-          return res.json(flattenedStudents);
-        }
-      }
-      // if (req.query?.criteria === "withEducation") {//needed for new section list form////////////////////
-      //   const students = await Student.find()
-      // }
-
-      //will retrieve only the selcted year
-      const students = await Student.find({
-        studentYears: { $elemMatch: { academicYear: selectedYear } },
-      })
-        .populate("studentEducation.attendedSchool")
-        .lean(); //this will not return the extra data(lean)
-      //const students = await Student.find({ studentYear: '2023/2024' }).lean()//this will not return the extra data(lean)
-      //console.log('with year select',selectedYear,  students)
-      if (!students?.length) {
-        return res.status(400).json({
-          message: "No students found  for the selected academic year",
-        });
-      } else {
-        const sortedStudents = students.sort((a, b) => {
-          const firstNameA = a.studentName.firstName.toLowerCase();
-          const firstNameB = b.studentName.firstName.toLowerCase();
-
-          if (firstNameA < firstNameB) return -1; // a comes first
-          if (firstNameA > firstNameB) return 1; // b comes first
-          return 0; // they are equal
-        });
-        //console.log('returned res', students)
-        return res.json(sortedStudents);
-
-      }
+        if (firstNameA < firstNameB) return -1; // a comes first
+        if (firstNameA > firstNameB) return 1; // b comes first
+        return 0; // they are equal
+      });
+      //console.log('returned res', students)
+      return res.json(sortedStudents);
     }
+  }
 
-    //will retreive according to the id
-  } else if (id) {
-    
+  if (selectedYear !== "1000" && criteria === "activeStudents") {
+    // for newSection gets only active studetns for the selected year
+    console.log(criteria, "criteria");
+    const students = await Student.find({
+      studentYears: {
+        $elemMatch: { academicYear: selectedYear },
+      },
+      studentIsActive: true,
+    })
+      .populate("studentEducation.attendedSchool")
+      .lean();
+    if (!students?.length) {
+      return res.status(400).json({
+        message: "No students found  for the selected academic year",
+      });
+    }
+    if (students) {
+      const sortedStudents = students.sort((a, b) => {
+        const firstNameA = a.studentName.firstName.toLowerCase();
+        const firstNameB = b.studentName.firstName.toLowerCase();
+
+        if (firstNameA < firstNameB) return -1; // a comes first
+        if (firstNameA > firstNameB) return 1; // b comes first
+        return 0; // they are equal
+      });
+      //console.log('returned res', students)
+      return res.json(sortedStudents);
+    }
+  }
+  if (id) {//studetnDetails & editstudetn
     const student = await Student.find({ _id: id })
       .populate("studentEducation.attendedSchool")
       .lean(); //this will not return the extra data(lean)//removed populate father and mother
-    //console.log('hereeeeeeeeeeeeeeeeeeeeeeeee')
+
     //console.log('with id  select')
     if (!student?.length) {
       return res
@@ -299,8 +291,39 @@ const getAllStudents = asyncHandler(async (req, res) => {
     }
     //console.log('returned res', student)
 
-    res.json(student);
-  } else {//none of previous conditions////////////////////
+    return res.json(student);
+  }
+  if (selectedYear !== "1000" && !criteria) {
+   
+    const students = await Student.find({
+      studentYears: { $elemMatch: { academicYear: selectedYear } },
+    })
+      .populate("studentEducation.attendedSchool")
+      .lean(); //this will not return the extra data(lean)
+    //const students = await Student.find({ studentYear: '2023/2024' }).lean()//this will not return the extra data(lean)
+    //console.log('with year select',selectedYear,  students)
+    if (!students?.length) {
+      return res.status(400).json({
+        message: "No students found  for the selected academic year",
+      });
+    } else {
+      const sortedStudents = students.sort((a, b) => {
+        const firstNameA = a.studentName.firstName.toLowerCase();
+        const firstNameB = b.studentName.firstName.toLowerCase();
+
+        if (firstNameA < firstNameB) return -1; // a comes first
+        if (firstNameA > firstNameB) return 1; // b comes first
+        return 0; // they are equal
+      });
+      //console.log('returned res', students)
+      return res.json(sortedStudents);
+    }
+  }
+
+   else {
+    //none of previous conditions////////////////////
+
+    console.log("newwwwwwwwwwwwwwhereee");
     const students = await Student.find().lean(); //this will not return the extra data(lean)
     //console.log('with no select')
     if (!students?.length) {

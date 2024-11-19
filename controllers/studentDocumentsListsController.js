@@ -1,145 +1,189 @@
 // const User = require('../models/User')
-const StudentDocumentsList = require('../models/StudentDocumentsList')
+const StudentDocumentsList = require("../models/StudentDocumentsList");
 //const Employee = require('../models/Employee')//we might need the employee module in this controller
-const asyncHandler = require('express-async-handler')//instead of using try catch
+const asyncHandler = require("express-async-handler"); //instead of using try catch
 
-const mongoose = require('mongoose')
+const mongoose = require("mongoose");
 
 // @desc Get all studentDocumentsList
-// @route GET 'desk/studentDocumentsList             
+// @route GET 'desk/studentDocumentsList
 // @access Private // later we will establish authorisations
 const getAllStudentDocumentsLists = asyncHandler(async (req, res) => {
-    // Get all schools from MongoDB
-    const studentDocumentsLists = await StudentDocumentsList.find().lean()//this will not return the extra data(lean)
-    // If no students 
-    console.log(studentDocumentsLists)
-    if (!studentDocumentsLists?.length) {
-        return res.status(400).json({ message: 'No studentDocumentsLists found from studentDocumentsList controller with love' })
+  const { id } = req.query;
+
+  if (id) {
+    const studentDocumentsList = await StudentDocumentsList.findOne({
+      _id: id,
+    }).lean(); //this will not return the extra data(lean)
+
+    console.log(studentDocumentsList,'studentDocumentsList from id');
+    if (!studentDocumentsList) {
+      return res
+        .status(400)
+        .json({ message: "No studentDocumentsList found for the id provided" });
     }
-    res.json(studentDocumentsLists)
-})
+    return res.json(studentDocumentsList);
+  }
+  // Get all  from MongoDB
+  const studentDocumentsLists = await StudentDocumentsList.find().lean(); //this will not return the extra data(lean)
+
+  //console.log(studentDocumentsLists);
+  if (!studentDocumentsLists?.length) {
+    return res
+      .status(400)
+      .json({
+        message:
+          "No studentDocumentsLists found from studentDocumentsList controller with love",
+      });
+  }
+  res.json(studentDocumentsLists);
+});
 
 // // @desc getStudentDocumentsListByUSerId
-// // @route GET 'desk/studentDocumentsList/myStudentDocumentsList with userID passed in the body of the query             
+// // @route GET 'desk/studentDocumentsList/myStudentDocumentsList with userID passed in the body of the query
 // // @access Private // later we will establish authorisations
 // const getStudentDocumentsListByUSerId = asyncHandler(async (req, res) => {
 //     // Get all  from MongoDB
 //     const{userId}=req.bodyconsole.log(userId)
 //     const studentDocumentsList = await StudentDocumentsList.find().lean()//this will not return the extra data(lean)
 
-//     // If no students 
+//     // If no students
 //     if (!studentDocumentsList?.length) {
 //         return res.status(400).json({ message: 'No studentDocumentsLists found from studentDocumentsList controller with love' })
 //     }
 //     res.json(studentDocumentsList)
 // })
 
-
-
-
-
-
-
-
 //----------------------------------------------------------------------------------
 // @desc Create new studentDocumentsList
 // @route POST 'desk/studentDocumentsList
 // @access Private
 const createNewStudentDocumentsList = asyncHandler(async (req, res) => {
-    const { documentsList, documentsAcademicYear} = req.body//this will come from front end we put all the fields o fthe collection here
+  const { documentsList, documentsAcademicYear } = req.body; //this will come from front end we put all the fields o fthe collection here
 
-    //Confirm data is present in the request with all required fields
-        
-        if (!documentsAcademicYear ||!Array.isArray(documentsList) ||documentsList?.length===0 ) {
-        return res.status(400).json({ message: 'All mandatory fields are required' })//400 : bad request
-    }
-    
-    // Check for duplicate username
-    const duplicate = await StudentDocumentsList.findOne({documentsAcademicYear }).lean().exec()//because we re receiving only one response from mongoose
+  //Confirm data is present in the request with all required fields
 
-    if (duplicate) {
-        return res.status(409).json({ message: `Duplicate academicYear: ${duplicate.documentsAcademicYear}, found` })
-    }
-  
-       // Add ObjectId to each document in the documentsList
-       const documentsWithIds = documentsList.map(doc => ({ ...doc, documentReference: new mongoose.Types.ObjectId() }))
-    // Construct the studentDocumentsList object with the updated documentsList
-    const studentDocumentsListObject = { documentsList: documentsWithIds, documentsAcademicYear };
+  if (
+    !documentsAcademicYear ||
+    !Array.isArray(documentsList) ||
+    documentsList?.length === 0
+  ) {
+    return res
+      .status(400)
+      .json({ message: "All mandatory fields are required" }); //400 : bad request
+  }
 
-    // Create and store the new studentDocumentsList
-    const studentDocumentsList = await StudentDocumentsList.create(studentDocumentsListObject);
+  // Check for duplicate username
+  const duplicate = await StudentDocumentsList.findOne({
+    documentsAcademicYear,
+  })
+    .lean()
+    .exec(); //because we re receiving only one response from mongoose
 
-    if (studentDocumentsList) {
-        res.status(201).json({ message: `New studentDocumentsList for ${studentDocumentsList.documentsAcademicYear} created` });
-    } else {
-        res.status(400).json({ message: 'Invalid studentDocumentsList data received' });
-    }
+  if (duplicate) {
+    return res
+      .status(409)
+      .json({
+        message: `Duplicate academicYear: ${duplicate.documentsAcademicYear}, found`,
+      });
+  }
+
+  // Add ObjectId to each document in the documentsList
+  const documentsWithIds = documentsList.map((doc) => ({
+    ...doc,
+    documentReference: new mongoose.Types.ObjectId(),
+  }));
+  // Construct the studentDocumentsList object with the updated documentsList
+  const studentDocumentsListObject = {
+    documentsList: documentsWithIds,
+    documentsAcademicYear,
+  };
+
+  // Create and store the new studentDocumentsList
+  const studentDocumentsList = await StudentDocumentsList.create(
+    studentDocumentsListObject
+  );
+
+  if (studentDocumentsList) {
+    res
+      .status(201)
+      .json({
+        message: `New studentDocumentsList for ${studentDocumentsList.documentsAcademicYear} created`,
+      });
+  } else {
+    res
+      .status(400)
+      .json({ message: "Invalid studentDocumentsList data received" });
+  }
 });
-
-
-
 
 // @desc Update a studentDocumentsList
 // @route PATCH 'desk/studentDocumentsList
 // @access Private
 const updateStudentDocumentsList = asyncHandler(async (req, res) => {
-    const { id, documentsList, documentsAcademicYear } = req.body;
+  const { id, documentsList, documentsAcademicYear } = req.body;
 
-    if (!documentsAcademicYear || !Array.isArray(documentsList) || documentsList.length === 0) {
-        return res.status(400).json({ message: 'All mandatory fields are required' });
-    }
-    
-    // Does the studentDocumentList exist to update?
-    const listToUpdate = await StudentDocumentsList.findById(id).exec();
+  if (
+    !documentsAcademicYear ||
+    !Array.isArray(documentsList) ||
+    documentsList.length === 0
+  ) {
+    return res
+      .status(400)
+      .json({ message: "All mandatory fields are required" });
+  }
 
-    if (!listToUpdate) {
-        return res.status(400).json({ message: 'No StudentDocumentsList found to update' });
-    }
+  // Does the studentDocumentList exist to update?
+  const listToUpdate = await StudentDocumentsList.findById(id).exec();
 
-    listToUpdate.documentsList = documentsList
-    listToUpdate.documentsAcademicYear = documentsAcademicYear
+  if (!listToUpdate) {
+    return res
+      .status(400)
+      .json({ message: "No StudentDocumentsList found to update" });
+  }
 
-    const updatedStudentDocumentsList = await listToUpdate.save()
+  listToUpdate.documentsList = documentsList;
+  listToUpdate.documentsAcademicYear = documentsAcademicYear;
 
-    res.json({ message: `StudentDocumentsList updated successfully`, updatedStudentDocumentsList });
+  const updatedStudentDocumentsList = await listToUpdate.save();
+
+  res.json({
+    message: `StudentDocumentsList updated successfully`,
+    updatedStudentDocumentsList,
+  });
 });
 
-
-
-
-
-//--------------------------------------------------------------------------------------1   
+//--------------------------------------------------------------------------------------1
 // @desc Delete a student
 // @route DELETE 'students/studentsParents/students
 // @access Private
 const deleteStudentDocumentsList = asyncHandler(async (req, res) => {
-    const { id } = req.body
+  const { id } = req.body;
 
-    // Confirm data
-    if (!id) {
-        return res.status(400).json({ message: 'StudentDocumentsList ID Required' })
-    }
+  // Confirm data
+  if (!id) {
+    return res
+      .status(400)
+      .json({ message: "StudentDocumentsList ID Required" });
+  }
 
-    // Does the user exist to delete?
-    const studentDocumentsList = await StudentDocumentsList.findById(id).exec()
+  // Does the user exist to delete?
+  const studentDocumentsList = await StudentDocumentsList.findById(id).exec();
 
-    if (!studentDocumentsList) {
-        return res.status(400).json({ message: 'StudentDocumentsList not found' })
-    }
+  if (!studentDocumentsList) {
+    return res.status(400).json({ message: "StudentDocumentsList not found" });
+  }
 
-    const result = await studentDocumentsList.deleteOne()
+  const result = await studentDocumentsList.deleteOne();
 
-    const reply = `studentDocumentsList ${studentDocumentsList.studentDocumentsListubject}, with ID ${studentDocumentsList._id}, deleted`
+  const reply = `studentDocumentsList ${studentDocumentsList.studentDocumentsListubject}, with ID ${studentDocumentsList._id}, deleted`;
 
-    res.json(reply)
-})
-
-
+  res.json(reply);
+});
 
 module.exports = {
-    getAllStudentDocumentsLists,
-    createNewStudentDocumentsList,
-    updateStudentDocumentsList,
-    deleteStudentDocumentsList
- 
-}
+  getAllStudentDocumentsLists,
+  createNewStudentDocumentsList,
+  updateStudentDocumentsList,
+  deleteStudentDocumentsList,
+};
