@@ -56,27 +56,21 @@ const getAllStudents = asyncHandler(async (req, res) => {
 
   //console.log(selectedYear, "sleected year inback")
   //will retrive all teh students
-  if (selectedYear === "1000") {
-    const students = await Student.find().lean();
-    if (!students?.length) {
-      return res.status(400).json({ message: "No students found!" });
-    } else {
-      //console.log('returned res', students)
 
-      // if students found, we check if the criteria : 'No Family 'is present
-      if (req.query.criteria && req.query.criteria === "No Family") {
-        getStudentsNotInFamily()
-          .then((students) => {
-            res.json(students);
-          })
-          .catch((error) => {
-            console.error(error);
-          });
-      } else {
-        res.json(students);
-      }
-    }
+  // if students found, we check if the criteria : 'No Family 'is present
+  if (criteria && criteria === "No Family") {
+    getStudentsNotInFamily()
+      .then((students) => {
+        return res.json(students);
+      })
+      .catch((error) => {
+        console.error(error);
+        if (error) {
+          return res.status(400).json({ message: `${error}` });
+        }
+      });
   }
+
   if (selectedYear !== "1000" && criteria === "withSections") {
     console.log("with   sectionnssssssssssssssssssssssssssssssssssss");
     const students = await Student.find({
@@ -248,6 +242,14 @@ const getAllStudents = asyncHandler(async (req, res) => {
       return res.json(sortedStudents);
     }
   }
+  if (selectedYear === "1000") {
+    const students = await Student.find().lean();
+    if (!students?.length) {
+      return res.status(400).json({ message: "No students found!" });
+    } else {
+      return res.json(students);
+    }
+  }
 
   if (selectedYear !== "1000" && criteria === "activeStudents") {
     // for newSection gets only active studetns for the selected year
@@ -278,7 +280,8 @@ const getAllStudents = asyncHandler(async (req, res) => {
       return res.json(sortedStudents);
     }
   }
-  if (id) {//studetnDetails & editstudetn
+  if (id) {
+    //studetnDetails & editstudetn
     const student = await Student.find({ _id: id })
       .populate("studentEducation.attendedSchool")
       .lean(); //this will not return the extra data(lean)//removed populate father and mother
@@ -294,7 +297,6 @@ const getAllStudents = asyncHandler(async (req, res) => {
     return res.json(student);
   }
   if (selectedYear !== "1000" && !criteria) {
-   
     const students = await Student.find({
       studentYears: { $elemMatch: { academicYear: selectedYear } },
     })
@@ -318,9 +320,7 @@ const getAllStudents = asyncHandler(async (req, res) => {
       //console.log('returned res', students)
       return res.json(sortedStudents);
     }
-  }
-
-   else {
+  } else {
     //none of previous conditions////////////////////
 
     console.log("newwwwwwwwwwwwwwhereee");

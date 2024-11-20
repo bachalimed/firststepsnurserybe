@@ -311,7 +311,10 @@ const createNewFamily = asyncHandler(async (req, res) => {
     };
     
     const savedFamily = await Family.create(familyObject);
-    if (savedFamily) {
+    if(!savedFamily) {
+     return res.status(400).json({ message: "unable to save family" });
+    }
+   
       //update teh users with the familyId
       savedFather.familyId = savedFamily._id;
       savedMother.familyId = savedFamily._id;
@@ -332,9 +335,7 @@ const createNewFamily = asyncHandler(async (req, res) => {
           .status(400)
           .json({ message: "unable to update users with family Id" });
       }
-    } else {
-      res.status(400).json({ message: "unable to save family" });
-    }
+    
   } else {
     //delete the user already craeted to be done
 
