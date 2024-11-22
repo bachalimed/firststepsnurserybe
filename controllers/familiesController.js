@@ -7,14 +7,131 @@ const asyncHandler = require("express-async-handler"); //instead of using try ca
 const bcrypt = require("bcrypt"); //to hash passwords before saving them
 const mongoose = require("mongoose");
 
+
+
+
+const getFamilyStatisticsByYear = async (selectedYear) => {
+  try {
+    // Step 1: Retrieve all families and populate their children with matching students by academicYear
+    const families = await Family.aggregate([
+      {
+        $lookup: {
+          from: "students", // Assume the collection is named "students"
+          localField: "children.child", // Assuming the "children.child" field in Family references Student _id
+          foreignField: "_id",
+          as: "children"
+        }
+      },
+      {
+        $project: {
+          _id: 1,
+          familyName: 1, // Optional field to help identify families, adjust as needed
+          familySituation: 1, // Include familySituation for counting
+          children: 1,    // See what children look like after $lookup
+        }
+      },
+      {
+        $addFields: {
+          // Filter children array to include only those students with the selected academicYear
+          children: {
+            $filter: {
+              input: "$children",
+              as: "childWrapper",
+              cond: {
+                $in: [selectedYear, "$$childWrapper.studentYears.academicYear"]
+              }
+            }
+          }
+        }
+      }
+    ]);
+
+    // Step 2: Count the number of families with each number of children
+    const familiesChildren = families.reduce((acc, family) => {
+      const childrenCount = family.children.length;
+
+      // Increment the count for this number of children
+      if (!acc[childrenCount]) {
+        acc[childrenCount] = 0;
+      }
+      acc[childrenCount]++;
+
+      return acc;
+    }, {});
+
+    // Step 3: Count the number of families by familySituation
+    const familySituationCount = families.reduce((acc, family) => {
+      const situation = family.familySituation || "Unknown";
+
+      // Increment the count for each situation
+      if (!acc[situation]) {
+        acc[situation] = 0;
+      }
+      acc[situation]++;
+
+      return acc;
+    }, {});
+
+    // Step 4: Count the total number of families that have at least one student in the selected year
+    const familiesWithStudentsInYear = families.filter(family => family.children.length > 0).length;
+
+    // Step 5: Return the result with all statistics
+    return {
+      familiesChildren,                // Number of families with each number of children for the selected year
+      familySituationCount,            // Number of families for each situation
+      familiesWithStudentsInYear       // Total number of families with at least one student in the selected year
+    };
+
+  } catch (error) {
+    console.error("Error retrieving family statistics:", error);
+    throw error;
+  }
+};
+
+
+
 // @desc Get all parents
 // @route GET /students/studentsParents/parents
 // @access Private // later we will establish authorisations
 const getAllFamilies = asyncHandler(async (req, res) => {
   // Get all parents from MongoDB according to the params
-  let filteredFamilies;
 
-  if (req.query.selectedYear) {
+  const { selectedYear, id, criteria } = req.query;
+  let filteredFamilies;
+  if (selectedYear !== "1000" && criteria === "familiesTotalStats") {
+
+    console.log('here')
+    try {
+      // Wait for the `countStudents` function to resolve
+      const { familiesChildren,                // Number of families with each number of children for the selected year
+        familySituationCount,            // Number of families for each situation
+        familiesWithStudentsInYear } = await getFamilyStatisticsByYear(selectedYear);
+     
+      // Check if all counts are missing or zero
+      if (!familiesChildren||!familiesWithStudentsInYear) {
+        return res
+          .status(400)
+          .json({
+            message: "No family Stats found for the Year provided",
+          });
+      }
+
+
+      // If counts are valid, return them in the response
+      return res.json({
+        familiesChildren,                // Number of families with each number of children for the selected year
+        familySituationCount,            // Number of families for each situation
+        familiesWithStudentsInYear
+      });
+    } catch (error) {
+      console.error("Error fetching monthly Stats :", error);
+      return res
+        .status(500)
+        .json({ message: "Error retrieving enrolment data", error });
+    }
+  }
+
+  if (selectedYear) {
     const { selectedYear } = req.query;
     //console.log("selectedYear in getallfamilies", selectedYear);
     //retrive all families
@@ -58,17 +175,15 @@ const getAllFamilies = asyncHandler(async (req, res) => {
 
     //console.log(updatedParentsArray,'updatedParentsArray')
     if (!filteredFamilies?.length) {
-      return res
-        .status(400)
-        .json({
-          message:
-            "No families with students found found for the selected Year !",
-        });
+      return res.status(400).json({
+        message:
+          "No families with students found found for the selected Year !",
+      });
     } else {
       res.json(filteredFamilies);
     }
-  } else if (req.query.id) {
-    const { id } = req.query;
+  }
+  if (id) {
     if (req.query.criteria) {
       const criteria = req.query.criteria;
       //console.log("in teh criteria", criteria);
@@ -309,33 +424,32 @@ const createNewFamily = asyncHandler(async (req, res) => {
       children: children,
       familySituation: familySituation,
     };
-    
+
     const savedFamily = await Family.create(familyObject);
-    if(!savedFamily) {
-     return res.status(400).json({ message: "unable to save family" });
+    if (!savedFamily) {
+      return res.status(400).json({ message: "unable to save family" });
     }
-   
-      //update teh users with the familyId
-      savedFather.familyId = savedFamily._id;
-      savedMother.familyId = savedFamily._id;
-      const finalFather = await savedFather.save();
-      const finalMother = await savedMother.save();
-      if (finalFather && finalMother) {
-        return res.status(201).json({
-          message: `New family created with ID: ${savedFamily._id}. Father: ${
-            finalFather.userFullName.userFirstName || ""
-          } ${finalFather.userFullName.userMiddleName || ""} ${
-            finalFather.userFullName.userLastName || ""
-          }, and Mother: ${finalMother.userFullName.userFirstName || ""} ${
-            finalMother.userFullName.userMiddleName || ""
-          } ${finalMother.userFullName.userLastName || ""} have been created.`,
-        }); //change parentYear later to show the parent full name
-      } else {
-        return res
-          .status(400)
-          .json({ message: "unable to update users with family Id" });
-      }
-    
+
+    //update teh users with the familyId
+    savedFather.familyId = savedFamily._id;
+    savedMother.familyId = savedFamily._id;
+    const finalFather = await savedFather.save();
+    const finalMother = await savedMother.save();
+    if (finalFather && finalMother) {
+      return res.status(201).json({
+        message: `New family created with ID: ${savedFamily._id}. Father: ${
+          finalFather.userFullName.userFirstName || ""
+        } ${finalFather.userFullName.userMiddleName || ""} ${
+          finalFather.userFullName.userLastName || ""
+        }, and Mother: ${finalMother.userFullName.userFirstName || ""} ${
+          finalMother.userFullName.userMiddleName || ""
+        } ${finalMother.userFullName.userLastName || ""} have been created.`,
+      }); //change parentYear later to show the parent full name
+    } else {
+      return res
+        .status(400)
+        .json({ message: "unable to update users with family Id" });
+    }
   } else {
     //delete the user already craeted to be done
 

@@ -6,6 +6,102 @@ const asyncHandler = require("express-async-handler"); //instead of using try ca
 
 const mongoose = require("mongoose");
 
+
+
+
+/**
+ * Function to get enrolment statistics by month, including service types and trends.
+ * @param {Number} selectedYear - The selected academic year to filter enrolments.
+ */
+const getEnrolmentStatisticsByMonth = async (selectedYear) => {
+  try {
+    // Retrieve enrolments that match the selected year
+    const enrolmentsAggregation = await Enrolment.aggregate([
+      {
+        $match: {
+          enrolmentYear: selectedYear, // Filter by the selected academic year
+        },
+      },
+      {
+        $group: {
+          _id: { month: "$enrolmentMonth" }, // Group by enrolmentMonth
+          enrolmentsNumber: { $sum: 1 }, // Count total enrolments per month
+          serviceTypes: {
+            $push: "$serviceType", // Collect all service types in the month
+          },
+        },
+      },
+      {
+        $sort: {
+          "_id.month": 1, // Sort by month (January to December)
+        },
+      },
+    ]);
+
+    // Initialize the result array and service type trend tracker
+    const monthlyStats = [];
+    const nextServiceTypeCounts = {}; // Tracks the service type counts for the next month
+
+    // Helper function to calculate the trend percentage
+    const calculateTrend = (current, next) => {
+      if (next === 0) return current > 0 ? 100 : 0; // Avoid division by zero
+      return ((next - current) / current) * 100;
+    };
+
+    // Iterate through the aggregation result to structure the data
+    enrolmentsAggregation.forEach((entry, index) => {
+      const { month } = entry._id;
+      const enrolmentsNumber = entry.enrolmentsNumber;
+
+      // Count occurrences of each service type in the month
+      const serviceTypeCount = entry.serviceTypes.reduce((acc, serviceType) => {
+        acc[serviceType] = (acc[serviceType] || 0) + 1;
+        return acc;
+      }, {});
+
+      // Calculate trends for each service type by comparing to the next month
+      const serviceTypeTrends = {};
+      for (const serviceType in serviceTypeCount) {
+        const currentCount = serviceTypeCount[serviceType];
+        const nextCount = nextServiceTypeCounts[serviceType] || 0;
+        serviceTypeTrends[serviceType] = Math.round(calculateTrend(currentCount, nextCount));
+
+        // Update nextServiceTypeCounts for the next iteration
+        nextServiceTypeCounts[serviceType] = currentCount;
+      }
+
+      // Add the structured data to the monthly stats array
+      monthlyStats.push({
+        month,
+        enrolmentsNumber,
+        serviceTypes: serviceTypeCount,
+        serviceTypeTrends, // Trends for each service type compared to the next month
+      });
+    });
+
+    // Return the statistics
+    return monthlyStats;
+  } catch (error) {
+    console.error("Error retrieving enrolment statistics:", error);
+    throw error;
+  }
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 // @desc Get all enrolments
 // @route GET 'enrolments/enrolmentsParents/enrolments
 // @access Private // later we will establish authorisations
@@ -13,7 +109,21 @@ const getAllEnrolments = asyncHandler(async (req, res) => {
   // Check if the request has selectedYear or id query parameters
   //console.log('getting the query', req.query)
   const { selectedYear, id, selectedMonth, criteria } = req.query;
-
+ 
+  if (id) {
+    // Fetch enrolment by ID
+    // const { id } = req.query;
+    const enrolment = await Enrolment.find({ _id: id })
+      .populate("student")
+      .lean();
+    //console.log('admssion with id', enrolment)
+    if (!enrolment) {
+      return res
+        .status(400)
+        .json({ message: "No enrolment found for the provided Id" });
+    }
+    return res.json(enrolment);
+  }
   if (selectedYear === "1000") {
     // Fetch all enrolments if selectedYear is '1000'
     const enrolments = await Enrolment.find().lean();
@@ -139,6 +249,40 @@ const getAllEnrolments = asyncHandler(async (req, res) => {
       return res.status(500).json({ message: "Error retrieving enrolments" });
     }
   }
+//////////////////////////////////////////////////////////////////////////////////////////
+  if (selectedYear !== "1000" &&criteria==="enrolmentsTotalStats") {
+
+    try {
+      // Wait for the `countStudents` function to resolve
+    const monthlyStats = await getEnrolmentStatisticsByMonth(selectedYear);
+//console.log(monthlyStats,'monthlyStats')
+    // Check if all counts are missing or zero
+    if (
+      !monthlyStats
+    ) {
+      return res
+        .status(400)
+        .json({ message: "No enrolments Stats found for the selected Year provided" });
+    }
+
+    // If counts are valid, return them in the response
+    return res.json({
+      monthlyStats
+    });
+  } catch (error) {
+    console.error("Error fetching monthly Stats :", error);
+    return res
+      .status(500)
+      .json({ message: "Error retrieving enrolment data", error });
+  }
+
+
+
+  }
+
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////
 
   if (selectedYear !== "1000") {
     const enrolments = await Enrolment.find({ enrolmentYear: selectedYear })
@@ -192,20 +336,7 @@ const getAllEnrolments = asyncHandler(async (req, res) => {
     }
     return res.json(filteredEnrolments);
   }
-  if (id) {
-    // Fetch enrolment by ID
-    // const { id } = req.query;
-    const enrolment = await Enrolment.find({ _id: id })
-      .populate("student")
-      .lean();
-    //console.log('admssion with id', enrolment)
-    if (!enrolment) {
-      return res
-        .status(400)
-        .json({ message: "No enrolment found for the provided Id" });
-    }
-    return res.json(enrolment);
-  } else {
+  else {
     // Fetch all enrolments if no query parameters
     const enrolments = await Enrolment.find().lean();
     if (!enrolments?.length) {
@@ -286,8 +417,8 @@ const createNewEnrolment = asyncHandler(async (req, res) => {
       enrolmentYear,
       enrolmentMonth,
       enrolmentNote,
-      enrolementCreator: enrolmentCreator,
-      enrolementOperator: enrolmentOperator,
+      enrolmentCreator: enrolmentCreator,
+      enrolmentOperator: enrolmentOperator,
     });
 
     // Save enrolment and handle errors
@@ -330,12 +461,14 @@ const updateEnrolment = asyncHandler(async (req, res) => {
   const {
     enrolmentId,
     student,
-    enrolmentDate,
+    //enrolmentDate,
     enrolmentYear,
     enrolmentMonth,
     enrolmentNote,
     enrolmentOperator,
-    agreedServices,
+    service,
+    serviceFinalFee,
+    enrolmentSuspension,
   } = req.body;
   //console.log(req.body);
   // Confirm data
@@ -343,11 +476,13 @@ const updateEnrolment = asyncHandler(async (req, res) => {
     !enrolmentId ||
     !student ||
     !enrolmentMonth ||
-    !enrolmentDate ||
+    //!enrolmentDate ||
+
     !enrolmentYear ||
     !enrolmentOperator ||
-    !agreedServices ||
-    agreedServices?.length === 0
+    !service ||
+    !serviceFinalFee
+    
   ) {
     return res.status(400).json({ message: "All fields are required" });
   }
@@ -359,17 +494,11 @@ const updateEnrolment = asyncHandler(async (req, res) => {
     return res.status(400).json({ message: "Enrolment not found" });
   }
 
-  // Check for duplicate
-  const duplicate = await Enrolment.findOne({ student }).lean().exec();
-
-  // Allow updates to the original user
-  if (duplicate && duplicate?._id.toString() !== enrolmentId) {
-    return res.status(409).json({ message: "Duplicate Enrolment" });
-  }
-
-  enrolment.enrolmentDate = enrolmentDate; //it will only allow updating properties that are already existant in the model
+  
+  enrolment.serviceFinalFee = serviceFinalFee; //it will only allow updating properties that are already existant in the model
   enrolment.enrolmentOperator = enrolmentOperator;
-  enrolment.agreedServices = agreedServices;
+  enrolment.enrolmentNote = enrolmentNote;
+  enrolment.enrolmentSuspension = enrolmentSuspension;
 
   const updatedEnrolment = await enrolment.save(); //save method received when we did not include lean
 

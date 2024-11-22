@@ -1,7 +1,7 @@
 const mongoose = require('mongoose')
 
 
-const enrolementSuspensionSchema= new mongoose.Schema({
+const enrolmentSuspensionSchema= new mongoose.Schema({
 	suspensionOperator:{type: mongoose.Schema.Types.ObjectId,  index:true, ref:'User'},
 	enrolmentSuspensionEffectiveDate:{type: Date, index: true},
 	
@@ -22,12 +22,12 @@ const enrolmentSchema = new mongoose.Schema({
 	//enrolmentDuration:{type: String, required:true, index:true},
 	//enrolmentStartDate: {type: Date, required:true},
 	//enrolmentEndDate: {type: Date, required:true},
-	enrolementSuspension:[enrolementSuspensionSchema],
+	enrolmentSuspension:[enrolmentSuspensionSchema],
 	
 	enrolmentInvoice:{type: mongoose.Schema.Types.ObjectId,  index:true, ref:'Invoice'},
 	//enrolmentPayment:{type: mongoose.Schema.Types.ObjectId,   index:true, ref:'Payment'},//we get it from invoice and its payments
-	enrolementOperator:{type: mongoose.Schema.Types.ObjectId, required:true, index:true, ref:'User'},
-	enrolementCreator:{type: mongoose.Schema.Types.ObjectId, required:true, index:true, ref:'User'},
+	enrolmentOperator:{type: mongoose.Schema.Types.ObjectId, required:true, index:true, ref:'User'},
+	enrolmentCreator:{type: mongoose.Schema.Types.ObjectId,  index:true, ref:'User'},
 	
 },
 	

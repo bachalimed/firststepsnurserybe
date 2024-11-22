@@ -9,6 +9,135 @@ const asyncHandler = require("express-async-handler"); //instead of using try ca
 const useSelectedAcademicYear = require("../middleware/setCurrentAcademicYear");
 const mongoose = require("mongoose");
 
+const countStudents = async (selectedYear) => {
+  try {
+    // Count students with the specific academic year in their `studentYears` array
+    const studentsMatchingAcademicYear = await Student.countDocuments({
+      studentYears: {
+        $elemMatch: { academicYear: selectedYear },
+      },
+    });
+
+    // Count students that are not active
+    const inactiveStudentsCount = await Student.countDocuments({
+      studentIsActive: false,
+    });
+
+    // Count students with `admission` not empty and valid for the selected academic year
+    const studentsWithAdmission = await Student.countDocuments({
+      studentYears: {
+        $elemMatch: {
+          academicYear: selectedYear,
+          // Ensure `admission` is a valid ObjectId and not an empty string
+          admission: { $exists: true, $type: "objectId" },
+        },
+      },
+    });
+
+    // Count students registered for the selected year but without a valid admission
+    const registeredStudents = await Student.countDocuments({
+      studentYears: {
+        $elemMatch: {
+          academicYear: selectedYear,
+          // Ensure `admission` is NOT a valid ObjectId
+          $or: [
+            // Case 1: `admission` does not exist
+            { admission: { $exists: false } },
+           
+            // Case 3: `admission` is not a valid ObjectId (null or of incorrect type)
+            { admission: null },
+            // Case 4: `admission` is of a type other than ObjectId
+            { admission: { $type: "string" } },
+          ],
+        },
+      },
+    });
+    
+    
+
+    // Retrieve student grades for the specified academic year and count occurrences
+    const studentGradesAggregation = await Student.aggregate([
+      {
+        $unwind: "$studentYears", // Unwind the `studentYears` array
+      },
+      {
+        $match: {
+          // Match documents with the specified academic year
+          "studentYears.academicYear": selectedYear,
+          // Ensure `admission` is a valid ObjectId and not empty
+          "studentYears.admission": { $exists: true, $ne: "", $type: "objectId" },
+        },
+      },
+      {
+        $group: {
+          // Group by the grade field
+          _id: "$studentYears.grade",
+          count: { $sum: 1 }, // Count the occurrences
+        },
+      },
+    ]);
+
+    // Convert aggregation result to an object: { grade: count }
+    const studentGrades = {};
+    studentGradesAggregation.forEach((grade) => {
+      if (grade._id) {
+        studentGrades[grade._id] = grade.count;
+      }
+    });
+
+    // Retrieve student schools for the selected academic year and count occurrences
+    const studentSchoolsAggregation = await Student.aggregate([
+      {
+        $unwind: "$studentEducation", // Unwind the `studentEducation` array
+      },
+      {
+        $match: {
+          // Match documents with the specified academic year
+          "studentEducation.schoolYear": selectedYear,
+        },
+      },
+      {
+        $lookup: {
+          from: "attendedSchools", // school collection 
+          localField: "studentEducation.attendedSchool",
+          foreignField: "_id",
+          as: "attendedSchoolDetails",
+        },
+      },
+      {
+        $unwind: "$attendedSchoolDetails", // Unwind the attendedSchoolDetails to get the school name
+      },
+      {
+        $group: {
+          // Group by the school name
+          _id: "$attendedSchoolDetails.schoolName",
+          count: { $sum: 1 }, // Count the number of students per school
+        },
+      },
+    ]);
+
+    // Convert aggregation result to an object: { schoolName: count }
+    const studentSchools = {};
+    studentSchoolsAggregation.forEach((school) => {
+      if (school._id) {
+        studentSchools[school._id] = school.count;
+      }
+    });
+
+    return {
+      studentsMatchingAcademicYear,
+      inactiveStudentsCount,
+      studentsWithAdmission,
+      registeredStudents, // Include registeredStudents count
+      studentGrades,
+      studentSchools, // Return the count of students per school
+    };
+  } catch (error) {
+    console.error("Error counting students:", error);
+    throw error;
+  }
+};
+/////////////////////////////////////////////////// 
 //function to get only the studetns with no families
 async function getStudentsNotInFamily() {
   try {
@@ -242,14 +371,6 @@ const getAllStudents = asyncHandler(async (req, res) => {
       return res.json(sortedStudents);
     }
   }
-  if (selectedYear === "1000") {
-    const students = await Student.find().lean();
-    if (!students?.length) {
-      return res.status(400).json({ message: "No students found!" });
-    } else {
-      return res.json(students);
-    }
-  }
 
   if (selectedYear !== "1000" && criteria === "activeStudents") {
     // for newSection gets only active studetns for the selected year
@@ -296,6 +417,49 @@ const getAllStudents = asyncHandler(async (req, res) => {
 
     return res.json(student);
   }
+  if (selectedYear !== "1000" && criteria === "DashStudentsTotalNumberStats") {
+    console.log("eeeeeeeeeeeeeeeeeeerere");
+    try {
+      // Wait for the `countStudents` function to resolve
+    const counts = await countStudents(selectedYear);
+
+    // Destructure the results from `counts`
+    const {
+      studentsMatchingAcademicYear,
+      inactiveStudentsCount,
+      studentsWithAdmission,
+      registeredStudents, // Include registeredStudents count
+      studentGrades,
+      studentSchools,
+    } = counts;
+
+    // Check if all counts are missing or zero
+    if (
+      !studentsMatchingAcademicYear &&
+      !inactiveStudentsCount &&
+      !studentsWithAdmission
+    ) {
+      return res
+        .status(400)
+        .json({ message: "No students registered for the selected Year provided" });
+    }
+
+    // If counts are valid, return them in the response
+    return res.json({
+      studentsMatchingAcademicYear,
+      inactiveStudentsCount,
+      studentsWithAdmission,
+      registeredStudents,
+      studentGrades,
+      studentSchools,
+    });
+  } catch (error) {
+    console.error("Error fetching student counts:", error);
+    return res
+      .status(500)
+      .json({ message: "Error retrieving student data", error });
+  }
+  }
   if (selectedYear !== "1000" && !criteria) {
     const students = await Student.find({
       studentYears: { $elemMatch: { academicYear: selectedYear } },
@@ -319,6 +483,14 @@ const getAllStudents = asyncHandler(async (req, res) => {
       });
       //console.log('returned res', students)
       return res.json(sortedStudents);
+    }
+  }
+  if (selectedYear === "1000") {
+    const students = await Student.find().lean();
+    if (!students?.length) {
+      return res.status(400).json({ message: "No students found!" });
+    } else {
+      return res.json(students);
     }
   } else {
     //none of previous conditions////////////////////
