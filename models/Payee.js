@@ -12,12 +12,12 @@ const payeeSchema = new mongoose.Schema({
 	payeeLabel:{type: String, required:true, index: true, set:capitalizeFirstLetter},
 	payeeYears:[{type: String,}],
 	payeePhone:{type: String,},
-	payeeAddress:{type: String,},
-	payeeNotes: {type: String, },
+	payeeAddress:{type: String, set:capitalizeFirstLetter},
+	payeeNotes: {type: String, set:capitalizeFirstLetter },
 	payeeIsActive: {type: Boolean, index: true},
 	payeeOperator:{type: mongoose.Schema.Types.ObjectId,  ref:'User'},
 	payeeCreator:{type: mongoose.Schema.Types.ObjectId,  ref:'User'},
-	payeeCategories:[{type: String,}],
+	//payeeCategories:[{type: String,}],
 }	,
 {
    timestamps: true // Automatically create `createdAt` and `updatedAt` fields

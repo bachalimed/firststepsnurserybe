@@ -58,7 +58,7 @@ const createNewPayee = asyncHandler(async (req, res) => {
     payeeNotes,
     payeeIsActive,
     payeeYears,
-    payeeCategories,
+    //payeeCategories,
     payeeOperator,
     payeeCreator,
   } = req?.body; //this will come from front end we put all the fields o fthe collection here
@@ -69,7 +69,7 @@ const createNewPayee = asyncHandler(async (req, res) => {
     !payeeLabel ||
     !payeeIsActive ||
     !payeeYears ||
-    !payeeCategories ||
+    //!payeeCategories ||
     !payeeOperator ||
     !payeeCreator
   ) {
@@ -82,7 +82,7 @@ const createNewPayee = asyncHandler(async (req, res) => {
   const duplicate = await Payee.findOne({
     payeeYears,
     payeeLabel,
-    payeeCategories,
+    //payeeCategories,
   });
 
   if (duplicate) {
@@ -98,7 +98,7 @@ const createNewPayee = asyncHandler(async (req, res) => {
     payeeNotes: payeeNotes,
     payeeIsActive: payeeIsActive,
     payeeYears: payeeYears,
-    payeeCategories: payeeCategories,
+    //payeeCategories: payeeCategories,
     payeeOperator: payeeOperator,
     payeeCreator: payeeCreator,
   }; //construct new payee to be stored
@@ -130,7 +130,7 @@ const updatePayee = asyncHandler(async (req, res) => {
     payeeNotes,
     payeeIsActive,
     payeeYears,
-    payeeCategories,
+    //payeeCategories,
     payeeOperator,
   } = req?.body;
 
@@ -140,7 +140,7 @@ const updatePayee = asyncHandler(async (req, res) => {
     payeeIsActive === undefined || // Checks if isChangeFlag is undefined
     !payeeLabel ||
     payeeYears.length === 0 ||
-    payeeCategories.length === 0 ||
+    //payeeCategories.length === 0 ||
     !payeeOperator
   ) {
     return res.status(400).json({ message: "All mandatory fields required" });
@@ -159,7 +159,7 @@ const updatePayee = asyncHandler(async (req, res) => {
   payeeToUpdate.payeeNotes=payeeNotes
   payeeToUpdate.payeeIsActive=payeeIsActive
   payeeToUpdate.payeeYears=payeeYears
-  payeeToUpdate.payeeCategories=payeeCategories
+  //payeeToUpdate.payeeCategories=payeeCategories
   payeeToUpdate.payeeOperator=payeeOperator
 
 
