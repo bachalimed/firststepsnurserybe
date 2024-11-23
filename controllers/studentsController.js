@@ -533,6 +533,7 @@ const createNewStudent = asyncHandler(async (req, res) => {
     studentGardien,
     studentEducation,
     lastModified,
+    operator
   } = req.body; //this will come from front end we put all the fields o fthe collection here
   //console.log(studentName, studentDob,  studentSex, studentIsActive, studentYears, studentGardien, studentEducation, lastModified)
   //Confirm data is present in the request with all required fields
@@ -562,6 +563,8 @@ const createNewStudent = asyncHandler(async (req, res) => {
     studentGardien,
     studentEducation,
     lastModified,
+    operator:operator,
+    creator:operator
   }; //construct new student to be stored
 
   // Create and store new student

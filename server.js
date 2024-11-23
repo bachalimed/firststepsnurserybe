@@ -63,6 +63,7 @@ app.use('/settings/studentsSet/studentDocumentsLists/', require('./routes/studen
 app.use('/settings/hrSet/employeeDocumentsLists/', require('./routes/employeeDocumentsListRoutes'))
 app.use('/settings/studentsSet/services/', require('./routes/serviceRoutes'))
 app.use('/settings/academicsSet/classrooms/', require('./routes/classroomRoutes'))
+app.use('/settings/financesSet/payees/', require('./routes/payeeRoutes'))
 
 
 
