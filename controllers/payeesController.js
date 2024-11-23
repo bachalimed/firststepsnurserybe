@@ -124,120 +124,57 @@ const updatePayee = asyncHandler(async (req, res) => {
   // set all other related sessions to ending date where you have a student from that payee in any other, the latter will have an ending date
   const {
     id,
-    isChangeFlag,
     payeeLabel,
-    payeeYear,
-    students,
-    payeeColor,
-    payeeType,
-    payeeFrom,
-    // payeeTo,
-    payeeAnimator,
-    payeeLocation,
-    operator,
+    payeePhone,
+    payeeAddress,
+    payeeNotes,
+    payeeIsActive,
+    payeeYears,
+    payeeCategories,
+    payeeOperator,
   } = req?.body;
 
   // Confirm data
   if (
+    !id ||
+    payeeIsActive === undefined || // Checks if isChangeFlag is undefined
     !payeeLabel ||
-    isChangeFlag === undefined || // Checks if isChangeFlag is undefined
-    !payeeYear ||
-    !students ||
-    students.length === 0 ||
-    !payeeColor ||
-    !payeeType ||
-    //!payeeTo ||
-    !payeeFrom ||
-    !payeeAnimator ||
-    !payeeLocation ||
-    !operator
+    payeeYears.length === 0 ||
+    payeeCategories.length === 0 ||
+    !payeeOperator
   ) {
     return res.status(400).json({ message: "All mandatory fields required" });
   }
-  //check for duplcate
-  // Check for duplicate, no need because we can have same attributes but different students
-  //  const duplicatePayee = await Payee.findOne({ payeeLabel,}).lean().exec();
-
-  //  // Allow updates to the original service
-  //  if (duplicatePayee?._id.toString() !== id) {
-  //    return res.status(409).json({ message: "Duplicate payee found with the same Label" });
-  //  }
-
+  
   // Does the payee exist to update?
   const payeeToUpdate = await Payee.findById(id).exec(); //we did not lean becausse we need the save method attached to the response
 
   if (!payeeToUpdate) {
     return res.status(400).json({ message: "Payee to update not found" });
   }
-  if (isChangeFlag) {
-    //if there was a change we set payeeTo and create a new payee with new data
-    payeeToUpdate.payeeTo = payeeFrom; //the starting dat aof new payee is ending date of old payee
+ 
+  payeeToUpdate.payeeLabel=payeeLabel
+  payeeToUpdate.payeePhone=payeePhone
+  payeeToUpdate.payeeAddress=payeeAddress
+  payeeToUpdate.payeeNotes=payeeNotes
+  payeeToUpdate.payeeIsActive=payeeIsActive
+  payeeToUpdate.payeeYears=payeeYears
+  payeeToUpdate.payeeCategories=payeeCategories
+  payeeToUpdate.payeeOperator=payeeOperator
 
+
+ 
     //console.log(payeeToUpdate,'payeeToUpdate')
     const updatedPayee = await payeeToUpdate.save(); //save old payee
-    const newPayeeObject = {
-      payeeLabel,
-      payeeYear,
-      students,
-      payeeColor,
-      payeeType,
-      payeeFrom,
-      //payeeTo,
-      payeeAnimator,
-      payeeLocation,
-      operator,
-      creator: operator,
-    }; //construct new payee to be stored
-
-    // Create and store new payee
-    const newPayee = await Payee.create(newPayeeObject);
-
-    if (newPayee) {
-      // Update students with new payee ID
-      await Student.updateMany(
-        { _id: { $in: students } },
-        { $set: { studentPayee: newPayee._id } }
-      );
-
-      res.status(201).json({
-        message: `Payee: ${updatedPayee.payeeLabel} updated and ${newPayee.payeeLabel} created`,
-      });
-    } else {
-      return res.status(400).json({ message: "Invalid payee data received" });
+    if (!updatedPayee) {
+      return res.status(400).json({ message: "invalid payee data received" });
     }
-  }
-  if (isChangeFlag !== undefined && !isChangeFlag) {
-    //no students were changed so we only update the curretn payee
-    //if there was a change we set payeeTo and create a new payee with new data
-    // payeeToUpdate.payeeTo = payeeTo //it will only allow updating properties that are already existant in the model
-    payeeToUpdate.payeeLabel = payeeLabel;
-    payeeToUpdate.payeeYear = payeeYear;
-    //payeeToUpdate.students, //because no student swere added or removed
-    payeeToUpdate.payeeColor = payeeColor;
-    payeeToUpdate.payeeType = payeeType;
-    payeeToUpdate.payeeFrom = payeeFrom;
-    //payeeTo,
-    payeeToUpdate.payeeAnimator = payeeAnimator;
-    payeeToUpdate.payeeLocation = payeeLocation;
-    payeeToUpdate.operator = operator;
+      return res.status(201).json({
+        message: `Payee: ${updatedPayee.payeeLabel} updated `,
+      })
 
-    // update payee
-    const updatedPayee = await payeeToUpdate.save(); //save old payee
+ 
 
-    if (updatedPayee) {
-      // Update students with the updated payee's ID
-      await Student.updateMany(
-        { _id: { $in: students } },
-        { $set: { studentPayee: updatedPayee._id } }
-      );
-
-      res.status(201).json({
-        message: `Payee ${updatedPayee.payeeLabel} updated`,
-      });
-    } else {
-      return res.status(400).json({ message: "Invalid payee data received" });
-    }
-  }
 });
 
 //--------------------------------------------------------------------------------------1
