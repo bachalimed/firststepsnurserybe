@@ -14,14 +14,32 @@ const getAllExpenseCategories = asyncHandler(async (req, res) => {
 
   // Check if an ID is passed as a query parameter
   const { id, criteria, selectedYear } = req.query;
+  if (id) {
+    //console.log("nowwwwwwwwwwwwwwwwwwwwwww here");
 
+    // Find a single expenseCategory by its ID
+    const expenseCategory = await ExpenseCategory.findOne({ _id: id })
+      
+      // .populate({
+      //   path: 'service', // Field to populate (assuming it's named 'service')
+      //   select: 'serviceType', // Only retrieve the 'serviceType' field
+      // })
+      .lean();
+
+    if (!expenseCategory) {
+      return res.status(400).json({ message: "ExpenseCategory not found" });
+    }
+
+    // Return the expenseCategory inside an array
+    return res.json([expenseCategory]); //we need it inside  an array to avoid response data error
+  }
   if (selectedYear !== "1000") {
     // Find a single expenseCategory by its ID
     const expenseCategories = await ExpenseCategory.find()
-  .populate({
-    path: 'expenseCategoryService', 
-    select: 'serviceType', 
-  })
+  // .populate({
+  //   path: 'expenseCategoryService', 
+  //   select: 'serviceType', 
+  // })
   .lean();
 
     if (!expenseCategories) {
@@ -32,25 +50,7 @@ const getAllExpenseCategories = asyncHandler(async (req, res) => {
     return res.json(expenseCategories); //we need it inside  an array to avoid response data error
   }
 
-  if (id) {
-    //console.log("nowwwwwwwwwwwwwwwwwwwwwww here");
-
-    // Find a single expenseCategory by its ID
-    const expenseCategory = await ExpenseCategory.findOne({ _id: id })
-      
-      .populate({
-        path: 'service', // Field to populate (assuming it's named 'service')
-        select: 'serviceType', // Only retrieve the 'serviceType' field
-      })
-      .lean();
-
-    if (!expenseCategory) {
-      return res.status(400).json({ message: "ExpenseCategory not found" });
-    }
-
-    // Return the expenseCategory inside an array
-    return res.json([expenseCategory]); //we need it inside  an array to avoid response data error
-  }
+  
   // If no ID is provided, fetch all expenseCategories
 });
 
@@ -65,7 +65,7 @@ const createNewExpenseCategory = asyncHandler(async (req, res) => {
     expenseCategoryLabel,
     expenseCategoryYears,
     expenseCategoryItems,
-    expenseCategoryService,
+    //expenseCategoryService,
     expenseCategoryIsActive,
     expenseCategoryOperator,
     expenseCategoryCreator,
@@ -76,7 +76,7 @@ const createNewExpenseCategory = asyncHandler(async (req, res) => {
   if (
     !expenseCategoryLabel ||
     !expenseCategoryIsActive||
-    !expenseCategoryService||
+    //!expenseCategoryService||
     !expenseCategoryYears ||
     !expenseCategoryItems ||
     expenseCategoryYears?.length<1 ||
@@ -106,7 +106,7 @@ const createNewExpenseCategory = asyncHandler(async (req, res) => {
     expenseCategoryLabel: expenseCategoryLabel,
     expenseCategoryYears: expenseCategoryYears,
     expenseCategoryItems: expenseCategoryItems,
-    expenseCategoryService: expenseCategoryService,
+    //expenseCategoryService: expenseCategoryService,
     expenseCategoryIsActive: expenseCategoryIsActive,
     expenseCategoryOperator: expenseCategoryOperator,
     expenseCategoryCreator: expenseCategoryCreator,
@@ -136,7 +136,7 @@ const updateExpenseCategory = asyncHandler(async (req, res) => {
     expenseCategoryLabel,
     expenseCategoryYears,
     expenseCategoryItems,
-    expenseCategoryService,
+    //expenseCategoryService,
     expenseCategoryIsActive,
     expenseCategoryOperator,
   } = req?.body;
@@ -147,7 +147,7 @@ const updateExpenseCategory = asyncHandler(async (req, res) => {
     !expenseCategoryLabel ||
     !expenseCategoryIsActive||
     !expenseCategoryYears ||
-    !expenseCategoryService ||
+    //!expenseCategoryService ||
     !expenseCategoryItems ||
     expenseCategoryYears?.length<1 ||
     expenseCategoryItems?.length<1 ||
@@ -166,7 +166,7 @@ const updateExpenseCategory = asyncHandler(async (req, res) => {
   expenseCategoryToUpdate.expenseCategoryLabel=expenseCategoryLabel
   expenseCategoryToUpdate.expenseCategoryYears=expenseCategoryYears
   expenseCategoryToUpdate.expenseCategoryItems=expenseCategoryItems
-  expenseCategoryToUpdate.expenseCategoryService=expenseCategoryService
+ // expenseCategoryToUpdate.expenseCategoryService=expenseCategoryService
   expenseCategoryToUpdate.expenseCategoryIsActive=expenseCategoryIsActive
   expenseCategoryToUpdate.expenseCategoryOperator=expenseCategoryOperator
     const updatedExpenseCategory = await expenseCategoryToUpdate.save(); //save old expenseCategory

@@ -12,8 +12,8 @@ const expenseCategorySchema = new mongoose.Schema({
 	expenseCategoryLabel:{type: String, required:true, index: true, set:capitalizeFirstLetter},
 	expenseCategoryYears:[{type: String,required:true,}],
 	expenseCategoryItems:[{type: String,required:true, set:capitalizeFirstLetter}],
-	expenseCategoryIsActive:[{type: Boolean,required:true,}],
-	expenseCategoryService:{type: mongoose.Schema.Types.ObjectId, required:true, ref:'Service'},
+	expenseCategoryIsActive:{type: Boolean,required:true,},
+	//expenseCategoryService:{type: mongoose.Schema.Types.ObjectId, required:true, ref:'Service'},
 	expenseCategoryOperator:{type: mongoose.Schema.Types.ObjectId,  ref:'User'},
 	expenseCategoryCreator:{type: mongoose.Schema.Types.ObjectId,  ref:'User'},
 	
