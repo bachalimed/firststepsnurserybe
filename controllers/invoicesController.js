@@ -35,6 +35,58 @@ const calculateDueDate = (enrolmentMonth, enrolmentYear) => {
 
   return `${yearToUse}-${formattedMonth}-01`;
 };
+
+
+
+//helper for finances stats
+const getInvoicesStats = async (selectedYear) => {
+  try {
+    const result = await Invoice.aggregate([
+      {
+        $match: { invoiceYear: selectedYear } // Filter invoices by the selected year
+      },
+      {
+        $addFields: {
+          invoiceAmountAsNumber: { $toDouble: "$invoiceAmount" } // Convert string to number
+        }
+      },
+      {
+        $group: {
+          _id: null, // No grouping required
+          totalInvoicedAmount: { $sum: "$invoiceAmountAsNumber" } // Sum converted values
+        }
+      }
+    ]);
+
+    // If no results, return 0
+    const totalAmount = result.length > 0 ? result[0].totalInvoicedAmount : 0;
+    return totalAmount;
+  } catch (error) {
+    console.error("Error computing invoices sum:", error);
+    throw error;
+  }
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 // @desc Get all invoice
 // @route GET 'desk/invoice
 // @access Private // later we will establish authorisations
@@ -73,6 +125,25 @@ const getAllInvoices = asyncHandler(async (req, res) => {
     // Return the enriched invoice
     return res.json(enrichedInvoice);
   }
+  if (selectedYear !== "1000" && criteria==="invoicesTotalStats") {
+
+    try {
+      const totalInvoicedAmount = await getInvoicesStats(selectedYear);
+  
+      return res.status(200).json({
+        message: "Invoices and total amount retrieved successfully",
+        selectedYear,
+        totalInvoicedAmount
+      });
+    } catch (error) {
+     return  res.status(500).json({
+        message: "Error retrieving invoices",
+        error: error.message
+      });
+    }
+  };
+
+
 
   if (selectedYear !== "1000" && selectedMonth) {
     // retrieve invoices with specified criteria and populated enrolments/students

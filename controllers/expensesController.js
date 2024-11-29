@@ -6,6 +6,57 @@ const asyncHandler = require("express-async-handler"); //instead of using try ca
 
 const mongoose = require("mongoose");
 
+
+
+//helper for finances stats
+const getExpensesStats = async (selectedYear) => {
+  try {
+    const result = await Expense.aggregate([
+      {
+        $match: { expenseYear: selectedYear } // Filter invoices by the selected year
+      },
+      {
+        $addFields: {
+          expenseAmountAsNumber: { $toDouble: "$expenseAmount" } // Convert string to number
+        }
+      },
+      {
+        $group: {
+          _id: null, // No grouping required
+          totalExpensesAmount: { $sum: "$expenseAmountAsNumber" } // Sum converted values
+        }
+      }
+    ]);
+
+    // If no results, return 0
+    const totalAmount = result.length > 0 ? result[0].totalExpensesAmount : 0;
+    return totalAmount;
+  } catch (error) {
+    console.error("Error computing invoices sum:", error);
+    throw error;
+  }
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 // @desc Get all expense
 // @route GET 'desk/expense
 // @access Private // later we will establish authorisations
@@ -29,6 +80,24 @@ const getAllExpenses = asyncHandler(async (req, res) => {
     // Return the expense inside an array
     return res.json([expense]); //we need it inside  an array to avoid response data error
   }
+
+  if (selectedYear !== "1000" && criteria==="expensesTotalStats") {
+
+    try {
+      const totalExpensesAmount = await getExpensesStats(selectedYear);
+  
+      return res.status(200).json({
+        message: "expenses and total amount retrieved successfully",
+        selectedYear,
+        totalExpensesAmount
+      });
+    } catch (error) {
+     return  res.status(500).json({
+        message: "Error retrieving expenses",
+        error: error.message
+      });
+    }
+  };
   if (selectedYear !== "1000") {
     // Find a single expense by its ID
     const expenses = await Expense.find()
@@ -133,25 +202,35 @@ const updateExpense = asyncHandler(async (req, res) => {
   // set all other related sessions to ending date where you have a student from that expense in any other, the latter will have an ending date
   const {
     id,
-    expenseLabel,
-    expensePhone,
-    expenseAddress,
-    expenseNotes,
-    expenseIsActive,
-    expenseYears,
-    //expenseCategories,
-    expenseOperator,
+    expenseYear,
+        expenseMonth,
+        expenseAmount,
+        expenseNote,
+        expenseCategory,
+        expenseItems,
+        expensePayee,
+        expenseDate,
+        expensePaymentDate,
+        expenseService,
+        expenseMethod,
+        expenseOperator,
   } = req?.body;
 
   // Confirm data
-  if (
-    !id ||
-    expenseIsActive === undefined || // Checks if isChangeFlag is undefined
-    !expenseLabel ||
-    expenseYears.length === 0 ||
-    //expenseCategories.length === 0 ||
-    !expenseOperator
-  ) {
+  if (!id||
+    !expenseYear ||
+    !expenseMonth ||
+    !expenseAmount ||
+    !expenseCategory||
+    !expenseItems||
+    expenseItems?.length<1 ||
+    !expensePayee ||
+    !expenseService ||
+   
+    !expenseDate||
+    !expenseMethod
+    
+  ){
     return res.status(400).json({ message: "All mandatory fields required" });
   }
   
@@ -162,12 +241,17 @@ const updateExpense = asyncHandler(async (req, res) => {
     return res.status(400).json({ message: "Expense to update not found" });
   }
  
-  expenseToUpdate.expenseLabel=expenseLabel
-  expenseToUpdate.expensePhone=expensePhone
-  expenseToUpdate.expenseAddress=expenseAddress
-  expenseToUpdate.expenseNotes=expenseNotes
-  expenseToUpdate.expenseIsActive=expenseIsActive
-  expenseToUpdate.expenseYears=expenseYears
+  expenseToUpdate.expenseYear=expenseYear
+  expenseToUpdate.expenseMonth=expenseMonth
+  expenseToUpdate.expenseAmount=expenseAmount
+  expenseToUpdate.expenseCategory=expenseCategory
+  expenseToUpdate.expenseItems=expenseItems
+  expenseToUpdate.expensePayee=expensePayee
+  expenseToUpdate.expenseService=expenseService
+  expenseToUpdate.expenseDate=expenseDate
+  expenseToUpdate.expenseMethod=expenseMethod
+  expenseToUpdate.expenseNote=expenseNote
+  expenseToUpdate.expensePaymentDate=expensePaymentDate
   //expenseToUpdate.expenseCategories=expenseCategories
   expenseToUpdate.expenseOperator=expenseOperator
 
@@ -179,7 +263,7 @@ const updateExpense = asyncHandler(async (req, res) => {
       return res.status(400).json({ message: "invalid expense data received" });
     }
       return res.status(201).json({
-        message: `Expense: ${updatedExpense.expenseLabel} updated `,
+        message: `Expense: of ${updatedExpense.expenseAmount} updated `,
       })
 
  

@@ -8,6 +8,65 @@ const asyncHandler = require("express-async-handler"); //instead of using try ca
 
 const mongoose = require("mongoose");
 
+
+
+
+
+
+const getPaymentsStats = async (selectedYear) => {
+  try {
+    const result = await Payment.aggregate([
+      {
+        $match: { paymentYear: selectedYear } // Filter payments by the selected year
+      },
+      {
+        $addFields: {
+          paymentAmountAsNumber: { $toDouble: "$paymentAmount" } // Convert string to number
+        }
+      },
+      {
+        $group: {
+          _id: null, // No grouping required
+          totalPaymentAmount: { $sum: "$paymentAmountAsNumber" } // Sum converted values
+        }
+      }
+    ]);
+
+    // If no results, return 0
+    const totalAmount = result.length > 0 ? result[0].totalPaymentAmount : 0;
+    return totalAmount;
+  } catch (error) {
+    console.error("Error computing payments sum:", error);
+    throw error;
+  }
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 // @desc Get all payment
 // @route GET 'desk/payment
 // @access Private // later we will establish authorisations
@@ -16,6 +75,35 @@ const getAllPayments = asyncHandler(async (req, res) => {
 
   // Check if an ID is passed as a query parameter
   const { id, criteria, selectedYear } = req.query;
+  if (id) {
+    //console.log("nowwwwwwwwwwwwwwwwwwwwwww here");
+
+    // Find a single payment by its ID
+    const payment = await Payment.findOne({ _id: id })
+      .populate("students", "-operator -studentDob -studentGardien -updatedAt")
+      .lean();
+
+    if (!payment) {
+      return res.status(400).json({ message: "Payment not found" });
+    }
+
+    // Return the payment inside an array
+    return res.json([payment]); //we need it inside  an array to avoid response data error
+  }
+  if (selectedYear !== "1000" && criteria==="DashFinancesTotalPaymentsStats") {
+    // Find a single payment by its ID
+    try {
+      const totalPayments = await getPaymentsStats(selectedYear);
+      console.log(totalPayments,'totalPayments')
+      return res.status(200).json({ totalPayments });
+    } catch (error) {
+       return res.status(500).json({ error: "Failed to calculate total payments" });
+    }
+
+
+  
+  }
+
 
   if (selectedYear !== "1000") {
     // Find a single payment by its ID
@@ -40,21 +128,7 @@ const getAllPayments = asyncHandler(async (req, res) => {
   }
   
 
-  if (id) {
-    //console.log("nowwwwwwwwwwwwwwwwwwwwwww here");
-
-    // Find a single payment by its ID
-    const payment = await Payment.findOne({ _id: id })
-      .populate("students", "-operator -studentDob -studentGardien -updatedAt")
-      .lean();
-
-    if (!payment) {
-      return res.status(400).json({ message: "Payment not found" });
-    }
-
-    // Return the payment inside an array
-    return res.json([payment]); //we need it inside  an array to avoid response data error
-  }
+  
   // If no ID is provided, fetch all payments
 });
 
