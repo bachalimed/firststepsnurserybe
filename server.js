@@ -55,6 +55,7 @@ app.use('/hr/employees/employeeDocuments/', require('./routes/employeeDocumentsR
 app.use('/hr/employees/employeeDocuments/:id/', require('./routes/employeeDocumentsRoutes'))
 app.use('/hr/employees', require('./routes/employeeRoutes'))
 app.use('/hr/payslips', require('./routes/payslipRoutes'))
+app.use('/hr/leaves', require('./routes/leaveRoutes'))
 
 
 app.use('/desk/tasks', require('./routes/taskRoutes'))

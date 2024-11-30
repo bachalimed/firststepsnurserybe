@@ -98,7 +98,7 @@ const getAllPayslips = asyncHandler(async (req, res) => {
   // Check if an ID is passed as a query parameter
   const { id, criteria, selectedYear } = req.query;
   if (id) {
-    //console.log("nowwwwwwwwwwwwwwwwwwwwwww here");
+    console.log("nowwwwwwwwwwwwwwwwwwwwwww here");
 
     // Find a single payslip by its ID
     const payslip = await Payslip.findOne({ _id: id })

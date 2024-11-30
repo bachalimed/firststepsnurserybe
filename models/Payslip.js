@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 const User = require("./User");
+const Leave = require("./Leave");
 
 function capitalizeFirstLetter(str) {
   if (typeof str !== "string" || str.length === 0) return str;
@@ -8,14 +9,7 @@ function capitalizeFirstLetter(str) {
 
 
 
-const payslipAbsentDaysSchema = new mongoose.Schema(
-  {
-    absentDate: { type: Date },
-    absentReason: { type: String },
-    dayIsPaid: { type: Boolean },
-  },
-  { _id: false }
-);
+
 
 const payslipSalaryComponentsSchema = new mongoose.Schema(
   {
@@ -36,8 +30,8 @@ const payslipSchema = new mongoose.Schema({
     ref: "Employee",
   },
   payslipIsApproved: { type: Boolean, required: true },
-  payslipPaymentDate: { type: Boolean, required: true },
-  payslipAbsentDays: [payslipAbsentDaysSchema],
+  payslipPaymentDate: { type: Date, required: true },
+  payslipLeaveDays: [{ type: mongoose.Schema.Types.ObjectId, ref: "Leave" }],
   payslipSalaryComponents: [payslipSalaryComponentsSchema],
 
   payslipOperator: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
