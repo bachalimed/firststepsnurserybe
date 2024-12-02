@@ -1,6 +1,6 @@
 const Payslip = require("../models/Payslip");
 const User = require("../models/User");
-
+const Leave= require("../models/Leave");
 //const Employee = require('../models/Employee')//we might need the employee module in this controller
 const asyncHandler = require("express-async-handler"); //instead of using try catch
 
@@ -14,6 +14,10 @@ const getPayslipsByYear = async (selectedYear) => {
       .populate({
         path: 'payslipEmployee', // Populate the employee field
         select: 'employeeCurrentEmployment' // Only select the necessary field
+      })
+      .populate({
+        path: 'payslipLeaveDays', // Populate the employee field
+        select: '-leaveOperator -leaveCreator -leaveEmployee -leaveYear -leaveMonth' // Only select the necessary fields
       })
       .lean(); // Convert documents to plain JavaScript objects for easier manipulation
       // Add user information for each employee
@@ -98,7 +102,7 @@ const getAllPayslips = asyncHandler(async (req, res) => {
   // Check if an ID is passed as a query parameter
   const { id, criteria, selectedYear } = req.query;
   if (id) {
-    console.log("nowwwwwwwwwwwwwwwwwwwwwww here");
+    //console.log("nowwwwwwwwwwwwwwwwwwwwwww here");
 
     // Find a single payslip by its ID
     const payslip = await Payslip.findOne({ _id: id })

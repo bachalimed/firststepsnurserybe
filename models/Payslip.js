@@ -11,15 +11,15 @@ function capitalizeFirstLetter(str) {
 
 
 
-const payslipSalaryComponentsSchema = new mongoose.Schema(
-  {
-    component: { type: String, required: true, set: capitalizeFirstLetter },
-    amount: { type: String, required: true },
-    periodicity: { type: String, required: true, set: capitalizeFirstLetter },
-    reduction:{ type: String,},
-  },
-  { _id: false }
-);
+// const payslipSalaryComponentsSchema = new mongoose.Schema(
+//   {
+//     component: { type: String, required: true, set: capitalizeFirstLetter },
+//     amount: { type: String, required: true },
+//     periodicity: { type: String, required: true, set: capitalizeFirstLetter },
+//     reduction:{ type: String,},
+//   },
+//   { _id: false }
+// );
 
 const payslipSchema = new mongoose.Schema({
   payslipYear: { type: String, index: true, required: true },
@@ -32,7 +32,13 @@ const payslipSchema = new mongoose.Schema({
   payslipIsApproved: { type: Boolean, required: true },
   payslipPaymentDate: { type: Date, required: true },
   payslipLeaveDays: [{ type: mongoose.Schema.Types.ObjectId, ref: "Leave" }],
-  payslipSalaryComponents: [payslipSalaryComponentsSchema],
+  //payslipSalaryComponents: [payslipSalaryComponentsSchema],
+  payslipSalaryComponents: {
+        basic: { type: String, required: true, set: capitalizeFirstLetter },
+        amount: { type: String, required: true },
+        periodicity: { type: String, required: true, set: capitalizeFirstLetter },
+        //reduction:{ type: String,},
+      },
 
   payslipOperator: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
   payslipCreator: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
