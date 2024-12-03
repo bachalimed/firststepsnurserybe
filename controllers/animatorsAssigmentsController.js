@@ -78,7 +78,7 @@ const createNewAnimatorsAssigment = asyncHandler(async (req, res) => {
   ) {
     return res
       .status(400)
-      .json({ message: "All mandatory fields are required" }); //400 : bad request
+      .json({ message: "Required fields are missing" }); //400 : bad request
   }
 
   // Check for duplicate username
@@ -147,7 +147,7 @@ const updateAnimatorsAssigment = asyncHandler(async (req, res) => {
   ) {
     return res
       .status(400)
-      .json({ message: "All mandatory fields are required" }); //400 : bad request
+      .json({ message: "Required fields are missing" }); //400 : bad request
   }
   // Does the animatorsAssigment exist to update?
   const animatorsAssigment = await AnimatorsAssigment.findById(id).exec(); //we did not lean becausse we need the save method attached to the response

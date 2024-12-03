@@ -569,7 +569,7 @@ const deleteFamily = asyncHandler(async (req, res) => {
       .status(400)
       .json({ message: "Family not found for the provided id" });
   }
-  const { father, mother, children } = familyToDelete;
+  const { father, mother, children } = family;
   const fatherToDelete = await User.findById(father);
 
   //   if (!fatherToDelete) {
@@ -591,7 +591,7 @@ const deleteFamily = asyncHandler(async (req, res) => {
     replyMother = `mother ${motherToDelete.userFullName.userFirstName} ${motherToDelete.userFullName.userMiddleName} ${motherToDelete.userFullName.userLastName} deleted`;
     //res.json(reply);
   }
-  const familyToDelete = await User.findById(family);
+  const familyToDelete = await Family.findById(id);
   let deletedFamily;
   let replyFamily;
 
@@ -601,7 +601,7 @@ const deleteFamily = asyncHandler(async (req, res) => {
 
   const reply = `${replyFather}, ${replyMother} ${replyFamily}`;
 
-  res.json(reply);
+  res.json({message:reply});
 });
 
 module.exports = {

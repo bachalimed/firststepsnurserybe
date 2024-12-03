@@ -158,7 +158,7 @@ console.log('now in the controller to get by doc id', id)
 //     //Confirm data is present in the request with all required fields
         
 //         if (!documentsAcademicYear ||!Array.isArray(documents) ||documents?.length===0 ) {
-//         return res.status(400).json({ message: 'All mandatory fields are required' })//400 : bad request
+//         return res.status(400).json({ message: 'Required fields are missing' })//400 : bad request
 //     }
     
 //     // Check for duplicate username

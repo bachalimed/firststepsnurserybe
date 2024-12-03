@@ -357,7 +357,7 @@ const createNewSession = asyncHandler(async (req, res) => {
     //if nursery and no animator or no classroom
     return res
       .status(400)
-      .json({ message: "All mandatory fields are required" }); //400 : bad request
+      .json({ message: "Required fields are missing" }); //400 : bad request
   }
 
   // Check for duplicate username

@@ -14,7 +14,7 @@ const getAllAcademicYears = asyncHandler(async (req, res) => {
 
   // If no academicYears
   if (!academicYears?.length) {
-    return res.status(400).json({ message: "No academicYearss found" });
+    return res.status(400).json({ message: "No academicYears found" });
   } else {
     res.status(200).json({ academicYears, total: academicYears.length });
     //console.log('returned academicYears')
@@ -30,14 +30,14 @@ const createNewAcademicYear = asyncHandler(async (req, res) => {
 
   //Confirm data is present in the request with all required fields
   if (!title || !yearStart || !yearEnd || !academicYearCreator) {
-    return res.status(400).json({ message: "All fields are required" }); //400 : bad request
+    return res.status(400).json({ message: "Required fields are missing" }); //400 : bad request
   }
 
   // Check for duplicate academicYearname
   const duplicate = await AcademicYear.findOne({ yearStart }).lean().exec(); //because we re receiving only one response from mongoose
 
   if (duplicate) {
-    return res.status(409).json({ message: "Duplicate academicYear" });
+    return res.status(409).json({ message: "Duplicate academicYear found" });
   }
 
   const academicYearObject = { title, yearStart, yearEnd, academicYearCreator }; //construct new academicYear to be stored
@@ -49,7 +49,7 @@ const createNewAcademicYear = asyncHandler(async (req, res) => {
     //if created
     res
       .status(201)
-      .json({ message: `New academic Year ${academicYear.title} created` });
+      .json({ message: `Academic Year ${academicYear.title} created` });
   } else {
     res.status(400).json({ message: "Invalid academic Year data received" });
   }
@@ -63,14 +63,14 @@ const updateAcademicYear = asyncHandler(async (req, res) => {
 
   // Confirm data
   if (!id || !title || !yearStart || !yearEnd || !academicYearCreator) {
-    return res.status(400).json({ message: "All fields  are required" });
+    return res.status(400).json({ message: "Required fields are missing" });
   }
 
   // Does the academicYear exist to update?
   const academicYear = await AcademicYear.findById(id).exec(); //we did not lean becausse we need the save method attached to the response
 
   if (!academicYear) {
-    return res.status(400).json({ message: "Academic Year not found" });
+    return res.status(400).json({ message: `Academic year not found` });
   }
 
   // Check for duplicate
@@ -78,7 +78,7 @@ const updateAcademicYear = asyncHandler(async (req, res) => {
 
   // Allow updates to the original academicYear
   if (duplicate && duplicate?._id.toString() !== id) {
-    return res.status(409).json({ message: "Duplicate academic Year" });
+    return res.status(409).json({ message: "Duplicate academic Year found" });
   }
 
   academicYear.title = title; //it will only allow updating properties that are already existant in the model
@@ -89,7 +89,7 @@ const updateAcademicYear = asyncHandler(async (req, res) => {
 
   const updatedAcademicYear = await academicYear.save(); //save method received when we did not include lean
 
-  res.json({ message: `${updatedAcademicYear.academicYearname} updated` });
+  res.json({ message: `Academic year ${updatedAcademicYear.academicYearname} updated` });
 });
 //--------------------------------------------------------------------------------------1
 // @desc Delete a academicYear
@@ -100,7 +100,7 @@ const deleteAcademicYear = asyncHandler(async (req, res) => {
 
   // Confirm data
   if (!id) {
-    return res.status(400).json({ message: "Academic Year ID Required" });
+    return res.status(400).json({ message: "Required id not found" });
   }
 
   // Does the academicYear still have assigned notes?
@@ -113,12 +113,12 @@ const deleteAcademicYear = asyncHandler(async (req, res) => {
   const academicYear = await AcademicYear.findById(id).exec();
 
   if (!academicYear) {
-    return res.status(400).json({ message: "Academic Year not found" });
+    return res.status(400).json({ message: "Academic Year not provided" });
   }
 
   const result = await academicYear.deleteOne();
-console.log(result, 'result')
-  const reply = `deleted ${result.deletedCount} AcademicYear: Name ${academicYear.academicYearname} with ID ${academicYear._id} `;
+//console.log(result, 'result')
+  const reply = `Deleted ${result.deletedCount} AcademicYear ${academicYear.title} `;
 
   res.json(reply);
 });

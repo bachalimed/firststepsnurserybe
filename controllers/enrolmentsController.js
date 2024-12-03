@@ -533,15 +533,10 @@ const deleteEnrolment = asyncHandler(async (req, res) => {
 
   const result = await enrolmentToDelete.deleteOne();
   //console.log(result, "result");
-  const reply = `confirm:  ${result} enrolment ${
-    enrolmentToDelete.enrolmentName.firstName +
-    " " +
-    enrolmentToDelete.enrolmentName.middleName +
-    " " +
-    enrolmentToDelete.enrolmentName.lastName
-  }, with ID ${enrolmentToDelete._id} deleted`;
+  //console.log(enrolmentToDelete, "enrolmentToDelete");
+  const reply = `deleted ${result?.deletedCount} enrolment ${enrolmentToDelete?.serviceType} of ${enrolmentToDelete?.enrolmentMonth}`;
 
-  res.json(reply);
+  return res.json({ message:reply});
 });
 
 module.exports = {

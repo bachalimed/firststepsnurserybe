@@ -171,6 +171,8 @@ const updateUser = asyncHandler(async (req, res) => {
   const { formData } = req?.body;
   const {
     id,
+    oldPassword,
+    newPassword1,
     userFullName,
     username,
     password,
@@ -185,9 +187,42 @@ const updateUser = asyncHandler(async (req, res) => {
     userRoles,
     userAddress,
     userContact,
+    criteria,
   } = formData;
 
-  // Confirm data
+  if (criteria === "resetPassword") {
+    if (!id || !oldPassword || !newPassword1) {
+      return res.status(400).json({ message: "required fields are missing" });
+    }
+    const user = await User.findById(id).exec(); //we did not lean becausse we need the save method attached to the response
+
+ 
+    if (!user) {
+      return res.status(400).json({ message: "User not found" });
+    }
+//console.log(user,'user')
+    // Check for duplicate
+    const duplicate = await User.findOne({ username }).lean().exec();
+
+    // Allow updates to the original user
+    if (duplicate && duplicate?._id.toString() !== id) {
+      return res.status(409).json({ message: "Duplicate username found" });
+    }
+
+const passwordMatch = await bcrypt.compare(oldPassword, user.password)
+
+    if (!passwordMatch) {
+      return res.status(409).json({ message: "old password not matching" });
+    }
+    // Hash new password
+ 
+    user.password = await bcrypt.hash(newPassword1, 10); // salt rounds
+    const updatedUser = await user.save(); //save method received when we did not include lean
+    //console.log(updatedUser);
+
+    return res.json({ message: `${updatedUser?.username} updated` });
+  }
+  // normal user update
   if (
     !id ||
     !username ||
@@ -241,7 +276,7 @@ const updateUser = asyncHandler(async (req, res) => {
   const updatedUser = await user.save(); //save method received when we did not include lean
   console.log(updatedUser);
 
-  res.json({ message: `${updatedUser.username} updated` });
+  return res.json({ message: `${updatedUser.username} updated` });
 });
 //--------------------------------------------------------------------------------------1
 // @desc Delete a user

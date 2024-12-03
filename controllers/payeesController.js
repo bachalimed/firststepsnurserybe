@@ -75,7 +75,7 @@ const createNewPayee = asyncHandler(async (req, res) => {
   ) {
     return res
       .status(400)
-      .json({ message: "All mandatory fields are required" }); //400 : bad request
+      .json({ message: "Required fields are missing" }); //400 : bad request
   }
 
   // Check for duplicate payee or invoices paid previously

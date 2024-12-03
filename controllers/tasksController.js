@@ -53,7 +53,7 @@ const createNewTask = asyncHandler(async (req, res) => {
         
         if (!taskCreationDate ||!taskPriority ||! taskSubject ||! taskDescription ||! taskCreator 
             ||! taskDueDate||! taskResponsible||! taskState||! lastModified.operator||! taskYear) {
-        return res.status(400).json({ message: 'All mandatory fields are required' })//400 : bad request
+        return res.status(400).json({ message: 'Required fields are missing' })//400 : bad request
     }
     
     // Check for duplicate username

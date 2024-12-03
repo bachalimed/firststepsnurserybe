@@ -73,7 +73,7 @@ console.log(schoolName, schoolCity, schoolType, schoolColor)
     //Confirm data is present in the request with all required fields
         
         if ( !schoolName || !schoolCity || !schoolType ||!schoolColor) {
-        return res.status(400).json({ message: 'All mandatory fields are required' })//400 : bad request
+        return res.status(400).json({ message: 'Required fields are missing' })//400 : bad request
     }
     
     // Check for duplicate username

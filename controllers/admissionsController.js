@@ -258,7 +258,7 @@ const createNewAdmission = asyncHandler(async (req, res) => {
     !admissionYear ||
     !agreedServices
   ) {
-    return res.status(400).json({ message: "All fields are required" }); //400 : bad request
+    return res.status(400).json({ message: "Required fields are missing" }); //400 : bad request
   }
 
   // Check for duplicate
@@ -272,7 +272,7 @@ const createNewAdmission = asyncHandler(async (req, res) => {
 
   if (duplicate) {
     return res.status(409).json({
-      message: ` duplicate admission name for student ${duplicate.student} and service ${duplicate.agreedServices} `,
+      message: `Duplicate admission for student ${duplicate.student} and service ${duplicate.agreedServices} `,
     });
   }
 
@@ -297,7 +297,7 @@ const createNewAdmission = asyncHandler(async (req, res) => {
   }; //construct new admission to be stored
   //set is authjorised for everfy isFLagged:false
 
-  console.log(admissionObject.agreedServices, "modifiedAgreedServices");
+ // console.log(admissionObject.agreedServices, "modifiedAgreedServices");
 
   // Create and store new admission
   const admission = await Admission.create(admissionObject);
@@ -358,7 +358,7 @@ const updateAdmission = asyncHandler(async (req, res) => {
     !agreedServices ||
     agreedServices?.length === 0
   ) {
-    return res.status(400).json({ message: "All fields are required" });
+    return res.status(400).json({ message: "Required fields are missing" });
   }
 
   // Does the admission exist to update?
@@ -373,7 +373,7 @@ const updateAdmission = asyncHandler(async (req, res) => {
 
   // Allow updates to the original user
   if (duplicate && duplicate?._id.toString() !== admissionId) {
-    return res.status(409).json({ message: "Duplicate Admission" });
+    return res.status(409).json({ message: "Duplicate Admission found" });
   }
 
   admission.admissionDate = admissionDate; //it will only allow updating properties that are already existant in the model
@@ -395,7 +395,7 @@ const deleteAdmission = asyncHandler(async (req, res) => {
 
   // Confirm data
   if (!id) {
-    return res.status(400).json({ message: "Admission Id Required" });
+    return res.status(400).json({ message: "Required id not provided" });
   }
 
   // Does the admission exist to delete?
@@ -413,8 +413,8 @@ const deleteAdmission = asyncHandler(async (req, res) => {
     );
 
     if (studentUpdateResult) {
-      const reply = `Confirm: deleted 1 admission, with ID ${admissionToDelete._id} and updated student ${studentUpdateResult._id}`;
-      return res.json(reply);
+      const reply = `deleted 1 admission, with ID ${admissionToDelete._id} and student updated`;
+      return res.json({message:reply});
     } else {
       return res
         .status(400)
@@ -424,7 +424,7 @@ const deleteAdmission = asyncHandler(async (req, res) => {
 
   // If failed to delete admission
   const reply = `Confirm: deleted ${result.deletedCount} admissions`;
-  return res.status(400).json(reply);
+  return res.status(400).json({message:reply});
 });
 
 module.exports = {

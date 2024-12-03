@@ -140,7 +140,7 @@ const countStudents = async (selectedYear) => {
 /////////////////////////////////////////////////// 
 //function to get only the studetns with no families
 async function getStudentsNotInFamily() {
-  try {
+ // try {
     // Step 1: Find all students that are part of any family
     const families = await Family.find({}, "children.child").lean();
 
@@ -153,12 +153,12 @@ async function getStudentsNotInFamily() {
     const studentsNotInFamilies = await Student.find({
       _id: { $nin: studentsInFamilies },
     }).lean();
-
+//console.log(studentsNotInFamilies,'studentsNotInFamilies')
     return studentsNotInFamilies;
-  } catch (error) {
-    console.error("Error fetching students not in families:", error);
-    throw error;
-  }
+  // } catch (error) {
+  //   console.error("Error fetching students not in families:", error);
+  //   throw error;
+  // }
 }
 
 function flattenStudentName(student) {
@@ -186,20 +186,23 @@ const getAllStudents = asyncHandler(async (req, res) => {
   //console.log(selectedYear, "sleected year inback")
   //will retrive all teh students
 
-  // if students found, we check if the criteria : 'No Family 'is present
-  if (criteria && criteria === "No Family") {
+  //  we check if the criteria : 'No Family ' for any year to add student to family
+  if (selectedYear==="1000" && criteria === "No Family") {
+    console.log('no familyyyyyyyyyyyyyyyyyyyyyyyyyyyy')
     getStudentsNotInFamily()
       .then((students) => {
+        console.log(students,'students')
         return res.json(students);
       })
-      .catch((error) => {
-        console.error(error);
-        if (error) {
-          return res.status(400).json({ message: `${error}` });
-        }
-      });
+      // .catch((error) => {
+      //   console.error(error);
+      //   if (error) {
+      //     return res.status(400).json({ message: `${error}` });
+      //   }
+      // });
   }
 
+  
   if (selectedYear !== "1000" && criteria === "withSections") {
     console.log("with   sectionnssssssssssssssssssssssssssssssssssss");
     const students = await Student.find({
@@ -485,33 +488,34 @@ const getAllStudents = asyncHandler(async (req, res) => {
       return res.json(sortedStudents);
     }
   }
-  if (selectedYear === "1000") {
+  if (selectedYear === "1000"&&!criteria) {
     const students = await Student.find().lean();
     if (!students?.length) {
       return res.status(400).json({ message: "No students found!" });
     } else {
       return res.json(students);
     }
-  } else {
-    //none of previous conditions////////////////////
+  } 
+  // else {
+  //   //none of previous conditions////////////////////
 
-    console.log("newwwwwwwwwwwwwwhereee");
-    const students = await Student.find().lean(); //this will not return the extra data(lean)
-    //console.log('with no select')
-    if (!students?.length) {
-      return res.status(400).json({ message: "No students found" });
-    }
-    const sortedStudents = students.sort((a, b) => {
-      const firstNameA = a.studentName.firstName.toLowerCase();
-      const firstNameB = b.studentName.firstName.toLowerCase();
+  //   console.log("newwwwwwwwwwwwwwhereee");
+  //   const students = await Student.find().lean(); //this will not return the extra data(lean)
+  //   //console.log('with no select')
+  //   if (!students?.length) {
+  //     return res.status(400).json({ message: "No students found" });
+  //   }
+  //   const sortedStudents = students.sort((a, b) => {
+  //     const firstNameA = a.studentName.firstName.toLowerCase();
+  //     const firstNameB = b.studentName.firstName.toLowerCase();
 
-      if (firstNameA < firstNameB) return -1; // a comes first
-      if (firstNameA > firstNameB) return 1; // b comes first
-      return 0; // they are equal
-    });
-    //console.log('returned res', students)
-    return res.json(sortedStudents);
-  }
+  //     if (firstNameA < firstNameB) return -1; // a comes first
+  //     if (firstNameA > firstNameB) return 1; // b comes first
+  //     return 0; // they are equal
+  //   });
+  //   //console.log('returned res', students)
+  //   return res.json(sortedStudents);
+  // }
 
   // If no students
 
@@ -672,7 +676,7 @@ const deleteStudent = asyncHandler(async (req, res) => {
 
   // Find all documents related to the student
   const documents = await StudentDocument.find({ studentId: id });
-  console.log(documents, "documents");
+  //console.log(documents, "documents");
   if (documents.length !== 0) {
     // Delete each file associated with the documents
     for (const doc of documents) {
