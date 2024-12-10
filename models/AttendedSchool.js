@@ -7,7 +7,7 @@ function capitalizeFirstLetter(str) {
 
 
 const attendedSchoolSchema = new mongoose.Schema({
-	//id is already assigned automatically by mongo
+
 	schoolName:{type: String, required:true, index: true, set: capitalizeFirstLetter}, 
 	schoolCity:{type: String, required:true, set: capitalizeFirstLetter},
 	schoolType: {type: String, required:true},

@@ -16,7 +16,7 @@ const agreedServicesSchema= new mongoose.Schema({//fee can be changed in the mid
 
 
 const admissionSchema = new mongoose.Schema({
-	//id is already assigned automatically by mongo
+	
 	student:{type: mongoose.Schema.Types.ObjectId, required:true, index:true, ref: 'Student'},
 	admissionYear:{type: String, required:true, index:true},
 	admissionDate: {type: Date, required:true},

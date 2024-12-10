@@ -73,12 +73,7 @@ const expenseSchema = new mongoose.Schema(
     expensePaymentDate: {
       type: Date,
     },
-    // expenseCategory: {
-    //   type: mongoose.Schema.Types.ObjectId,
-    //   ref: "ExpenseCategory",
-    //   required: true,
-    // },
-
+  
     expenseMethod: {
       type: String,
       set: capitalizeFirstLetter,
