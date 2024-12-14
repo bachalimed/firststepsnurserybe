@@ -69,29 +69,29 @@ const getAllClassrooms = asyncHandler(async (req, res) => {
 // @route POST 'desk/classroom
 // @access Private
 const createNewClassroom = asyncHandler(async (req, res) => {
-    const { schoolName, schoolCity, schoolType } = req?.body//this will come from front end we put all the fields o fthe collection here
-console.log(schoolName, schoolCity, schoolType)
+    const { classroomNumber, classroomLabel, classroomCapacity, classroomMaxCapacity, classroomColor } = req?.body//this will come from front end we put all the fields o fthe collection here
+
     //Confirm data is present in the request with all required fields
         
-        if ( !schoolName || !schoolCity || !schoolType) {
+        if ( !classroomNumber || !classroomLabel || !classroomCapacity || !classroomMaxCapacity) {
         return res.status(400).json({ message: 'Required fields are missing' })//400 : bad request
     }
     
     // Check for duplicate username
-    const duplicate = await Classroom.findOne({schoolName }).lean().exec()//because we re receiving only one response from mongoose
+    const duplicate = await Classroom.findOne({classroomNumber }).lean().exec()//because we re receiving only one response from mongoose
 
-    if (duplicate&&duplicate.schoolType== schoolType) {
-        return res.status(409).json({ message: `Duplicate classroom: ${duplicate.schoolName}, found` })
+    if (duplicate) {
+        return res.status(409).json({ message: `Duplicate classroom: ${duplicate.classroomNumber}, found` })
     }
   
     
-    const classroomObject = { schoolName, schoolCity, schoolType}//construct new classroom to be stored
+    const classroomObject = { classroomNumber, classroomLabel, classroomCapacity, classroomMaxCapacity, classroomColor}//construct new classroom to be stored
 
     // Create and store new classroom 
     const classroom = await Classroom.create(classroomObject)
 
     if (classroom) { //if created 
-        res.status(201).json({ message: `New classroom of subject: ${classroom.schoolName}, created` })
+        res.status(201).json({ message: `New classroom of subject: ${classroom.classroomLabel}, created` })
     } else {
         res.status(400).json({ message: 'Invalid classroom data received' })
     }
@@ -104,10 +104,10 @@ console.log(schoolName, schoolCity, schoolType)
 // @route PATCH 'desk/classroom
 // @access Private
 const updateClassroom = asyncHandler(async (req, res) => {
-    const { id, schoolName, schoolCity, schoolType  } = req?.body
+    const { id, classroomNumber, classroomLabel, classroomCapacity, classroomMaxCapacity, classroomColor   } = req?.body
 
     // Confirm data 
-    if (!id ||!schoolName ||! schoolCity ||! schoolType ) {
+    if (!id ||!classroomNumber ||! classroomLabel ||! classroomCapacity ||! classroomMaxCapacity) {
         return res.status(400).json({ message: 'All mandatory fields required' })
     }
 
@@ -119,13 +119,15 @@ const updateClassroom = asyncHandler(async (req, res) => {
     }
 
 
-    classroom.schoolName = schoolName//it will only allow updating properties that are already existant in the model
-    classroom.schoolCity = schoolCity
-    classroom.schoolType = schoolType    
+    classroom.classroomNumber = classroomNumber//it will only allow updating properties that are already existant in the model
+    classroom.classroomLabel = classroomLabel
+    classroom.classroomCapacity = classroomCapacity    
+    classroom.classroomMaxCapacity = classroomMaxCapacity    
+    classroom.classroomColor = classroomColor    
     
     const updatedClassroom = await classroom.save()//save method received when we did not include lean
 
-    res.json({ message: `classroom: ${updatedClassroom.schoolName}, updated` })
+    res.json({ message: `classroom: ${updatedClassroom.classroomLabel}, updated!` })
 })
 
 
@@ -151,9 +153,9 @@ const deleteClassroom = asyncHandler(async (req, res) => {
 
     const result = await classroom.deleteOne()
 
-    const reply = `classroom ${classroom.classroomubject}, with ID ${classroom._id}, deleted`
+    const reply = `classroom ${classroom.classroomLabel}, with ID ${classroom._id}, deleted`
 
-    res.json(reply)
+    res.json({message:reply})
 })
 
 

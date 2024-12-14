@@ -9,10 +9,10 @@ const mongoose = require("mongoose");
 // @route GET '/settings/academicsSet/services/'            ??how to modify this route to admin/services is in serve.js and serviceRoutes
 // @access Private // later we will establish authorisations
 const getAllServices = asyncHandler(async (req, res) => {
-  // Get all services from MongoDB
+  const {id, selectedYear} = req?.query
   //console.log('teh request', req.query)
-  if(req.query?.selectedYear){
-  const {selectedYear} = req.query//maybe replace the conditionals with the current year that we get  from middleware
+ 
+ 
   //console.log(selectedYear, "sleected year inback")
   //will retrive all teh services
   if (selectedYear === '1000'){
@@ -24,7 +24,20 @@ const getAllServices = asyncHandler(async (req, res) => {
 
       return res.json(services)}
     }
-    else{
+    if(id){
+      const {id} = req.query
+      const service = await Service.find({ _id: id }).lean()//this will not return the extra data(lean)//removed populate father and mother
+  
+  //console.log('with id  select')
+  if (!service?.length) {
+      return res.status(400).json({ message: 'No service found for the Id provided' })
+  }
+  //console.log('returned res', service)
+  return res.json(service)
+
+  }
+
+   if (selectedYear!=="1000"){
   //will retrieve only the selcted year
           const services = await Service.find({ serviceYear:selectedYear }).lean()//this will not return the extra data(lean)
           
@@ -36,18 +49,7 @@ const getAllServices = asyncHandler(async (req, res) => {
            return res.json(services)}
         }
   //will retreive according to the id
-  }else if(req.query?.id){
-      const {id} = req.query
-      const service = await Service.find({ _id: id }).lean()//this will not return the extra data(lean)//removed populate father and mother
-  
-  //console.log('with id  select')
-  if (!service?.length) {
-      return res.status(400).json({ message: 'No service found for the Id provided' })
-  }
-  //console.log('returned res', service)
-  res.json(service)
-
-  }else {
+ else {
   const services = await Service.find().lean()//this will not return the extra data(lean)
   //console.log('with no select')
   if (!services?.length) {
