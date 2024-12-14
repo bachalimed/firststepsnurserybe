@@ -69,8 +69,7 @@ const getAllServices = asyncHandler(async (req, res) => {
 // @access Private
 const createNewService = asyncHandler(async (req, res) => {
  
-  const { serviceType, serviceYear, serviceAnchor,  serviceCreator, serviceOperator } = req?.body; //this will come from front end we put all the fields o fthe collection here
-  
+  const  { serviceType, serviceYear, serviceAnchor, serviceCreator, serviceOperator } = req?.body
 
   //Confirm data is present in the request with all required fields
   if (!serviceType || !serviceYear || !serviceAnchor  || !serviceCreator || !serviceOperator) {
@@ -104,15 +103,15 @@ const duplicate = await Service.findOne({ serviceYear, serviceType }).lean().exe
 // @route PATCH '/settings/academicsSet/services/'
 // @access Private
 const updateService = asyncHandler(async (req, res) => {
-  const { id, serviceType, serviceYear, serviceAnchor,  serviceOperator } = req.body;
+  const { serviceId, serviceType, serviceYear, serviceAnchor,  serviceOperator } = req.body;
 
   // Confirm data
-  if (!id || !serviceType || !serviceYear || !serviceAnchor || !serviceOperator) {
+  if (!serviceId || !serviceType || !serviceYear || !serviceAnchor || !serviceOperator) {
     return res.status(400).json({ message: "All fields  are required" });
   }
 
   // Does the service exist to update?
-  const service = await Service.findById(id).exec(); //we did not lean becausse we need the save method attached to the response
+  const service = await Service.findById(serviceId).exec(); //we did not lean becausse we need the save method attached to the response
 
   if (!service) {
     return res.status(400).json({ message: "Academic Year not found" });
@@ -122,7 +121,7 @@ const updateService = asyncHandler(async (req, res) => {
   const duplicate = await Service.findOne({ serviceYear, serviceType }).lean().exec();
 
   // Allow updates to the original service
-  if (duplicate && duplicate?._id.toString() !== id) {
+  if (duplicate && duplicate?._id.toString() !== serviceId) {
     return res.status(409).json({ message: "Duplicate service Type for the academic Year" });
   }
 
@@ -133,7 +132,7 @@ const updateService = asyncHandler(async (req, res) => {
 
   const updatedService = await service.save(); //save method received when we did not include lean
 
-  res.json({ message: `${updatedService.servicename} updated` });
+  return res.json({ message: `${updatedService?.serviceType},  ${updatedService?.serviceYear} updated` });
 });
 //--------------------------------------------------------------------------------------1
 // @desc Delete a service

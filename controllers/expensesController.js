@@ -256,7 +256,6 @@ const updateExpense = asyncHandler(async (req, res) => {
   expenseToUpdate.expenseOperator=expenseOperator
 
 
- 
     //console.log(expenseToUpdate,'expenseToUpdate')
     const updatedExpense = await expenseToUpdate.save(); //save old expense
     if (!updatedExpense) {

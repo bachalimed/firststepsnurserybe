@@ -391,7 +391,7 @@ const updateInvoice = asyncHandler(async (req, res) => {
     (invoice.invoiceOperator = invoiceOperator);
   const updatedInvoice = await invoice.save(); //save method received when we did not include lean
 
-  res.json({ message: `invoice due on: ${updatedInvoice.invoiceDueDate}, for  ${updatedInvoice.invoiceAmount} updated` });
+  return res.status(201).json({ message: `invoice of ${updatedInvoice.invoiceAmount} updated` });
 });
 
 //--------------------------------------------------------------------------------------1
