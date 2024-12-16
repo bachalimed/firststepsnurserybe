@@ -70,7 +70,7 @@ const createNewStudentDocumentsList = asyncHandler(async (req, res) => {
   ) {
     return res
       .status(400)
-      .json({ message: "Required fields are missing" }); //400 : bad request
+      .json({ message: "Required data is missing" }); //400 : bad request
   }
 
   // Check for duplicate username
@@ -108,12 +108,12 @@ const createNewStudentDocumentsList = asyncHandler(async (req, res) => {
     res
       .status(201)
       .json({
-        message: `New studentDocumentsList for ${studentDocumentsList.documentsAcademicYear} created`,
+        message: `Student documents' list created successfully`,
       });
   } else {
     res
       .status(400)
-      .json({ message: "Invalid studentDocumentsList data received" });
+      .json({ message: "Invalid data received" });
   }
 });
 
@@ -130,7 +130,7 @@ const updateStudentDocumentsList = asyncHandler(async (req, res) => {
   ) {
     return res
       .status(400)
-      .json({ message: "Required fields are missing" });
+      .json({ message: "Required data is missing" });
   }
 
   // Does the studentDocumentList exist to update?
@@ -148,7 +148,7 @@ const updateStudentDocumentsList = asyncHandler(async (req, res) => {
   const updatedStudentDocumentsList = await listToUpdate.save();
 
   res.json({
-    message: `StudentDocumentsList updated successfully`,
+    message: `Student documents list updated successfully`,
     updatedStudentDocumentsList,
   });
 });
@@ -164,7 +164,7 @@ const deleteStudentDocumentsList = asyncHandler(async (req, res) => {
   if (!id) {
     return res
       .status(400)
-      .json({ message: "StudentDocumentsList ID Required" });
+      .json({ message: "Required data is missing" });
   }
 
   // Does the user exist to delete?

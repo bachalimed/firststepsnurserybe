@@ -280,7 +280,7 @@ const createNewEmployee = asyncHandler(async (req, res) => {
     !employeeCurrentEmployment.salaryPackage.basic ||
     !employeeYears.length > 0
   ) {
-    return res.status(400).json({ message: "All fields are required" }); //400 : bad request
+    return res.status(400).json({ message: "Required data is missing" }); //400 : bad request
   }
   // Check for duplicate employee by checking duplicate fullname, but we can have a returning employee, we will later check the dates of entry and departure to update them properly
   // const duplicateemployee = await User.findOne({ userFullName: userFullName }).lean().exec()
@@ -354,24 +354,24 @@ const createNewEmployee = asyncHandler(async (req, res) => {
 
       //the following line res is not being executed and was causing the error [ERR_HTTP_HEADERS_SENT, now we send both res for user and parent  together in ne line
       return res.status(201).json({
-        message: `New user ${username + ","} and new employee ${
+        message: `User ${username + ","} and employee ${
           userFullName.userFirstName +
           " " +
           userFullName.userMiddleName +
           " " +
           userFullName.userLastName +
           ","
-        } created`,
+        } created successfully`,
       });
     } else {
       //delete the user already craeted to be done
 
       return res
         .status(400)
-        .json({ message: "Invalid employee data received" });
+        .json({ message: "Invalid data received" });
     }
   } else {
-    res.status(400).json({ message: "Invalid user data received" });
+    res.status(400).json({ message: "Invalid data received" });
   }
 }); //we need to delete the user if the parent is not saved
 
@@ -468,7 +468,7 @@ const updateEmployee = asyncHandler(async (req, res) => {
     !employeeCurrentEmployment.salaryPackage.basic ||
     !employeeYears.length > 0
   ) {
-    return res.status(400).json({ message: "All fields are required" }); //400 : bad request
+    return res.status(400).json({ message: "Required data is missing" }); //400 : bad request
   }
 
   //no need to check for duplicate username because it was not edited in empoloyee edit
@@ -508,22 +508,15 @@ const updateEmployee = asyncHandler(async (req, res) => {
 
     if (updatedEmployee) {
       res.json({
-        message: ` ${updatedUser.username} updated, and employee ${
-          updatedUser.userFullName.userFirstName +
-          " " +
-          updatedUser.userFullName.userMiddleName +
-          " " +
-          updatedUser.userFullName.userLastName +
-          ","
-        } updated`,
+        message: `User and employee updated successfully`,
       }); //change parentYear later to show the parent full name
     } else {
       //delete the user already craeted to be done later
 
-      res.status(400).json({ message: "Invalid employee data received" });
+      res.status(400).json({ message: "Invalid data received" });
     }
   } else {
-    res.status(400).json({ message: "Invalid user data received" });
+    res.status(400).json({ message: "Invalid data received" });
   }
 });
 
@@ -537,7 +530,7 @@ const deleteEmployee = asyncHandler(async (req, res) => {
 
   // Confirm data
   if (!id) {
-    return res.status(400).json({ message: "User ID Required" });
+    return res.status(400).json({ message: "Required data is missing" });
   }
 
   // Does the parent still have assigned active students?
@@ -560,22 +553,16 @@ const deleteEmployee = asyncHandler(async (req, res) => {
   //if user is also an parent, delete only the employee collection and keep user
   if (user.isParent) {
     const result1 = await employee.deleteOne();
-    const reply = `employee ${employee.id} deleted`;
-    res.json(reply);
+    const reply = `Deleted ${result1?.deletedCount} Employee`;
+    res.json({message:reply});
   } else {
     const result1 = await employee.deleteOne();
     const result2 = await user.deleteOne();
     console.log(result2);
 
-    const reply = `Username ${user.username} deleted, employee ${
-      user.userFullName.userFirstName +
-      " " +
-      user.userFullName.userMiddleName +
-      " " +
-      user.userFullName.userLastName
-    } deleted`;
+    const reply = `Deleted ${result2?.deletedCount} user and  ${result1?.deletedCount} employee `;
 
-    res.json(reply);
+    res.json({message:reply});
   }
 });
 module.exports = {

@@ -8,28 +8,23 @@ const asyncHandler = require("express-async-handler"); //instead of using try ca
 
 const mongoose = require("mongoose");
 
-
-
-
-
-
 const getPaymentsStats = async (selectedYear) => {
   try {
     const result = await Payment.aggregate([
       {
-        $match: { paymentYear: selectedYear } // Filter payments by the selected year
+        $match: { paymentYear: selectedYear }, // Filter payments by the selected year
       },
       {
         $addFields: {
-          paymentAmountAsNumber: { $toDouble: "$paymentAmount" } // Convert string to number
-        }
+          paymentAmountAsNumber: { $toDouble: "$paymentAmount" }, // Convert string to number
+        },
       },
       {
         $group: {
           _id: null, // No grouping required
-          totalPaymentAmount: { $sum: "$paymentAmountAsNumber" } // Sum converted values
-        }
-      }
+          totalPaymentAmount: { $sum: "$paymentAmountAsNumber" }, // Sum converted values
+        },
+      },
     ]);
 
     // If no results, return 0
@@ -40,32 +35,6 @@ const getPaymentsStats = async (selectedYear) => {
     throw error;
   }
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 // @desc Get all payment
 // @route GET 'desk/payment
@@ -90,34 +59,35 @@ const getAllPayments = asyncHandler(async (req, res) => {
     // Return the payment inside an array
     return res.json([payment]); //we need it inside  an array to avoid response data error
   }
-  if (selectedYear !== "1000" && criteria==="DashFinancesTotalPaymentsStats") {
+  if (
+    selectedYear !== "1000" &&
+    criteria === "DashFinancesTotalPaymentsStats"
+  ) {
     // Find a single payment by its ID
     try {
       const totalPayments = await getPaymentsStats(selectedYear);
-      console.log(totalPayments,'totalPayments')
+      console.log(totalPayments, "totalPayments");
       return res.status(200).json({ totalPayments });
     } catch (error) {
-       return res.status(500).json({ error: "Failed to calculate total payments" });
+      return res
+        .status(500)
+        .json({ error: "Failed to calculate total payments" });
     }
-
-
-  
   }
-
 
   if (selectedYear !== "1000") {
     // Find a single payment by its ID
     const payments = await Payment.find()
-  .populate({
-    path: 'paymentStudent',
-    select: 'student_id studentName' // Selects only the fields you want from the student
-  })
-  .populate({
-    path: 'paymentInvoices', // This will populate the paymentInvoices array
-    select: '_id invoiceYear invoiceMonth invoiceDueDate invoiceIsFullyPaid invoiceAuthorisedAmount invoiceDiscountAmount invoiceAmount' // Include everything from Invoice (_id will be automatically included)
-  })
-  .lean();
-
+      .populate({
+        path: "paymentStudent",
+        select: "student_id studentName", // Selects only the fields you want from the student
+      })
+      .populate({
+        path: "paymentInvoices", // This will populate the paymentInvoices array
+        select:
+          "_id invoiceYear invoiceMonth invoiceDueDate invoiceIsFullyPaid invoiceAuthorisedAmount invoiceDiscountAmount invoiceAmount", // Include everything from Invoice (_id will be automatically included)
+      })
+      .lean();
 
     if (!payments) {
       return res.status(400).json({ message: "Payment not found" });
@@ -126,9 +96,7 @@ const getAllPayments = asyncHandler(async (req, res) => {
     // Return the payment inside an array
     return res.json(payments); //we need it inside  an array to avoid response data error
   }
-  
 
-  
   // If no ID is provided, fetch all payments
 });
 
@@ -162,9 +130,7 @@ const createNewPayment = asyncHandler(async (req, res) => {
     !paymentDate ||
     !paymentOperator
   ) {
-    return res
-      .status(400)
-      .json({ message: "Required fields are missing" }); //400 : bad request
+    return res.status(400).json({ message: "Required data is missing" }); //400 : bad request
   }
 
   // Check for duplicate payment or invoices paid previously
@@ -197,10 +163,10 @@ const createNewPayment = asyncHandler(async (req, res) => {
   // Create and store new payment
   const payment = await Payment.create(paymentObject);
   if (!payment) {
-    return res.status(400).json({ message: "Invalid payment data received No payment saved" });
+    return res.status(400).json({ message: "Invalid data received" });
   }
   if (payment) {
-    console.log(payment,'payment')
+    console.log(payment, "payment");
     // Update each Invoice in Payment.paymentInvoices with newPaymentId and set fully paid to true
     // Get the new payment ID
     const newPaymentId = payment._id;
@@ -210,19 +176,19 @@ const createNewPayment = asyncHandler(async (req, res) => {
     // Update each Invoice in paymentInvoices with newPaymentId
     await Invoice.updateMany(
       { _id: { $in: invoiceIDs } }, // Filter invoices by IDs in the invoiceIDs array
-      { 
-        $set: { 
-          invoicePayment: newPaymentId, 
-          invoiceIsFullyPaid: true 
-        } 
+      {
+        $set: {
+          invoicePayment: newPaymentId,
+          invoiceIsFullyPaid: true,
+        },
       }
     );
 
     // If created and students updated
     return res.status(201).json({
-      message: `New payment  ${payment._id} of  ${payment.paymentAmount} for ${payment.paymentInvoices} created and ${payment.paymentInvoices.length} Invoices updated`,
+      message: `Payment created and Invoices updated successfully`,
     });
-  } 
+  }
 });
 
 // @desc Update a payment
@@ -261,7 +227,7 @@ const updatePayment = asyncHandler(async (req, res) => {
     !paymentLocation ||
     !operator
   ) {
-    return res.status(400).json({ message: "All mandatory fields required" });
+    return res.status(400).json({ message: "Required data is missing" });
   }
   //check for duplcate
   // Check for duplicate, no need because we can have same attributes but different students
@@ -309,10 +275,10 @@ const updatePayment = asyncHandler(async (req, res) => {
       );
 
       res.status(201).json({
-        message: `Payment: ${updatedPayment.paymentLabel} updated and ${newPayment.paymentLabel} created`,
+        message: `Payment updated successfully`,
       });
     } else {
-      return res.status(400).json({ message: "Invalid payment data received" });
+      return res.status(400).json({ message: "Invalid data received" });
     }
   }
   if (isChangeFlag !== undefined && !isChangeFlag) {
@@ -341,10 +307,10 @@ const updatePayment = asyncHandler(async (req, res) => {
       );
 
       res.status(201).json({
-        message: `Payment ${updatedPayment.paymentLabel} updated`,
+        message: `Payment updated successfully`,
       });
     } else {
-      return res.status(400).json({ message: "Invalid payment data received" });
+      return res.status(400).json({ message: "Invalid data received" });
     }
   }
 });
@@ -359,7 +325,7 @@ const deletePayment = asyncHandler(async (req, res) => {
 
   // Confirm data
   if (!id) {
-    return res.status(400).json({ message: "Payment ID Required" });
+    return res.status(400).json({ message: "Required data is missing" });
   }
 
   // Does the user exist to delete?
@@ -373,20 +339,19 @@ const deletePayment = asyncHandler(async (req, res) => {
     { invoicePayment: id }, // Condition: Find invoices where invoicePayment equals the provided id
     {
       $unset: { studentPayment: "" }, // Unset the studentPayment field
-      $set: { 
-        invoicePayment: null,         // Set invoicePayment to an empty value (you could use null if preferred)
-        invoiceIsFullyPaid: false   // Set invoiceIsFullyPaid to false
-      }
+      $set: {
+        invoicePayment: null, // Set invoicePayment to an empty value (you could use null if preferred)
+        invoiceIsFullyPaid: false, // Set invoiceIsFullyPaid to false
+      },
     }
   );
-  
 
   // Delete the payment
   const result = await payment.deleteOne();
 
-  const reply = `Payment of ${payment.paymentAmount}, with ID ${payment._id}, deleted and invoices updated`;
+  const reply = `Deleted ${result?.deletedCount} payment and invoices updated successfully`;
 
-  return res.json(reply);
+  return res.json({message:reply});
 });
 
 module.exports = {

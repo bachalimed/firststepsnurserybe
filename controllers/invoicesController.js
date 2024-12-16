@@ -36,26 +36,24 @@ const calculateDueDate = (enrolmentMonth, enrolmentYear) => {
   return `${yearToUse}-${formattedMonth}-01`;
 };
 
-
-
 //helper for finances stats
 const getInvoicesStats = async (selectedYear) => {
   try {
     const result = await Invoice.aggregate([
       {
-        $match: { invoiceYear: selectedYear } // Filter invoices by the selected year
+        $match: { invoiceYear: selectedYear }, // Filter invoices by the selected year
       },
       {
         $addFields: {
-          invoiceAmountAsNumber: { $toDouble: "$invoiceAmount" } // Convert string to number
-        }
+          invoiceAmountAsNumber: { $toDouble: "$invoiceAmount" }, // Convert string to number
+        },
       },
       {
         $group: {
           _id: null, // No grouping required
-          totalInvoicedAmount: { $sum: "$invoiceAmountAsNumber" } // Sum converted values
-        }
-      }
+          totalInvoicedAmount: { $sum: "$invoiceAmountAsNumber" }, // Sum converted values
+        },
+      },
     ]);
 
     // If no results, return 0
@@ -67,26 +65,6 @@ const getInvoicesStats = async (selectedYear) => {
   }
 };
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 // @desc Get all invoice
 // @route GET 'desk/invoice
 // @access Private // later we will establish authorisations
@@ -95,7 +73,6 @@ const getAllInvoices = asyncHandler(async (req, res) => {
   const { id, selectedYear, selectedMonth, criteria } = req.query;
   // Check if an ID is passed as a query parameter
   if (id) {
-    
     // Find a single  invoice by its ID
     const invoice = await Invoice.findOne({ _id: id }).lean();
 
@@ -125,25 +102,22 @@ const getAllInvoices = asyncHandler(async (req, res) => {
     // Return the enriched invoice
     return res.json(enrichedInvoice);
   }
-  if (selectedYear !== "1000" && criteria==="invoicesTotalStats") {
-
+  if (selectedYear !== "1000" && criteria === "invoicesTotalStats") {
     try {
       const totalInvoicedAmount = await getInvoicesStats(selectedYear);
-  
+
       return res.status(200).json({
         message: "Invoices and total amount retrieved successfully",
         selectedYear,
-        totalInvoicedAmount
+        totalInvoicedAmount,
       });
     } catch (error) {
-     return  res.status(500).json({
+      return res.status(500).json({
         message: "Error retrieving invoices",
-        error: error.message
+        error: error.message,
       });
     }
-  };
-
-
+  }
 
   if (selectedYear !== "1000" && selectedMonth) {
     // retrieve invoices with specified criteria and populated enrolments/students
@@ -154,12 +128,11 @@ const getAllInvoices = asyncHandler(async (req, res) => {
         invoiceYear: selectedYear,
         invoiceMonth: selectedMonth,
       })
-      .populate({
-        path: "invoicePayment",
-        select: "paymentDate  _id", 
-      })
-      .lean();
-      
+        .populate({
+          path: "invoicePayment",
+          select: "paymentDate  _id",
+        })
+        .lean();
 
       if (!invoices || invoices.length === 0) {
         return res.status(404).json({ message: "No invoices found" });
@@ -178,8 +151,7 @@ const getAllInvoices = asyncHandler(async (req, res) => {
             .populate({
               path: "student",
               select: "studentName _id", // Populate the student to get studentName and _id
-            })
-           
+            });
 
           // Attach the found enrolments to the invoice object
           return {
@@ -196,13 +168,11 @@ const getAllInvoices = asyncHandler(async (req, res) => {
       return res.status(500).json({ message: "Error retrieving invoices" });
     }
   }
-  if (selectedYear !== "1000"&& criteria==="Unpaid") {// for newPaymentFOrm, we need the unpaid invoices with their enrolment and student info
-console.log("We re hereeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeerrrr")
-
-
-
-
-
+  if (selectedYear !== "1000" && criteria === "Unpaid") {
+    // for newPaymentFOrm, we need the unpaid invoices with their enrolment and student info
+    console.log(
+      "We re hereeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeerrrr"
+    );
   }
   if (selectedYear === "1000") {
     // If no ID is provided, fetch all  invoices
@@ -292,9 +262,7 @@ const createNewInvoice = asyncHandler(async (req, res) => {
         invoiceDiscountAmount == null || // Allow 0 as a valid discount
         !invoiceCreator
       ) {
-        return res
-          .status(400)
-          .json({ message: "All mandatory data is required" });
+        return res.status(400).json({ message: "Required data is missing" });
       }
       if (element.enrolmentInvoice) {
         return res
@@ -322,9 +290,7 @@ const createNewInvoice = asyncHandler(async (req, res) => {
         });
       } else {
         // Return an error if any invoice creation fails
-        return res
-          .status(400)
-          .json({ message: "Invalid invoice data received" });
+        return res.status(400).json({ message: "Invalid data received" });
       }
     }
 
@@ -371,17 +337,17 @@ const updateInvoice = asyncHandler(async (req, res) => {
     !invoiceAuthorisedAmount ||
     !invoiceOperator
   ) {
-    return res.status(400).json({ message: "All mandatory fields required" });
+    return res.status(400).json({ message: "Required data is missing" });
   }
 
   // Does the invoice exist to update?
   const invoice = await Invoice.findById(id).exec(); //we did not lean becausse we need the save method attached to the response
 
-  if (!invoice ) {
+  if (!invoice) {
     return res.status(400).json({ message: "Invoice not found" });
   }
 
-    (invoice.invoiceDueDate = invoiceDueDate),
+  (invoice.invoiceDueDate = invoiceDueDate),
     (invoice.invoiceIsFullyPaid = invoiceIsFullyPaid),
     (invoice.invoiceAmount = invoiceAmount),
     (invoice.invoiceAuthorisedAmount = invoiceAuthorisedAmount),
@@ -391,7 +357,7 @@ const updateInvoice = asyncHandler(async (req, res) => {
     (invoice.invoiceOperator = invoiceOperator);
   const updatedInvoice = await invoice.save(); //save method received when we did not include lean
 
-  return res.status(201).json({ message: `invoice of ${updatedInvoice.invoiceAmount} updated` });
+  return res.status(201).json({ message: `Invoice updated successfully` });
 });
 
 //--------------------------------------------------------------------------------------1
@@ -403,7 +369,7 @@ const deleteInvoice = asyncHandler(async (req, res) => {
 
   // Confirm data
   if (!id) {
-    return res.status(400).json({ message: "Invoice ID Required" });
+    return res.status(400).json({ message: "Required data is missing" });
   }
 
   // Does the user exist to delete?
@@ -414,22 +380,22 @@ const deleteInvoice = asyncHandler(async (req, res) => {
   }
 
   const result = await invoice.deleteOne();
- // Remove the enrolmentInvoice from the associated enrolment
- const updatedEnrolment = await Enrolment.findByIdAndUpdate(
-  invoice.invoiceEnrolment,
-  { $unset: { enrolmentInvoice: "" } }, // Remove enrolmentInvoice field
-  { new: true }
-);
+  // Remove the enrolmentInvoice from the associated enrolment
+  const updatedEnrolment = await Enrolment.findByIdAndUpdate(
+    invoice.invoiceEnrolment,
+    { $unset: { enrolmentInvoice: "" } }, // Remove enrolmentInvoice field
+    { new: true }
+  );
 
-if (!updatedEnrolment) {
-  return res.status(400).json({ message: "Enrolment not found" });
-}
+  if (!updatedEnrolment) {
+    return res.status(400).json({ message: "Enrolment not found" });
+  }
 
- // Response message
- const reply = `Invoice  with ID ${invoice._id}, deleted and associated enrolment ${invoiceEnrolment._id}`;
+  // Response message
+  const reply = `Deleted ${result?.deletedCount} invoice, and updated enrolment successfully`;
 
- // Send the response
- res.json(reply);
+  // Send the response
+  res.json({ message: reply });
 });
 
 module.exports = {

@@ -70,7 +70,7 @@ const createNewEmployeeDocumentsList = asyncHandler(async (req, res) => {
   ) {
     return res
       .status(400)
-      .json({ message: "Required fields are missing" }); //400 : bad request
+      .json({ message: "Required data is missing" }); //400 : bad request
   }
 
   // Check for duplicate username
@@ -108,12 +108,12 @@ const createNewEmployeeDocumentsList = asyncHandler(async (req, res) => {
     res
       .status(201)
       .json({
-        message: `New employeeDocumentsList for ${employeeDocumentsList.documentsAcademicYear} created`,
+        message: `Employee Documents List for ${employeeDocumentsList.documentsAcademicYear} created successfully`,
       });
   } else {
     res
       .status(400)
-      .json({ message: "Invalid employeeDocumentsList data received" });
+      .json({ message: "Invalid data received" });
   }
 });
 
@@ -130,7 +130,7 @@ const updateEmployeeDocumentsList = asyncHandler(async (req, res) => {
   ) {
     return res
       .status(400)
-      .json({ message: "Required fields are missing" });
+      .json({ message: "Required data is missing" });
   }
 
   // Does the employeeDocumentList exist to update?
@@ -148,7 +148,7 @@ const updateEmployeeDocumentsList = asyncHandler(async (req, res) => {
   const updatedEmployeeDocumentsList = await listToUpdate.save();
 
   res.json({
-    message: `EmployeeDocumentsList updated successfully`,
+    message: `Employee documents list updated successfully`,
     updatedEmployeeDocumentsList,
   });
 });
@@ -164,7 +164,7 @@ const deleteEmployeeDocumentsList = asyncHandler(async (req, res) => {
   if (!id) {
     return res
       .status(400)
-      .json({ message: "EmployeeDocumentsList ID Required" });
+      .json({ message: "Required data is missing" });
   }
 
   // Does the user exist to delete?
@@ -176,7 +176,7 @@ const deleteEmployeeDocumentsList = asyncHandler(async (req, res) => {
 
   const result = await employeeDocumentsList.deleteOne();
 
-  const reply = `employeeDocumentsList ${employeeDocumentsList.employeeDocumentsListubject}, with ID ${employeeDocumentsList._id}, deleted`;
+  const reply = `Deleted ${result?.deletedCount} employee documents list`;
 
   res.json(reply);
 });

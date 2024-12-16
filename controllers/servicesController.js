@@ -73,7 +73,7 @@ const createNewService = asyncHandler(async (req, res) => {
 
   //Confirm data is present in the request with all required fields
   if (!serviceType || !serviceYear || !serviceAnchor  || !serviceCreator || !serviceOperator) {
-    return res.status(400).json({ message: "All fields are required" }); //400 : bad request
+    return res.status(400).json({ message: "Required data is missing" }); //400 : bad request
   }
 
   // Check for duplicate servicename
@@ -93,9 +93,9 @@ const duplicate = await Service.findOne({ serviceYear, serviceType }).lean().exe
     //if created
     res
       .status(201)
-      .json({ message: `New   ${service.serviceType} service for ${service.serviceYear} created` });
+      .json({ message: `Service created successfully` });
   } else {
-    res.status(400).json({ message: "Invalid academic Year data received" });
+    res.status(400).json({ message: "Invalid data received" });
   }
 });
 
@@ -107,7 +107,7 @@ const updateService = asyncHandler(async (req, res) => {
 
   // Confirm data
   if (!serviceId || !serviceType || !serviceYear || !serviceAnchor || !serviceOperator) {
-    return res.status(400).json({ message: "All fields  are required" });
+    return res.status(400).json({ message: "Required data is missing" });
   }
 
   // Does the service exist to update?
@@ -132,7 +132,7 @@ const updateService = asyncHandler(async (req, res) => {
 
   const updatedService = await service.save(); //save method received when we did not include lean
 
-  return res.json({ message: `${updatedService?.serviceType},  ${updatedService?.serviceYear} updated` });
+  return res.json({ message: `Service updated successfully` });
 });
 //--------------------------------------------------------------------------------------1
 // @desc Delete a service
@@ -143,7 +143,7 @@ const deleteService = asyncHandler(async (req, res) => {
 
   // Confirm data
   if (!id) {
-    return res.status(400).json({ message: "Academic Year ID Required" });
+    return res.status(400).json({ message: "Required data is missing" });
   }
 
   // Does the service still have assigned notes?

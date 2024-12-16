@@ -111,7 +111,7 @@ const createNewUser = asyncHandler(async (req, res) => {
     !userContact.primaryPhone ||
     !Array.isArray(userRoles)
   ) {
-    return res.status(400).json({ message: "All fields are requiredd" }); //400 : bad request
+    return res.status(400).json({ message: "Required data is missing" }); //400 : bad request
   }
 
   // Check for duplicate username
@@ -157,9 +157,9 @@ const createNewUser = asyncHandler(async (req, res) => {
 
   if (user) {
     //if created
-    res.status(201).json({ message: `New user ${username} created` });
+    res.status(201).json({ message: `User ${username} created successfully` });
   } else {
-    res.status(400).json({ message: "Invalid user data received" });
+    res.status(400).json({ message: "Invalid data received" });
   }
 });
 
@@ -192,7 +192,7 @@ const updateUser = asyncHandler(async (req, res) => {
 
   if (criteria === "resetPassword") {
     if (!id || !oldPassword || !newPassword1) {
-      return res.status(400).json({ message: "required fields are missing" });
+      return res.status(400).json({ message: "Required data is missing" });
     }
     const user = await User.findById(id).exec(); //we did not lean becausse we need the save method attached to the response
 
@@ -220,7 +220,7 @@ const passwordMatch = await bcrypt.compare(oldPassword, user.password)
     const updatedUser = await user.save(); //save method received when we did not include lean
     //console.log(updatedUser);
 
-    return res.json({ message: `${updatedUser?.username} updated` });
+    return res.json({ message: `User updated successfully` });
   }
   // normal user update
   if (
@@ -232,7 +232,7 @@ const passwordMatch = await bcrypt.compare(oldPassword, user.password)
   ) {
     return res
       .status(400)
-      .json({ message: "All fields except password are requireddd" });
+      .json({ message: "Required data is missing" });
   }
 
   // Does the user exist to update?
@@ -276,7 +276,7 @@ const passwordMatch = await bcrypt.compare(oldPassword, user.password)
   const updatedUser = await user.save(); //save method received when we did not include lean
   console.log(updatedUser);
 
-  return res.json({ message: `${updatedUser.username} updated` });
+  return res.json({ message: `User updated successfully` });
 });
 //--------------------------------------------------------------------------------------1
 // @desc Delete a user
@@ -287,7 +287,7 @@ const deleteUser = asyncHandler(async (req, res) => {
 
   // Confirm data
   if (!id) {
-    return res.status(400).json({ message: "User ID Required" });
+    return res.status(400).json({ message: "Required data is missing" });
   }
 
   // Does the user still have assigned notes?

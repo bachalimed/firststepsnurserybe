@@ -99,7 +99,7 @@ console.log(studentPhoto,'studentPhotoinside')
 
     return res
       .status(400)
-      .json({ message: "studentId and year query parameters are required" });
+      .json({ message: "Required data is missing" });
   }
 });
 

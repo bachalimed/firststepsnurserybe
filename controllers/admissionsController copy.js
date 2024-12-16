@@ -248,7 +248,7 @@ const createNewAdmission = asyncHandler(async (req, res) => {
     !admissionYear ||
     !agreedServices
   ) {
-    return res.status(400).json({ message: "All fields are required" }); //400 : bad request
+    return res.status(400).json({ message: "Required data is missing" }); //400 : bad request
   }
 
   // Check for duplicate
@@ -313,14 +313,14 @@ const createNewAdmission = asyncHandler(async (req, res) => {
       // Save the updated student document
       await studentToUpdateWithAdmission.save();
 
-      res.status(201).json({
-        message: `New admission for student ${admission.student} and service ${admission.agreedServices} created`,
+      return res.status(201).json({
+        message: `Admission and service created successfully`,
       });
     } else {
-      res.status(404).json({ message: "Student not found" });
+      return res.status(404).json({ message: "Not found" });
     }
   } else {
-    res.status(400).json({ message: "Invalid admission data received" });
+    return res.status(400).json({ message: "Invalid data received" });
   }
 });
 //internalcontroller :CreateNew User to be used by other controllers??
@@ -348,7 +348,7 @@ const updateAdmission = asyncHandler(async (req, res) => {
     !agreedServices ||
     agreedServices?.length === 0
   ) {
-    return res.status(400).json({ message: "All fields are required" });
+    return res.status(400).json({ message: "Required data is missing" });
   }
 
   // Does the admission exist to update?
@@ -373,7 +373,7 @@ const updateAdmission = asyncHandler(async (req, res) => {
   const updatedAdmission = await admission.save(); //save method received when we did not include lean
 
   res.json({
-    message: `admission ${updatedAdmission._id}, updated`,
+    message: `Admission  updated successfully`,
   });
 });
 //--------------------------------------------------------------------------------------1
@@ -385,7 +385,7 @@ const deleteAdmission = asyncHandler(async (req, res) => {
 
   // Confirm data
   if (!id) {
-    return res.status(400).json({ message: "Admission Id Required" });
+    return res.status(400).json({ message: "Required data is missing" });
   }
 
   // Does the admission exist to delete?
@@ -403,8 +403,8 @@ const deleteAdmission = asyncHandler(async (req, res) => {
     );
 
     if (studentUpdateResult) {
-      const reply = `Confirm: deleted 1 admission, with ID ${admissionToDelete._id} and updated student ${studentUpdateResult._id}`;
-      return res.json(reply);
+      const reply = `Deleted (${studentUpdateResult?.deletedCount}) admission and updated student successfully`;
+      return res.json({message:reply});
     } else {
       return res
         .status(400)
@@ -413,8 +413,8 @@ const deleteAdmission = asyncHandler(async (req, res) => {
   }
 
   // If failed to delete admission
-  const reply = `Confirm: deleted ${result.deletedCount} admissions`;
-  return res.status(400).json(reply);
+  const reply = `Deleted ${result.deletedCount} admissions`;
+  return res.status(400).json({message:reply});
 });
 
 module.exports = {

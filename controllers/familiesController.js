@@ -177,7 +177,7 @@ const getAllFamilies = asyncHandler(async (req, res) => {
     if (!filteredFamilies?.length) {
       return res.status(400).json({
         message:
-          "No families with students found found for the selected Year !",
+          "No families with students found for the selected Year !",
       });
     } else {
       res.json(filteredFamilies);
@@ -262,7 +262,7 @@ const getFamilyById = asyncHandler(async (req, res) => {
     if (!id) {
       return res
         .status(400)
-        .json({ message: "Missing required parameters: id" });
+        .json({ message: "Required data is missing" });
     }
     let family;
     if (criteria === "Dry") {
@@ -356,7 +356,7 @@ const createNewFamily = asyncHandler(async (req, res) => {
   ) {
     return res
       .status(400)
-      .json({ message: "All fields are required for Father" }); //400 : bad request
+      .json({ message: "Required data is missing" }); //400 : bad request
   }
 
   // Check for duplicate username/ if the user has no isParent we will update only the parent isParent and create it
@@ -370,7 +370,7 @@ const createNewFamily = asyncHandler(async (req, res) => {
   //console.log(password, 'password')
   const hashedFatherPwd = await bcrypt.hash(fatherPassword, 10); // salt roundsm we will implement it laterm normally password is without''
 
-  // res.status(201).json({ message: `New user ${username} created` })
+  // res.status(201).json({ message: `New user ${username} created successfully` })
 
   const fatherObject = { ...father, password: hashedFatherPwd }; //construct new user to be stored
   //console.log(fatherObject);
@@ -400,7 +400,7 @@ const createNewFamily = asyncHandler(async (req, res) => {
   ) {
     return res
       .status(400)
-      .json({ message: "All fields are required for Mother" }); //400 : bad request
+      .json({ message: "Required data is missing" }); //400 : bad request
   }
   // Check for duplicate username/ if the user has no isParent we will update only the parent isParent and create it
   const duplicateMother = await User.findOne({ motherUsername }).lean().exec(); //because we re receiving only one response from mongoose
@@ -411,7 +411,7 @@ const createNewFamily = asyncHandler(async (req, res) => {
   // Hash password
   const hashedMotherPwd = await bcrypt.hash(motherPassword, 10); // salt roundsm we will implement it laterm normally password is without''
 
-  // res.status(201).json({ message: `New user ${username} created` })
+  // res.status(201).json({ message: `New user ${username} created successfully` })
 
   const motherObject = { ...mother, password: hashedMotherPwd }; //construct new user to be stored
 
@@ -437,13 +437,8 @@ const createNewFamily = asyncHandler(async (req, res) => {
     const finalMother = await savedMother.save();
     if (finalFather && finalMother) {
       return res.status(201).json({
-        message: `New family created with ID: ${savedFamily._id}. Father: ${
-          finalFather.userFullName.userFirstName || ""
-        } ${finalFather.userFullName.userMiddleName || ""} ${
-          finalFather.userFullName.userLastName || ""
-        }, and Mother: ${finalMother.userFullName.userFirstName || ""} ${
-          finalMother.userFullName.userMiddleName || ""
-        } ${finalMother.userFullName.userLastName || ""} have been created.`,
+        message: `New family, Father,
+         and Mother created successfully`,
       }); //change parentYear later to show the parent full name
     } else {
       return res
@@ -458,9 +453,7 @@ const createNewFamily = asyncHandler(async (req, res) => {
 }); //we need to delete the user if the parent is not saved
 
 const updateFamily = asyncHandler(async (req, res) => {
-  if (!req.body) {
-    return res.status(400).json({ message: "no request body received" });
-  }
+  
   const { _id, father, mother, children, familySituation } = req.body; //this will come from front end we put all the fields ofthe collection here
 
   //saving teh father
@@ -476,7 +469,7 @@ const updateFamily = asyncHandler(async (req, res) => {
   if (!fatherFullName || !fatherDob || !fatherContact.primaryPhone) {
     return res
       .status(400)
-      .json({ message: "All fields are required for Father" }); //400 : bad request
+      .json({ message: "Required data is missing" }); //400 : bad request
   }
 
   // Check for duplicate username/ if the user has no isParent we will update only the parent isParent and create it
@@ -507,7 +500,7 @@ const updateFamily = asyncHandler(async (req, res) => {
   if (!motherFullName || !motherDob || !motherContact.primaryPhone) {
     return res
       .status(400)
-      .json({ message: "All fields are required for Mother" }); //400 : bad request
+      .json({ message: "Required data is missing" }); //400 : bad request
   }
   // Check for duplicate username/ if the user has no isParent we will update only the parent isParent and create it
   const duplicateMother = await User.findById(motherId).exec();
@@ -536,7 +529,7 @@ const updateFamily = asyncHandler(async (req, res) => {
     //console.log(savedFamily, "savedFamily");
     if (savedFamily) {
       res.status(201).json({
-        message: `family with id ${savedFamily._id}, father ${father.userFullName.userFirstName} ${father.userFullName.userMiddleName} ${father.userFullName.userLastName}, & mother ${mother.userFullName.userFirstName} ${mother.userFullName.userMiddleName} ${mother.userFullName.userLastName} updated`,
+        message: `Family, father, & mother updated successfully`,
       }); //change parentYear later to show the parent full name
     } else {
       res.status(400).json({ message: "unable to update family" });
@@ -580,7 +573,7 @@ const deleteFamily = asyncHandler(async (req, res) => {
   let replyFather;
   if (!fatherToDelete.isEmployee) {
     deletedFather = await fatherToDelete.deleteOne();
-    replyFather = `father ${fatherToDelete.userFullName.userFirstName} ${fatherToDelete.userFullName.userMiddleName} ${fatherToDelete.userFullName.userLastName} deleted`;
+    replyFather = `Deleted ${deletedFather?.deletedCount} father, `;
     //res.json(reply);
   }
   const motherToDelete = await User.findById(mother);
@@ -588,7 +581,7 @@ const deleteFamily = asyncHandler(async (req, res) => {
   let replyMother;
   if (!motherToDelete.isEmployee) {
     deletedMother = await motherToDelete.deleteOne();
-    replyMother = `mother ${motherToDelete.userFullName.userFirstName} ${motherToDelete.userFullName.userMiddleName} ${motherToDelete.userFullName.userLastName} deleted`;
+    replyMother = `${deletedMother?.deletedCount} mother, `;
     //res.json(reply);
   }
   const familyToDelete = await Family.findById(id);
@@ -596,7 +589,7 @@ const deleteFamily = asyncHandler(async (req, res) => {
   let replyFamily;
 
   deletedFamily = await familyToDelete.deleteOne();
-  replyFamily = ` family  deleted`;
+  replyFamily = `and ${deletedFamily?.deletedCount} family`;
   //res.json(reply);
 
   const reply = `${replyFather}, ${replyMother} ${replyFamily}`;

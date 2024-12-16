@@ -30,7 +30,7 @@ const createNewAcademicYear = asyncHandler(async (req, res) => {
 
   //Confirm data is present in the request with all required fields
   if (!title || !yearStart || !yearEnd || !academicYearCreator) {
-    return res.status(400).json({ message: "Required fields are missing" }); //400 : bad request
+    return res.status(400).json({ message: "Required data is missing" }); //400 : bad request
   }
 
   // Check for duplicate academicYearname
@@ -49,9 +49,9 @@ const createNewAcademicYear = asyncHandler(async (req, res) => {
     //if created
     res
       .status(201)
-      .json({ message: `Academic Year ${academicYear.title} created` });
+      .json({ message: `Academic Year ${academicYear.title} created Successfully` });
   } else {
-    res.status(400).json({ message: "Invalid academic Year data received" });
+    res.status(400).json({ message: "Invalid data received" });
   }
 });
 
@@ -63,7 +63,7 @@ const updateAcademicYear = asyncHandler(async (req, res) => {
 
   // Confirm data
   if (!id || !title || !yearStart || !yearEnd || !academicYearCreator) {
-    return res.status(400).json({ message: "Required fields are missing" });
+    return res.status(400).json({ message: "Required data is missing" });
   }
 
   // Does the academicYear exist to update?
@@ -89,7 +89,7 @@ const updateAcademicYear = asyncHandler(async (req, res) => {
 
   const updatedAcademicYear = await academicYear.save(); //save method received when we did not include lean
 
-  res.json({ message: `Academic year ${updatedAcademicYear.academicYearname} updated` });
+  res.json({ message: `Academic year ${updatedAcademicYear.academicYearname} updated Successfully` });
 });
 //--------------------------------------------------------------------------------------1
 // @desc Delete a academicYear
@@ -100,7 +100,7 @@ const deleteAcademicYear = asyncHandler(async (req, res) => {
 
   // Confirm data
   if (!id) {
-    return res.status(400).json({ message: "Required id not found" });
+    return res.status(400).json({ message: "Required data is missing" });
   }
 
   // Does the academicYear still have assigned notes?
@@ -118,9 +118,9 @@ const deleteAcademicYear = asyncHandler(async (req, res) => {
 
   const result = await academicYear.deleteOne();
 //console.log(result, 'result')
-  const reply = `Deleted ${result.deletedCount} AcademicYear ${academicYear.title} `;
+  const reply = `Deleted ${result.deletedCount} AcademicYear(s)`;
 
-  res.json(reply);
+  res.json({message:reply});
 });
 
 module.exports = {

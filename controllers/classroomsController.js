@@ -74,7 +74,7 @@ const createNewClassroom = asyncHandler(async (req, res) => {
     //Confirm data is present in the request with all required fields
         
         if ( !classroomNumber || !classroomLabel || !classroomCapacity || !classroomMaxCapacity) {
-        return res.status(400).json({ message: 'Required fields are missing' })//400 : bad request
+        return res.status(400).json({ message: 'Required data is missing' })//400 : bad request
     }
     
     // Check for duplicate username
@@ -91,9 +91,9 @@ const createNewClassroom = asyncHandler(async (req, res) => {
     const classroom = await Classroom.create(classroomObject)
 
     if (classroom) { //if created 
-        res.status(201).json({ message: `New classroom of subject: ${classroom.classroomLabel}, created` })
+        res.status(201).json({ message: `classroom ${classroom.classroomLabel} created successfully` })
     } else {
-        res.status(400).json({ message: 'Invalid classroom data received' })
+        res.status(400).json({ message: 'Invalid data received' })
     }
 })
 
@@ -108,7 +108,7 @@ const updateClassroom = asyncHandler(async (req, res) => {
 
     // Confirm data 
     if (!id ||!classroomNumber ||! classroomLabel ||! classroomCapacity ||! classroomMaxCapacity) {
-        return res.status(400).json({ message: 'All mandatory fields required' })
+        return res.status(400).json({ message: 'Required data is missing' })
     }
 
     // Does the classroom exist to update?
@@ -127,7 +127,7 @@ const updateClassroom = asyncHandler(async (req, res) => {
     
     const updatedClassroom = await classroom.save()//save method received when we did not include lean
 
-    res.json({ message: `classroom: ${updatedClassroom.classroomLabel}, updated!` })
+    res.json({ message: `Classroom: ${updatedClassroom.classroomLabel} updated successfully` })
 })
 
 
@@ -141,7 +141,7 @@ const deleteClassroom = asyncHandler(async (req, res) => {
 
     // Confirm data
     if (!id) {
-        return res.status(400).json({ message: 'Classroom ID Required' })
+        return res.status(400).json({ message: 'Required data is missing' })
     }
 
     // Does the user exist to delete?
@@ -153,7 +153,7 @@ const deleteClassroom = asyncHandler(async (req, res) => {
 
     const result = await classroom.deleteOne()
 
-    const reply = `classroom ${classroom.classroomLabel}, with ID ${classroom._id}, deleted`
+    const reply = `Deleted ${result.deletedCount} classroom ${classroom.classroomLabel}`
 
     res.json({message:reply})
 })

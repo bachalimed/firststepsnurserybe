@@ -192,7 +192,7 @@ const createNewPayslip = asyncHandler(async (req, res) => {
   ) {
     return res
       .status(400)
-      .json({ message: "Required fields are missing" }); //400 : bad request
+      .json({ message: "Required data is missing" }); //400 : bad request
   }
 
  
@@ -218,12 +218,12 @@ const createNewPayslip = asyncHandler(async (req, res) => {
   if (!payslip) {
     return res
       .status(400)
-      .json({ message: "Invalid payslip data received No payslip saved" });
+      .json({ message: "Invalid data received" });
   }
   // If created 
   //console.log(payslip?.payslipItems,'2')
   return res.status(201).json({
-    message: `New payslip  ${payslip.payslipMonth} for  ${payslip.payslipAmount} on  ${payslip.payslipDate} `,
+    message: `Payslip for created successfully`,
   });
 });
 
@@ -264,7 +264,7 @@ const updatePayslip = asyncHandler(async (req, res) => {
     !payslipMethod
     
   ){
-    return res.status(400).json({ message: "All mandatory fields required" });
+    return res.status(400).json({ message: "Required data is missing" });
   }
   
   // Does the payslip exist to update?
@@ -293,10 +293,10 @@ const updatePayslip = asyncHandler(async (req, res) => {
     //console.log(payslipToUpdate,'payslipToUpdate')
     const updatedPayslip = await payslipToUpdate.save(); //save old payslip
     if (!updatedPayslip) {
-      return res.status(400).json({ message: "invalid payslip data received" });
+      return res.status(400).json({ message: "invalid data received" });
     }
       return res.status(201).json({
-        message: `Payslip: of ${updatedPayslip.payslipAmount} updated `,
+        message: `Payslip updated successfully`,
       })
 
  
@@ -313,7 +313,7 @@ const deletePayslip = asyncHandler(async (req, res) => {
 
   // Confirm data
   if (!id) {
-    return res.status(400).json({ message: "Payslip ID Required" });
+    return res.status(400).json({ message: "Required data is missing" });
   }
 
   // Does the user exist to delete?
@@ -326,9 +326,9 @@ const deletePayslip = asyncHandler(async (req, res) => {
   // Delete the payslip
   const result = await payslip.deleteOne();
 
-  const reply = `Payslip  ${payslip.payslipLabel}, with ID ${payslip._id}, deleted `;
+  const reply = `Deleted ${result?.deletedCount} payslip`;
 
-  return res.json(reply);
+  return res.json({message:reply});
 });
 
 module.exports = {

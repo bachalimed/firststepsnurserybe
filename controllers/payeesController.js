@@ -75,7 +75,7 @@ const createNewPayee = asyncHandler(async (req, res) => {
   ) {
     return res
       .status(400)
-      .json({ message: "Required fields are missing" }); //400 : bad request
+      .json({ message: "Required data is missing" }); //400 : bad request
   }
 
   // Check for duplicate payee or invoices paid previously
@@ -108,11 +108,11 @@ const createNewPayee = asyncHandler(async (req, res) => {
   if (!payee) {
     return res
       .status(400)
-      .json({ message: "Invalid payee data received No payee saved" });
+      .json({ message: "Invalid data received" });
   }
   // If created and students updated
   return res.status(201).json({
-    message: `New payee  ${payee.payeeLabel} `,
+    message: `Payee  created successfully `,
   });
 });
 
@@ -143,7 +143,7 @@ const updatePayee = asyncHandler(async (req, res) => {
     //payeeCategories.length === 0 ||
     !payeeOperator
   ) {
-    return res.status(400).json({ message: "All mandatory fields required" });
+    return res.status(400).json({ message: "Required data is missing" });
   }
   
   // Does the payee exist to update?
@@ -167,10 +167,10 @@ const updatePayee = asyncHandler(async (req, res) => {
     //console.log(payeeToUpdate,'payeeToUpdate')
     const updatedPayee = await payeeToUpdate.save(); //save old payee
     if (!updatedPayee) {
-      return res.status(400).json({ message: "invalid payee data received" });
+      return res.status(400).json({ message: "invalid data received" });
     }
       return res.status(201).json({
-        message: `Payee: ${updatedPayee.payeeLabel} updated `,
+        message: `Payee updated successfully`,
       })
 
  
@@ -187,7 +187,7 @@ const deletePayee = asyncHandler(async (req, res) => {
 
   // Confirm data
   if (!id) {
-    return res.status(400).json({ message: "Payee ID Required" });
+    return res.status(400).json({ message: "Required data is missing" });
   }
 
   // Does the user exist to delete?
@@ -200,9 +200,9 @@ const deletePayee = asyncHandler(async (req, res) => {
   // Delete the payee
   const result = await payee.deleteOne();
 
-  const reply = `Payee  ${payee.payeeLabel}, with ID ${payee._id}, deleted `;
+  const reply = `Deleted ${result?.deletedCount} payee`;
 
-  return res.json(reply);
+  return res.json({message:reply});
 });
 
 module.exports = {

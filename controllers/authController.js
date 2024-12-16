@@ -10,7 +10,7 @@ const login = asyncHandler(async (req, res) => {
     const { username, password } = req.body//we expect a username and password to come in the login request
 
     if (!username || !password) {
-        return res.status(400).json({ message: 'Both Username & password are required' })
+        return res.status(400).json({ message: 'Required data is missing' })
     }
 
     const foundUser = await User.findOne({ username }).exec()

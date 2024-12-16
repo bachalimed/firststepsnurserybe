@@ -542,7 +542,7 @@ const createNewStudent = asyncHandler(async (req, res) => {
   //console.log(studentName, studentDob,  studentSex, studentIsActive, studentYears, studentGardien, studentEducation, lastModified)
   //Confirm data is present in the request with all required fields
   if (!studentName || !studentDob || !studentSex || !studentYears) {
-    return res.status(400).json({ message: "All fields are required" }); //400 : bad request
+    return res.status(400).json({ message: "Required data is missing" }); //400 : bad request
   }
 
   // Check for duplicate username
@@ -577,10 +577,10 @@ const createNewStudent = asyncHandler(async (req, res) => {
   if (student) {
     //if created
     res.status(201).json({
-      message: `New student ${studentName.firstName} ${studentName.middleName} ${studentName.lastName} created`,
+      message: `Student ${studentName.firstName} ${studentName.middleName} ${studentName.lastName} created successfully`,
     });
   } else {
-    res.status(400).json({ message: "Invalid student data received" });
+    res.status(400).json({ message: "Invalid data received" });
   }
 });
 //internalcontroller :CreateNew User to be used by other controllers??
@@ -606,7 +606,7 @@ const updateStudent = asyncHandler(async (req, res) => {
   console.log(req.body);
   // Confirm data
   if (!studentName || !studentDob || !studentSex || !studentYears) {
-    return res.status(400).json({ message: "All fields except required" });
+    return res.status(400).json({ message: "Required data is missing" });
   }
 
   // Does the student exist to update?
@@ -639,13 +639,7 @@ const updateStudent = asyncHandler(async (req, res) => {
   const updatedStudent = await student.save(); //save method received when we did not include lean
 
   res.json({
-    message: `student ${
-      updatedStudent.studentName.firstName +
-      " " +
-      updatedStudent.studentName.middleName +
-      " " +
-      updatedStudent.studentName.lastName
-    }, updated`,
+    message: `Student updated successfully`,
   });
 });
 //--------------------------------------------------------------------------------------1
@@ -657,7 +651,7 @@ const deleteStudent = asyncHandler(async (req, res) => {
 
   // Confirm data
   if (!id) {
-    return res.status(400).json({ message: "Student Id Required" });
+    return res.status(400).json({ message: "Required data is missing" });
   }
 
   // Does the user still have assigned notes?

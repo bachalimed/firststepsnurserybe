@@ -516,7 +516,7 @@ const createNewSection = asyncHandler(async (req, res) => {
   ) {
     return res
       .status(400)
-      .json({ message: "Required fields are missing" }); //400 : bad request
+      .json({ message: "Required data is missing" }); //400 : bad request
   }
 
   // Check for duplicate username
@@ -563,10 +563,10 @@ const createNewSection = asyncHandler(async (req, res) => {
 
     // If created and students updated
     res.status(201).json({
-      message: `New section ${section.sectionLabel}, ${section.sectionType}, for ${section.sectionYear} created and students updated`,
+      message: `Section created and students updated successfully`,
     });
   } else {
-    res.status(400).json({ message: "Invalid section data received" });
+    res.status(400).json({ message: "Invalid data received" });
   }
 });
 
@@ -606,7 +606,7 @@ const updateSection = asyncHandler(async (req, res) => {
     !sectionLocation ||
     !operator
   ) {
-    return res.status(400).json({ message: "All mandatory fields required" });
+    return res.status(400).json({ message: "Required data is missing" });
   }
   //check for duplcate
   // Check for duplicate, no need because we can have same attributes but different students
@@ -654,10 +654,10 @@ const updateSection = asyncHandler(async (req, res) => {
       );
 
       res.status(201).json({
-        message: `Section: ${updatedSection.sectionLabel} updated and ${newSection.sectionLabel} created`,
+        message: `Section updated and another created successfully`,
       });
     } else {
-      return res.status(400).json({ message: "Invalid section data received" });
+      return res.status(400).json({ message: "Invalid data received" });
     }
   }
   if (isChangeFlag !== undefined && !isChangeFlag) {
@@ -686,10 +686,10 @@ const updateSection = asyncHandler(async (req, res) => {
       );
 
       res.status(201).json({
-        message: `Section ${updatedSection.sectionLabel} updated`,
+        message: `Section  updated successfully`,
       });
     } else {
-      return res.status(400).json({ message: "Invalid section data received" });
+      return res.status(400).json({ message: "Invalid data received" });
     }
   }
 });
@@ -704,7 +704,7 @@ const deleteSection = asyncHandler(async (req, res) => {
 
   // Confirm data
   if (!id) {
-    return res.status(400).json({ message: "Section ID Required" });
+    return res.status(400).json({ message: "Required data is missing" });
   }
 
   // Does the user exist to delete?

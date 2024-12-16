@@ -53,7 +53,7 @@ const createNewTask = asyncHandler(async (req, res) => {
         
         if (!taskCreationDate ||!taskPriority ||! taskSubject ||! taskDescription ||! taskCreator 
             ||! taskDueDate||! taskResponsible||! taskState||! lastModified.operator||! taskYear) {
-        return res.status(400).json({ message: 'Required fields are missing' })//400 : bad request
+        return res.status(400).json({ message: 'Required data is missing' })//400 : bad request
     }
     
     // Check for duplicate username
@@ -71,9 +71,9 @@ const createNewTask = asyncHandler(async (req, res) => {
     const task = await Task.create(taskObject)
 
     if (task) { //if created 
-        res.status(201).json({ message: `New task of subject: ${task.taskSubject}, created` })
+        res.status(201).json({ message: `Task created successfully` })
     } else {
-        res.status(400).json({ message: 'Invalid task data received' })
+        res.status(400).json({ message: 'Invalid data received' })
     }
 })
 
@@ -90,7 +90,7 @@ const updateTask = asyncHandler(async (req, res) => {
     // Confirm data 
     if (!taskCreationDate ||!taskPriority ||! taskSubject ||! taskDescription ||! taskCreator 
         ||! taskDueDate||! taskResponsible||! taskState||! lastModified.operator||! taskYear) {
-        return res.status(400).json({ message: 'All mandatory fields required' })
+        return res.status(400).json({ message: 'Required data is missing' })
     }
 
     // Does the task exist to update?
@@ -125,7 +125,7 @@ const updateTask = asyncHandler(async (req, res) => {
     
     const updatedTask = await task.save()//save method received when we did not include lean
 
-    res.json({ message: `task: ${updatedTask.taskSubject}, updated` })
+    res.json({ message: `Task updated successfully` })
 })
 //--------------------------------------------------------------------------------------1   
 // @desc Delete a student
@@ -136,7 +136,7 @@ const deleteTask = asyncHandler(async (req, res) => {
 
     // Confirm data
     if (!id) {
-        return res.status(400).json({ message: 'Task ID Required' })
+        return res.status(400).json({ message: 'Required data is missing' })
     }
 
     // Does the user exist to delete?

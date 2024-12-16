@@ -252,7 +252,7 @@ const createNewSession = asyncHandler(async (req, res) => {
     //if nursery and no animator or no classroom
     return res
       .status(400)
-      .json({ message: "Required fields are missing" }); //400 : bad request
+      .json({ message: "Required data is missing" }); //400 : bad request
   }
 
   // Check for duplicate username
@@ -311,10 +311,10 @@ const createNewSession = asyncHandler(async (req, res) => {
     //   });
     // }
     return res.status(201).json({
-      message: `New session  on: ${session.StartTime} - ${session.EndTime}, created`,
+      message: `Session created successfully`,
     });
   } else {
-    res.status(400).json({ message: "Invalid session data received" });
+    res.status(400).json({ message: "Invalid data received" });
   }
 });
 
@@ -351,7 +351,7 @@ const updateSession = asyncHandler(async (req, res) => {
 
   // Confirm data
   if (!id) {
-    return res.status(400).json({ message: "All mandatory fields required" });
+    return res.status(400).json({ message: "Required data is missing" });
   }
 
   // Does the session exist to update?
@@ -436,13 +436,12 @@ const updateSession = asyncHandler(async (req, res) => {
 
       if (newChildSessionInSeries && updatedMasterSessionInSeries) {
         return res.status(201).json({
-          message: `master session: ${updatedMasterSessionInSeries.StartTime} - ${updatedMasterSessionInSeries.EndTime} created, and session${newChildSessionInSeries.StartTime}-${newChildSessionInSeries.EndTime} updated`,
+          message: `Master session created, and related session updated successfully`,
         });
       } else {
         return res.status(400).json({
           message:
-            "Invalid session data received, update was not or partially done",
-        });
+            "Invalid data received"});
       }
 
     case "editSeries": // in case we add editing of the whole series evetn altered events, we will update them,
@@ -502,7 +501,7 @@ const deleteSession = asyncHandler(async (req, res) => {
   const { id, operationType, extraException } = req.body;
   // Confirm data
   if (!id) {
-    return res.status(400).json({ message: "Session ID Required" });
+    return res.status(400).json({ message: "Required data is missing" });
   }
   // Does the user exist to delete?
   const session = await Session.findById(id).exec();

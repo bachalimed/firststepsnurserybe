@@ -173,7 +173,7 @@ await family.children.reduce(async (accPromise, child) => {
     
         return res
           .status(400)
-          .json({ message: "query parameters are required" });
+          .json({ message: "Required data is missing" });
       }
     });
     
@@ -218,7 +218,7 @@ await family.children.reduce(async (accPromise, child) => {
     try {const { id } = req.params
 console.log('now in the controller to get by doc id', id)
     if (!id) {
-        return res.status(400).json({ message: 'Missing required parameters: id' });
+        return res.status(400).json({ message: 'Required data is missing' });
     }
 
     const document = await StudentDocument.findOne({ _id: id}).lean();
@@ -320,7 +320,7 @@ console.log('now in the controller to get by doc id', id)
 //     if (studentDocuments) { //if created 
 //         res.status(201).json({ message: `New studentDocuments for : ${studentDocuments.documentsAcademicYear}, created` })
 //     } else {
-//         res.status(400).json({ message: 'Invalid studentDocuments data received' })
+//         res.status(400).json({ message: 'Invalid data received' })
 //     }
 // })
 
@@ -336,16 +336,16 @@ const createNewStudentDocument = asyncHandler(async (req, res) => {
      const file = req.file
     // Validate required fields
     if (!studentId || !studentDocumentYear || !studentDocumentReference || !file) {
-        return res.status(400).json({ message: 'Missing required fields.' });
+        return res.status(400).json({ message: 'Required data is missing' });
     }
     if (!file) {
-        return res.status(400).json({ message: 'File is required.' });
+        return res.status(400).json({ message: 'File is missing.' });
     }
 
     //ensure no other document with the same reference is already saved
     const duplicate = await  StudentDocument.findOne({studentDocumentReference:studentDocumentReference,studentDocumentYear:studentDocumentYear, studentId:studentId }).lean().exec()
     if (duplicate) {
-        return res.status(409).json({ message: 'Duplicate Document type already upploadedd ' })
+        return res.status(409).json({ message: 'Duplicate Document type already uploaded' })
     }
     // Save document entry to the database
     const document = new StudentDocument({
@@ -376,7 +376,7 @@ const updateStudentDocument = asyncHandler(async (req, res) => {
     // Confirm data 
     if (!studentDocumentsCreationDate ||!studentDocumentsPriority ||! studentDocumentsubject ||! studentDocumentsDescription ||! studentDocumentsCreator 
         ||! studentDocumentsDueDate||! studentDocumentsResponsible||! studentDocumentstate||! lastModified.operator||! studentDocumentsYear) {
-        return res.status(400).json({ message: 'All mandatory fields required' })
+        return res.status(400).json({ message: 'Required data is missing' })
     }
 
     // Does the studentDocuments exist to update?
@@ -411,7 +411,7 @@ const updateStudentDocument = asyncHandler(async (req, res) => {
     
     const updatedStudentDocuments = await studentDocuments.save()//save method received when we did not include lean
 
-    res.json({ message: `studentDocuments: ${updatedStudentDocuments.studentDocumentsubject}, updated` })
+    res.json({ message: `StudentDocuments updated successfully` })
 })
 //---------------------------------------------------------------------------------------1   
 // @desc Delete a student
@@ -424,7 +424,7 @@ const deleteStudentDocument = asyncHandler(async (req, res) => {
        
         
         if (!id) {
-            return res.status(400).json({ message: 'Missing required parameter: id ' });
+            return res.status(400).json({ message: 'Required data is missing' });
         }
 
         // Find the document to be deleted

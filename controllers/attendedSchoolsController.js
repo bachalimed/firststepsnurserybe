@@ -73,14 +73,14 @@ console.log(schoolName, schoolCity, schoolType, schoolColor)
     //Confirm data is present in the request with all required fields
         
         if ( !schoolName || !schoolCity || !schoolType ||!schoolColor) {
-        return res.status(400).json({ message: 'Required fields are missing' })//400 : bad request
+        return res.status(400).json({ message: 'Required data is missing' })//400 : bad request
     }
     
     // Check for duplicate username
     const duplicate = await AttendedSchool.findOne({schoolName }).lean().exec()//because we re receiving only one response from mongoose
 
     if (duplicate&&duplicate.schoolType== schoolType) {
-        return res.status(409).json({ message: `Duplicate attendedSchool: ${duplicate.schoolName}, found` })
+        return res.status(409).json({ message: `Duplicate school: ${duplicate.schoolName}, found` })
     }
   
     
@@ -90,9 +90,9 @@ console.log(schoolName, schoolCity, schoolType, schoolColor)
     const attendedSchool = await AttendedSchool.create(attendedSchoolObject)
 
     if (attendedSchool) { //if created 
-        res.status(201).json({ message: `New attendedSchool of subject: ${attendedSchool.schoolName}, created` })
+        res.status(201).json({ message: `School ${attendedSchool.schoolName}, created Successfully` })
     } else {
-        res.status(400).json({ message: 'Invalid attendedSchool data received' })
+        res.status(400).json({ message: 'Invalid data received' })
     }
 })
 
@@ -107,7 +107,7 @@ const updateAttendedSchool = asyncHandler(async (req, res) => {
 
     // Confirm data 
     if (!id ||!schoolName ||! schoolCity ||! schoolType || !schoolColor) {
-        return res.status(400).json({ message: 'All mandatory fields required' })
+        return res.status(400).json({ message: 'Required data is missing' })
     }
 
     // Does the attendedSchool exist to update?
@@ -125,7 +125,7 @@ const updateAttendedSchool = asyncHandler(async (req, res) => {
     
     const updatedAttendedSchool = await attendedSchool.save()//save method received when we did not include lean
 
-    res.json({ message: `attendedSchool: ${updatedAttendedSchool.schoolName}, updated` })
+    res.json({ message: `School updated successfully` })
 })
 
 
@@ -139,7 +139,7 @@ const deleteAttendedSchool = asyncHandler(async (req, res) => {
 
     // Confirm data
     if (!id) {
-        return res.status(400).json({ message: 'AttendedSchool ID Required' })
+        return res.status(400).json({ message: 'Required data is missing' })
     }
 
     // Does the user exist to delete?
@@ -151,7 +151,7 @@ const deleteAttendedSchool = asyncHandler(async (req, res) => {
 
     const result = await attendedSchool.deleteOne()
 
-    const reply = `attendedSchool ${attendedSchool.attendedSchoolubject}, with ID ${attendedSchool._id}, deleted`
+    const reply = `Deleted ${result?.deletedCount} school`
 
     res.json(reply)
 })

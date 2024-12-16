@@ -159,7 +159,7 @@ const createNewExpense = asyncHandler(async (req, res) => {
   ) {
     return res
       .status(400)
-      .json({ message: "Required fields are missing" }); //400 : bad request
+      .json({ message: "Required data is missing" }); //400 : bad request
   }
 
  
@@ -185,12 +185,12 @@ const createNewExpense = asyncHandler(async (req, res) => {
   if (!expense) {
     return res
       .status(400)
-      .json({ message: "Invalid expense data received No expense saved" });
+      .json({ message: "Invalid data received" });
   }
   // If created 
   //console.log(expense?.expenseItems,'2')
   return res.status(201).json({
-    message: `New expense  ${expense.expenseMonth} for  ${expense.expenseAmount} on  ${expense.expenseDate} `,
+    message: `Expense created successfully `,
   });
 });
 
@@ -231,7 +231,7 @@ const updateExpense = asyncHandler(async (req, res) => {
     !expenseMethod
     
   ){
-    return res.status(400).json({ message: "All mandatory fields required" });
+    return res.status(400).json({ message: "Required data is missing" });
   }
   
   // Does the expense exist to update?
@@ -259,10 +259,10 @@ const updateExpense = asyncHandler(async (req, res) => {
     //console.log(expenseToUpdate,'expenseToUpdate')
     const updatedExpense = await expenseToUpdate.save(); //save old expense
     if (!updatedExpense) {
-      return res.status(400).json({ message: "invalid expense data received" });
+      return res.status(400).json({ message: "invalid data received" });
     }
       return res.status(201).json({
-        message: `Expense: of ${updatedExpense.expenseAmount} updated `,
+        message: `Expense updated successfully`,
       })
 
  
@@ -279,7 +279,7 @@ const deleteExpense = asyncHandler(async (req, res) => {
 
   // Confirm data
   if (!id) {
-    return res.status(400).json({ message: "Expense ID Required" });
+    return res.status(400).json({ message: "Required data is missing" });
   }
 
   // Does the user exist to delete?
@@ -292,9 +292,9 @@ const deleteExpense = asyncHandler(async (req, res) => {
   // Delete the expense
   const result = await expense.deleteOne();
 
-  const reply = `Expense  ${expense.expenseLabel}, with ID ${expense._id}, deleted `;
+  const reply = `Deleted ${result?.deletedCount} Expense`;
 
-  return res.json(reply);
+  return res.json({message:reply});
 });
 
 module.exports = {

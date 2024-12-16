@@ -258,7 +258,7 @@ const createNewAdmission = asyncHandler(async (req, res) => {
     !admissionYear ||
     !agreedServices
   ) {
-    return res.status(400).json({ message: "Required fields are missing" }); //400 : bad request
+    return res.status(400).json({ message: "Required data is missing" }); //400 : bad request
   }
 
   // Check for duplicate
@@ -324,13 +324,13 @@ const createNewAdmission = asyncHandler(async (req, res) => {
       await studentToUpdateWithAdmission.save();
 
       res.status(201).json({
-        message: `New admission created`,
+        message: `Admission created Successfully`,
       });
     } else {
       res.status(404).json({ message: "Student not found" });
     }
   } else {
-    res.status(400).json({ message: "Invalid admission data received" });
+    res.status(400).json({ message: "Invalid data received" });
   }
 });
 //internalcontroller :CreateNew User to be used by other controllers??
@@ -358,7 +358,7 @@ const updateAdmission = asyncHandler(async (req, res) => {
     !agreedServices ||
     agreedServices?.length === 0
   ) {
-    return res.status(400).json({ message: "Required fields are missing" });
+    return res.status(400).json({ message: "Required data is missing" });
   }
 
   // Does the admission exist to update?
@@ -383,7 +383,7 @@ const updateAdmission = asyncHandler(async (req, res) => {
   const updatedAdmission = await admission.save(); //save method received when we did not include lean
 
   res.json({
-    message: `Admission updated`,
+    message: `Admission updated Successfully`,
   });
 });
 //--------------------------------------------------------------------------------------1
@@ -413,7 +413,7 @@ const deleteAdmission = asyncHandler(async (req, res) => {
     );
 
     if (studentUpdateResult) {
-      const reply = `Admission deleted and student updated`;
+      const reply = `Admission deleted and student updated successfully`;
       return res.json({message:reply});
     } else {
       return res
@@ -423,7 +423,7 @@ const deleteAdmission = asyncHandler(async (req, res) => {
   }
 
   // If failed to delete admission
-  const reply = `Deleted ${result.deletedCount} admissions`;
+  const reply = `Deleted ${result?.deletedCount} admissions`;
   return res.status(400).json({message:reply});
 });
 

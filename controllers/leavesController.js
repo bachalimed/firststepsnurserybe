@@ -66,7 +66,6 @@ const getLeavesByYear = async (selectedYear) => {
   }
 };
 
-
 // @desc Get all leave
 // @route GET 'desk/leave
 // @access Private // later we will establish authorisations
@@ -77,21 +76,18 @@ const getAllLeaves = asyncHandler(async (req, res) => {
   const { id, criteria, selectedYear } = req.query;
   if (id) {
     //console.log("nowwwwwwwwwwwwwwwwwwwwwww here");
-const leave  = await Leave.find({  _id:id }).lean()
- 
+    const leave = await Leave.find({ _id: id }).lean();
 
+    const user = await User.findOne(
+      { employeeId: leave[0]?.leaveEmployee }, // Match the employee ID
+      "userFullName" // Select only the userFullName field
+    ).lean();
 
- const user = await User.findOne(
-  { employeeId: leave[0]?.leaveEmployee }, // Match the employee ID
-  "userFullName" // Select only the userFullName field
-).lean();
-
-
-// Attach user information to the leave
-(leave[0]).leaveEmployeeName = user ? user?.userFullName : null;
-if (!leave) {
-  return res.status(400).json({ message: "Leave not found" });
-}
+    // Attach user information to the leave
+    leave[0].leaveEmployeeName = user ? user?.userFullName : null;
+    if (!leave) {
+      return res.status(400).json({ message: "Leave not found" });
+    }
     // Return the leave inside an array
     return res.json(leave); //we need it inside  an array to avoid response data error
   }
@@ -161,37 +157,33 @@ const createNewLeave = asyncHandler(async (req, res) => {
     !leaveOperator ||
     !leaveCreator
   ) {
-    return res
-      .status(400)
-      .json({ message: "Required fields are missing" }); //400 : bad request
+    return res.status(400).json({ message: "Required data is missing" }); //400 : bad request
   }
 
   const leaveObject = {
-    leaveYear:leaveYear ,
+    leaveYear: leaveYear,
     leaveMonth: leaveMonth,
     leaveEmployee: leaveEmployee,
-    leaveIsApproved:leaveIsApproved ,
-    leaveIsPaidLeave:leaveIsPaidLeave ,
-    leaveIsSickLeave:leaveIsSickLeave ,
-    leaveIsPartDay:leaveIsPartDay ,
+    leaveIsApproved: leaveIsApproved,
+    leaveIsPaidLeave: leaveIsPaidLeave,
+    leaveIsSickLeave: leaveIsSickLeave,
+    leaveIsPartDay: leaveIsPartDay,
     leaveStartDate: leaveStartDate,
     leaveEndDate: leaveEndDate,
-    leaveComment:leaveComment ,
+    leaveComment: leaveComment,
     leaveOperator: leaveOperator,
-    leaveCreator:leaveCreator ,
+    leaveCreator: leaveCreator,
   }; //construct new leave to be stored
 
   // Create and store new leave
   const leave = await Leave.create(leaveObject);
   if (!leave) {
-    return res
-      .status(400)
-      .json({ message: "Invalid leave data received No leave saved" });
+    return res.status(400).json({ message: "Invalid data received" });
   }
   // If created
   //console.log(leave?.leaveItems,'2')
   return res.status(201).json({
-    message: `New leave  ${leave.leaveMonth} for  ${leave.leaveStartDate}  `,
+    message: `Leave created successfully`,
   });
 });
 
@@ -231,7 +223,7 @@ const updateLeave = asyncHandler(async (req, res) => {
     !leaveDate ||
     !leaveMethod
   ) {
-    return res.status(400).json({ message: "All mandatory fields required" });
+    return res.status(400).json({ message: "Required data is missing" });
   }
 
   // Does the leave exist to update?
@@ -258,10 +250,10 @@ const updateLeave = asyncHandler(async (req, res) => {
   //console.log(leaveToUpdate,'leaveToUpdate')
   const updatedLeave = await leaveToUpdate.save(); //save old leave
   if (!updatedLeave) {
-    return res.status(400).json({ message: "invalid leave data received" });
+    return res.status(400).json({ message: "invalid data received" });
   }
   return res.status(201).json({
-    message: `Leave: of ${updatedLeave.leaveAmount} updated `,
+    message: `Leave updated successfully`,
   });
 });
 
@@ -275,7 +267,7 @@ const deleteLeave = asyncHandler(async (req, res) => {
 
   // Confirm data
   if (!id) {
-    return res.status(400).json({ message: "Leave ID Required" });
+    return res.status(400).json({ message: "Required data is missing" });
   }
 
   // Does the user exist to delete?
@@ -288,9 +280,9 @@ const deleteLeave = asyncHandler(async (req, res) => {
   // Delete the leave
   const result = await leave.deleteOne();
 
-  const reply = `Leave  ${leave.leaveLabel}, with ID ${leave._id}, deleted `;
+  const reply = `Deleted ${result?.deletedCount} leave`;
 
-  return res.json(reply);
+  return res.json({message:reply});
 });
 
 module.exports = {

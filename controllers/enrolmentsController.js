@@ -376,7 +376,7 @@ const createNewEnrolment = asyncHandler(async (req, res) => {
     !Array.isArray(enrolments) ||
     enrolments.length === 0
   ) {
-    return res.status(400).json({ message: "All fields are required" }); //400 : bad request
+    return res.status(400).json({ message: "Required data is missing" }); //400 : bad request
   }
 
   // Iterate through the enrolments array and process each enrolment object
@@ -449,7 +449,7 @@ const createNewEnrolment = asyncHandler(async (req, res) => {
   }
 
   return res.status(201).json({
-    message: "Enrolments successfully created",
+    message: "Enrolments created successfully",
     enrolments: successfulEnrolments,
   });
 });
@@ -484,7 +484,7 @@ const updateEnrolment = asyncHandler(async (req, res) => {
     !serviceFinalFee
     
   ) {
-    return res.status(400).json({ message: "All fields are required" });
+    return res.status(400).json({ message: "Required data is missing" });
   }
 
   // Does the enrolment exist to update?
@@ -503,7 +503,7 @@ const updateEnrolment = asyncHandler(async (req, res) => {
   const updatedEnrolment = await enrolment.save(); //save method received when we did not include lean
 
   res.json({
-    message: `enrolment ${updatedEnrolment._id}, updated`,
+    message: `Enrolment updated successfully`,
   });
 });
 //--------------------------------------------------------------------------------------1
@@ -515,7 +515,7 @@ const deleteEnrolment = asyncHandler(async (req, res) => {
 
   // Confirm data
   if (!id) {
-    return res.status(400).json({ message: "Enrolment Id Required" });
+    return res.status(400).json({ message: "Required data is missing" });
   }
 
   // Does the user still have assigned notes?
@@ -534,7 +534,7 @@ const deleteEnrolment = asyncHandler(async (req, res) => {
   const result = await enrolmentToDelete.deleteOne();
   //console.log(result, "result");
   //console.log(enrolmentToDelete, "enrolmentToDelete");
-  const reply = `deleted ${result?.deletedCount} enrolment ${enrolmentToDelete?.serviceType} of ${enrolmentToDelete?.enrolmentMonth}`;
+  const reply = `Deleted ${result?.deletedCount} Enrolment`;
 
   return res.json({ message:reply});
 });

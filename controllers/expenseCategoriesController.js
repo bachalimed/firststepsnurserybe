@@ -86,7 +86,7 @@ const createNewExpenseCategory = asyncHandler(async (req, res) => {
   ) {
     return res
       .status(400)
-      .json({ message: "Required fields are missing" }); //400 : bad request
+      .json({ message: "Required data is missing" }); //400 : bad request
   }
 
   // Check for duplicate expenseCategory or invoices paid previously
@@ -117,11 +117,11 @@ const createNewExpenseCategory = asyncHandler(async (req, res) => {
   if (!expenseCategory) {
     return res
       .status(400)
-      .json({ message: "Invalid expenseCategory data received No expenseCategory saved" });
+      .json({ message: "Invalid expenseCategory data received" });
   }
-  // If created and students updated
+  // If created 
   return res.status(201).json({
-    message: `New expenseCategory  ${expenseCategory.expenseCategoryLabel} `,
+    message: `Expense category  ${expenseCategory.expenseCategoryLabel} created Successfully `,
   });
 });
 
@@ -153,7 +153,7 @@ const updateExpenseCategory = asyncHandler(async (req, res) => {
     expenseCategoryItems?.length<1 ||
     !expenseCategoryOperator 
   ) {
-    return res.status(400).json({ message: "All mandatory fields required" });
+    return res.status(400).json({ message: "Required data is missing" });
   }
   
   // Does the expenseCategory exist to update?
@@ -171,10 +171,10 @@ const updateExpenseCategory = asyncHandler(async (req, res) => {
   expenseCategoryToUpdate.expenseCategoryOperator=expenseCategoryOperator
     const updatedExpenseCategory = await expenseCategoryToUpdate.save(); //save old expenseCategory
     if (!updatedExpenseCategory) {
-      return res.status(400).json({ message: "invalid expenseCategory data received" });
+      return res.status(400).json({ message: "invalid data received" });
     }
       return res.status(201).json({
-        message: `ExpenseCategory: ${updatedExpenseCategory.expenseCategoryLabel} updated `,
+        message: `Expense category updated successfully`,
       })
 
  
@@ -191,7 +191,7 @@ const deleteExpenseCategory = asyncHandler(async (req, res) => {
 
   // Confirm data
   if (!id) {
-    return res.status(400).json({ message: "ExpenseCategory ID Required" });
+    return res.status(400).json({ message: "Required data is missing" });
   }
 
   // Does the user exist to delete?
@@ -204,9 +204,9 @@ const deleteExpenseCategory = asyncHandler(async (req, res) => {
   // Delete the expenseCategory
   const result = await expenseCategory.deleteOne();
 
-  const reply = `ExpenseCategory  ${expenseCategory.expenseCategoryLabel}, with ID ${expenseCategory._id}, deleted `;
+  const reply = `Deleted ${result?.deletedCount} Expense category`;
 
-  return res.json(reply);
+  return res.json({message:reply});
 });
 
 module.exports = {

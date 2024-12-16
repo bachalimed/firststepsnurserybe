@@ -64,7 +64,7 @@ const {userId,year} = req.query
       }
     } else {
       // Handle case where query parameters are missing
-      return res.status(400).json({ message: 'userId and year query parameters are required' });
+      return res.status(400).json({ message: 'Required data is missing' });
     }
   })
 
@@ -75,7 +75,7 @@ const {userId,year} = req.query
     try {const { id } = req.params
 console.log('now in the controller to get by doc id', id)
     if (!id) {
-        return res.status(400).json({ message: 'Missing required parameters: id' });
+        return res.status(400).json({ message: 'Required data is missing' });
     }
 
     const document = await EmployeeDocument.findOne({ _id: id}).lean();
@@ -158,7 +158,7 @@ console.log('now in the controller to get by doc id', id)
 //     //Confirm data is present in the request with all required fields
         
 //         if (!documentsAcademicYear ||!Array.isArray(documents) ||documents?.length===0 ) {
-//         return res.status(400).json({ message: 'Required fields are missing' })//400 : bad request
+//         return res.status(400).json({ message: 'Required data is missing' })//400 : bad request
 //     }
     
 //     // Check for duplicate username
@@ -193,7 +193,7 @@ const createNewEmployeeDocument = asyncHandler(async (req, res) => {
      const file = req.file
     // Validate required fields
     if (!userId || !employeeDocumentYear || !employeeDocumentReference || !file) {
-        return res.status(400).json({ message: 'Missing required fields.' });
+        return res.status(400).json({ message: 'Required data is missing' });
     }
     if (!file) {
         return res.status(400).json({ message: 'File is required.' });
@@ -233,7 +233,7 @@ const updateEmployeeDocument = asyncHandler(async (req, res) => {
     // Confirm data 
     if (!employeeDocumentsCreationDate ||!employeeDocumentsPriority ||! employeeDocumentsubject ||! employeeDocumentsDescription ||! employeeDocumentsCreator 
         ||! employeeDocumentsDueDate||! employeeDocumentsResponsible||! employeeDocumentstate||! lastModified.operator||! employeeDocumentsYear) {
-        return res.status(400).json({ message: 'All mandatory fields required' })
+        return res.status(400).json({ message: 'Required data is missing' })
     }
 
     // Does the employeeDocuments exist to update?
@@ -268,7 +268,7 @@ const updateEmployeeDocument = asyncHandler(async (req, res) => {
     
     const updatedEmployeeDocuments = await employeeDocuments.save()//save method received when we did not include lean
 
-    res.json({ message: `employeeDocuments: ${updatedEmployeeDocuments.employeeDocumentsubject}, updated` })
+    res.json({ message: `Employee Documents updated successfully` })
 })
 //---------------------------------------------------------------------------------------1   
 // @desc Delete a employee
@@ -281,7 +281,7 @@ const deleteEmployeeDocument = asyncHandler(async (req, res) => {
        
         
         if (!id) {
-            return res.status(400).json({ message: 'Missing required parameter: id ' });
+            return res.status(400).json({ message: 'Required data is missing' });
         }
 
         // Find the document to be deleted
@@ -298,10 +298,10 @@ const deleteEmployeeDocument = asyncHandler(async (req, res) => {
         }
 
         // Delete the document from the database
-        await EmployeeDocument.deleteOne({ _id: id });
+        const result = await EmployeeDocument.deleteOne({ _id: id });
 
         // Respond with success message
-        const reply = `Employee Document with ID ${id} and file ${foundDocument.file} deleted`;
+        const reply = `Deleted ${result?.deletedCount} Employee Document and removed file ${foundDocument.file}`;
         res.json({ message: reply });
         
     } catch (err) {

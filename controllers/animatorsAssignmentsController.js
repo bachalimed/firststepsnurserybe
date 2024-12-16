@@ -95,7 +95,7 @@ const createNewAnimatorsAssignment = asyncHandler(async (req, res) => {
     !creator ||
     !operator
   ) {
-    return res.status(400).json({ message: "Required fields are missing" }); //400 : bad request
+    return res.status(400).json({ message: "Required data is missing" }); //400 : bad request
   }
 
   // Check for duplicate username
@@ -109,7 +109,7 @@ const createNewAnimatorsAssignment = asyncHandler(async (req, res) => {
 
   if (duplicate && duplicate.assignments == assignments) {
     return res.status(409).json({
-      message: `Duplicate animatorsAssignment: ${duplicate.assignedFrom} - ${duplicate.assignedTo}, found`,
+      message: `Duplicate Assignment found`,
     });
   }
 
@@ -130,12 +130,12 @@ const createNewAnimatorsAssignment = asyncHandler(async (req, res) => {
   if (animatorsAssignment) {
     //if created
     res.status(201).json({
-      message: `New animatorsAssignment of subject: ${animatorsAssignment.assignedFrom} - ${animatorsAssignment.assignedTo}, created`,
+      message: `Assignment created Successfully`,
     });
   } else {
     res
       .status(400)
-      .json({ message: "Invalid animatorsAssignment data received" });
+      .json({ message: "Invalid data received" });
   }
 });
 
@@ -162,13 +162,13 @@ const updateAnimatorsAssignment = asyncHandler(async (req, res) => {
     !assignedTo ||
     !operator
   ) {
-    return res.status(400).json({ message: "Required fields are missing" }); //400 : bad request
+    return res.status(400).json({ message: "Required data is missing" }); //400 : bad request
   }
   // Does the animatorsAssignment exist to update?
   const animatorsAssignment = await AnimatorsAssignment.findById(id).exec(); //we did not lean becausse we need the save method attached to the response
 
   if (!animatorsAssignment) {
-    return res.status(400).json({ message: "AnimatorsAssignment not found" });
+    return res.status(400).json({ message: "Assignment not found" });
   }
 
   animatorsAssignment.assignmentYear = assignmentYear; //it will only allow updating properties that are already existant in the model
@@ -180,7 +180,7 @@ const updateAnimatorsAssignment = asyncHandler(async (req, res) => {
   const updatedAnimatorsAssignment = await animatorsAssignment.save(); //save method received when we did not include lean
 
   res.json({
-    message: `animatorsAssignment: ${updatedAnimatorsAssignment.assignedFrom} -  ${updatedAnimatorsAssignment.assignedTo}, updated`,
+    message: `Assignment updated successfully`,
   });
 });
 
@@ -193,21 +193,21 @@ const deleteAnimatorsAssignment = asyncHandler(async (req, res) => {
 
   // Confirm data
   if (!id) {
-    return res.status(400).json({ message: "AnimatorsAssignment ID Required" });
+    return res.status(400).json({ message: "Required data is missing" });
   }
 
   // Does the user exist to delete?
   const animatorsAssignment = await AnimatorsAssignment.findById(id).exec();
 
   if (!animatorsAssignment) {
-    return res.status(400).json({ message: "AnimatorsAssignment not found" });
+    return res.status(400).json({ message: "Assignment not found" });
   }
 
   const result = await animatorsAssignment.deleteOne();
 
-  const reply = `animatorsAssignment ${animatorsAssignment.animatorsAssignmentubject}, with ID ${animatorsAssignment._id}, deleted`;
+  const reply = `Deleted (${result?.deletedCount}) assignment(s)`;
 
-  res.json(reply);
+  res.json({message:reply});
 });
 
 module.exports = {
