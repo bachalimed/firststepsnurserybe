@@ -272,7 +272,7 @@ const createNewAdmission = asyncHandler(async (req, res) => {
 
   if (duplicate) {
     return res.status(409).json({
-      message: `Duplicate admission for student ${duplicate.student} and service ${duplicate.agreedServices} `,
+      message: `Duplicate admission for service ${duplicate.agreedServices} `,
     });
   }
 
@@ -324,7 +324,7 @@ const createNewAdmission = asyncHandler(async (req, res) => {
       await studentToUpdateWithAdmission.save();
 
       res.status(201).json({
-        message: `New admission for student ${admission.student} and service ${admission.agreedServices} created`,
+        message: `New admission created`,
       });
     } else {
       res.status(404).json({ message: "Student not found" });
@@ -365,7 +365,7 @@ const updateAdmission = asyncHandler(async (req, res) => {
   const admission = await Admission.findById(admissionId).exec(); //we did not lean becausse we need the save method attached to the response
 
   if (!admission) {
-    return res.status(400).json({ message: "Admission not found" });
+    return res.status(400).json({ message: "Admission to update not found" });
   }
 
   // Check for duplicate
@@ -383,7 +383,7 @@ const updateAdmission = asyncHandler(async (req, res) => {
   const updatedAdmission = await admission.save(); //save method received when we did not include lean
 
   res.json({
-    message: `admission ${updatedAdmission._id}, updated`,
+    message: `Admission updated`,
   });
 });
 //--------------------------------------------------------------------------------------1
@@ -395,7 +395,7 @@ const deleteAdmission = asyncHandler(async (req, res) => {
 
   // Confirm data
   if (!id) {
-    return res.status(400).json({ message: "Required id not provided" });
+    return res.status(400).json({ message: "Id not provided" });
   }
 
   // Does the admission exist to delete?
@@ -413,7 +413,7 @@ const deleteAdmission = asyncHandler(async (req, res) => {
     );
 
     if (studentUpdateResult) {
-      const reply = `deleted 1 admission, with ID ${admissionToDelete._id} and student updated`;
+      const reply = `Admission deleted and student updated`;
       return res.json({message:reply});
     } else {
       return res
@@ -423,7 +423,7 @@ const deleteAdmission = asyncHandler(async (req, res) => {
   }
 
   // If failed to delete admission
-  const reply = `Confirm: deleted ${result.deletedCount} admissions`;
+  const reply = `Deleted ${result.deletedCount} admissions`;
   return res.status(400).json({message:reply});
 });
 

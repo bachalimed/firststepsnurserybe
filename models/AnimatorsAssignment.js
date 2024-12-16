@@ -1,17 +1,16 @@
 const mongoose = require("mongoose");
 
 
-
 const assignmentsSchema = new mongoose.Schema(
-  {
-    animator: {
+  {animator: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Employee",
-      required: true,
+      index: true
+     
     },
     schools: [{
       type: mongoose.Schema.Types.ObjectId,
-      ref: "School",
+      ref: "AttendedSchool",
       
     }],
   },
