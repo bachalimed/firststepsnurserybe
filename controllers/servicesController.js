@@ -122,7 +122,7 @@ const updateService = asyncHandler(async (req, res) => {
 
   // Allow updates to the original service
   if (duplicate && duplicate?._id.toString() !== serviceId) {
-    return res.status(409).json({ message: "Duplicate service Type for the academic Year" });
+    return res.status(409).json({ message: "Duplicate service Type for the academic Year found" });
   }
 
   service.serviceType = serviceType; //it will only allow updating properties that are already existant in the model

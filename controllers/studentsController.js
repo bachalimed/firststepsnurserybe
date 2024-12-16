@@ -621,7 +621,7 @@ const updateStudent = asyncHandler(async (req, res) => {
 
   // Allow updates to the original user
   if (duplicate && duplicate?._id.toString() !== id) {
-    return res.status(409).json({ message: "Duplicate name" });
+    return res.status(409).json({ message: "Duplicate student name found" });
   }
 
   student.studentName = studentName; //it will only allow updating properties that are already existant in the model

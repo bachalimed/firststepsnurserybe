@@ -363,7 +363,7 @@ const createNewFamily = asyncHandler(async (req, res) => {
   const duplicateFather = await User.findOne({ fatherUsername }).lean().exec(); //because we re receiving only one response from mongoose
 
   if (duplicateFather) {
-    return res.status(409).json({ message: "Duplicate username for Father" });
+    return res.status(409).json({ message: "Duplicate username for Father found" });
   }
 
   // Hash password
@@ -406,7 +406,7 @@ const createNewFamily = asyncHandler(async (req, res) => {
   const duplicateMother = await User.findOne({ motherUsername }).lean().exec(); //because we re receiving only one response from mongoose
 
   if (duplicateMother) {
-    return res.status(409).json({ message: "Duplicate username for Mother" });
+    return res.status(409).json({ message: "Duplicate username for Mother found" });
   }
   // Hash password
   const hashedMotherPwd = await bcrypt.hash(motherPassword, 10); // salt roundsm we will implement it laterm normally password is without''

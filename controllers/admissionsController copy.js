@@ -262,7 +262,7 @@ const createNewAdmission = asyncHandler(async (req, res) => {
 
   if (duplicate) {
     return res.status(409).json({
-      message: ` duplicate admission name for student ${duplicate.student} and service ${duplicate.agreedServices} `,
+      message: `Duplicate admission found`,
     });
   }
 
@@ -363,7 +363,7 @@ const updateAdmission = asyncHandler(async (req, res) => {
 
   // Allow updates to the original user
   if (duplicate && duplicate?._id.toString() !== admissionId) {
-    return res.status(409).json({ message: "Duplicate Admission" });
+    return res.status(409).json({ message: "Duplicate Admission found" });
   }
 
   admission.admissionDate = admissionDate; //it will only allow updating properties that are already existant in the model
@@ -373,7 +373,7 @@ const updateAdmission = asyncHandler(async (req, res) => {
   const updatedAdmission = await admission.save(); //save method received when we did not include lean
 
   res.json({
-    message: `Admission  updated successfully`,
+    message: `Admission updated successfully`,
   });
 });
 //--------------------------------------------------------------------------------------1

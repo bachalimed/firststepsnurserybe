@@ -118,14 +118,14 @@ const createNewUser = asyncHandler(async (req, res) => {
   const duplicate = await User.findOne({ username }).lean().exec(); //because we re receiving only one response from mongoose
 
   if (duplicate) {
-    return res.status(409).json({ message: "Duplicate username" });
+    return res.status(409).json({ message: "Duplicate username found" });
   }
 
   // Check for duplicate userFullName
   const duplicateName = await User.findOne({ userFullName }).lean().exec(); //because we re receiving only one response from mongoose
 
   if (duplicateName) {
-    return res.status(409).json({ message: "Duplicate Full name" });
+    return res.status(409).json({ message: "Duplicate Full name found" });
   }
 
   //check the related parent or employee id from the DB
@@ -247,7 +247,7 @@ const passwordMatch = await bcrypt.compare(oldPassword, user.password)
 
   // Allow updates to the original user
   if (duplicate && duplicate?._id.toString() !== id) {
-    return res.status(409).json({ message: "Duplicate username" });
+    return res.status(409).json({ message: "Duplicate username found" });
   }
 
   user.userFullName = userFullName; //it will only allow updating properties that are already existant in the model

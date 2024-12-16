@@ -293,14 +293,14 @@ const createNewEmployee = asyncHandler(async (req, res) => {
 
   if (duplicateUsername) {
     //we will later check if the duplicate has isEmployee and then call the update Employee method
-    return res.status(409).json({ message: "Duplicate username" });
+    return res.status(409).json({ message: "Duplicate username found" });
   }
 
   // Check for duplicate userFullName
   const duplicateFullName = await User.findOne({ userFullName }).lean().exec(); //because we re receiving only one response from mongoose
 
   if (duplicateFullName) {
-    return res.status(409).json({ message: "Duplicate Full name" });
+    return res.status(409).json({ message: "Duplicate full name found" });
   }
 
   // Hash password
