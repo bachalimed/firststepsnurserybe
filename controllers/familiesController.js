@@ -574,7 +574,7 @@ const deleteFamily = asyncHandler(async (req, res) => {
   if (!fatherToDelete.isEmployee) {
     deletedFather = await fatherToDelete.deleteOne();
     replyFather = `Deleted ${deletedFather?.deletedCount} father, `;
-    //res.json(reply);
+   
   }
   const motherToDelete = await User.findById(mother);
   let deletedMother;
@@ -582,7 +582,7 @@ const deleteFamily = asyncHandler(async (req, res) => {
   if (!motherToDelete.isEmployee) {
     deletedMother = await motherToDelete.deleteOne();
     replyMother = `${deletedMother?.deletedCount} mother, `;
-    //res.json(reply);
+    
   }
   const familyToDelete = await Family.findById(id);
   let deletedFamily;
@@ -590,11 +590,11 @@ const deleteFamily = asyncHandler(async (req, res) => {
 
   deletedFamily = await familyToDelete.deleteOne();
   replyFamily = `and ${deletedFamily?.deletedCount} family`;
-  //res.json(reply);
+  
 
   const reply = `${replyFather}, ${replyMother} ${replyFamily}`;
 
-  res.json({message:reply});
+ return  res.json({message:reply});
 });
 
 module.exports = {

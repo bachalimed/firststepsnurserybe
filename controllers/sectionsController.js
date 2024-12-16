@@ -722,9 +722,9 @@ const deleteSection = asyncHandler(async (req, res) => {
   // Delete the section
   const result = await section.deleteOne();
 
-  const reply = `Section ${section.sectionLabel}, with ID ${section._id}, deleted`;
+  const reply = `Deleted ${result?.deletedCount} section`;
 
-  res.json(reply);
+ return res.json({message:reply});
 });
 
 module.exports = {

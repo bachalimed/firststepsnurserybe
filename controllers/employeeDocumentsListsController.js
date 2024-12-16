@@ -178,7 +178,7 @@ const deleteEmployeeDocumentsList = asyncHandler(async (req, res) => {
 
   const reply = `Deleted ${result?.deletedCount} employee documents list`;
 
-  res.json(reply);
+ return  res.json({message:reply});
 });
 
 module.exports = {

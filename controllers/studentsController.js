@@ -696,7 +696,7 @@ const deleteStudent = asyncHandler(async (req, res) => {
 
     // Respond with a success message
     res.json({
-      message: `deleted ${studentDeleteResult.deletedCount} Student: ${studentToDelete.studentName.firstName}  ${studentToDelete.studentName.middleName}  ${studentToDelete.studentName.lastName} and ${docsDeleteResult.deletedCount} associated documents`,
+      message: `Deleted ${studentDeleteResult.deletedCount} student and ${docsDeleteResult.deletedCount} associated documents`,
     });
   } catch (error) {
     console.error("Error deleting student and documents:", error);

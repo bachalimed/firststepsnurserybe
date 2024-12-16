@@ -148,9 +148,9 @@ const deleteTask = asyncHandler(async (req, res) => {
 
     const result = await task.deleteOne()
 
-    const reply = `task ${task.taskSubject}, with ID ${task._id}, deleted`
+    const reply = `Deleted ${result?.deletedCount} task`
 
-    res.json(reply)
+    return res.json(reply)
 })
 
 

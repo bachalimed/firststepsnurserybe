@@ -176,9 +176,9 @@ const deleteStudentDocumentsList = asyncHandler(async (req, res) => {
 
   const result = await studentDocumentsList.deleteOne();
 
-  const reply = `studentDocumentsList ${studentDocumentsList.studentDocumentsListubject}, with ID ${studentDocumentsList._id}, deleted`;
+  const reply = `Deleted ${result?.deletedCount} list`;
 
-  res.json(reply);
+  return res.json({message:reply});
 });
 
 module.exports = {

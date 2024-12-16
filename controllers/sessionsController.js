@@ -619,7 +619,7 @@ const deleteSession = asyncHandler(async (req, res) => {
     case "deleteSession": //delete single separate event
       const ressul = await session.deleteOne();
       res.json({
-        message: `deleted  ${ressul.deletedCount} session ${session.StartTime} - ${session.EndTime}, deleted`,
+        message: `Deleted ${ressul.deletedCount} session`,
       });
       break;
 
@@ -638,7 +638,7 @@ const deleteSession = asyncHandler(async (req, res) => {
       const updatedRecurrenceExceptionSession = await session.save(); //save method received when we did not include lean
 
       res.json({
-        message: `occurence ${extraException} for Master session: ${session.StartTime} - ${session.EndTime}, deleted`,
+        message: `Deleted occurence ${extraException} for Master session`,
       });
       break;
 
@@ -647,7 +647,7 @@ const deleteSession = asyncHandler(async (req, res) => {
       const res1 = await session.deleteOne();
       const result = await Session.deleteMany({ RecurrenceID: id });
       res.json({
-        message: `Deleted ${res1.deletedCount} session with ID: ${id} and ${result.deletedCount} additional related sessions in the series `,
+        message: `Deleted ${res1.deletedCount} session ${result.deletedCount} additional related sessions in the series`,
       });
       break;
   }

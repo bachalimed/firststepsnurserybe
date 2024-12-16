@@ -305,9 +305,9 @@ const deleteUser = asyncHandler(async (req, res) => {
 
   const result = await user.deleteOne();
 
-  const reply = `Username ${user.username} with ID ${user._id} deleted`;
+  const reply = `Deleted ${result?.deletedCount} user`;
 
-  res.json(reply);
+  return res.json({message:reply});
 });
 
 module.exports = {

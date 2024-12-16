@@ -153,7 +153,7 @@ const deleteAttendedSchool = asyncHandler(async (req, res) => {
 
     const reply = `Deleted ${result?.deletedCount} school`
 
-    res.json(reply)
+   return  res.json({message:reply})
 })
 
 

@@ -513,7 +513,7 @@ const deleteSession = asyncHandler(async (req, res) => {
     case "deleteSession": //delete single separate event
       const ressul = await session.deleteOne();
       res.json({
-        message: `deleted  ${ressul.deletedCount} session ${session.StartTime} - ${session.EndTime}, deleted`,
+        message: `Deleted ${result?.deletedCount} session`,
       });
       break;
 

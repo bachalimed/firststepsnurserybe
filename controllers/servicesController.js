@@ -161,9 +161,9 @@ const deleteService = asyncHandler(async (req, res) => {
 
   const result = await service.deleteOne();
 console.log(result, 'result')
-  const reply = `deleted ${result.deletedCount} Service: Name ${service.servicename} with ID ${service._id} `;
+  const reply = `Deleted ${result?.deletedCount} service ${service.servicename}`;
 
-  res.json(reply);
+ return res.json({message:reply});
 });
 
 module.exports = {
