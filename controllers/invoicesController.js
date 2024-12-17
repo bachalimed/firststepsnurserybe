@@ -267,14 +267,14 @@ const createNewInvoice = asyncHandler(async (req, res) => {
       if (element.enrolmentInvoice) {
         return res
           .status(400)
-          .json({ message: `enrolment   ${element?.id} already invoiced` });
+          .json({ message: `enrolment ${element?.id} already invoiced` });
       }
       const duplicate = await Invoice.findOne({
         invoiceEnrolment: element?.id,
       }).lean();
       if (duplicate) {
         return res.status(400).json({
-          message: `duplicate invoice for the enrolment ${element?.id} `,
+          message: `Duplicate invoice found for the enrolment ${element?.id}`,
         });
       }
       // Attempt to save the invoice
