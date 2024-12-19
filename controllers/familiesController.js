@@ -551,7 +551,7 @@ const deleteFamily = asyncHandler(async (req, res) => {
 
   // Confirm data
   if (!id) {
-    return res.status(400).json({ message: "family Id not provided" });
+    return res.status(400).json({ message: "Required data is missing" });
   }
 
   // Does the parent exist to delete?
@@ -560,7 +560,7 @@ const deleteFamily = asyncHandler(async (req, res) => {
   if (!family) {
     return res
       .status(400)
-      .json({ message: "Family not found for the provided id" });
+      .json({ message: "Family not found" });
   }
   const { father, mother, children } = family;
   const fatherToDelete = await User.findById(father);

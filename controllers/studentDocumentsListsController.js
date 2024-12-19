@@ -16,7 +16,7 @@ const getAllStudentDocumentsLists = asyncHandler(async (req, res) => {
       _id: id,
     }).lean(); //this will not return the extra data(lean)
 
-    console.log(studentDocumentsList,'studentDocumentsList from id');
+    //console.log(studentDocumentsList,'studentDocumentsList from id');
     if (!studentDocumentsList) {
       return res
         .status(400)
@@ -33,7 +33,7 @@ const getAllStudentDocumentsLists = asyncHandler(async (req, res) => {
       .status(400)
       .json({
         message:
-          "No studentDocumentsLists found from studentDocumentsList controller with love",
+          "No studentDocumentsLists found from studentDocumentsList",
       });
   }
   res.json(studentDocumentsLists);

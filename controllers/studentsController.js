@@ -603,10 +603,10 @@ const updateStudent = asyncHandler(async (req, res) => {
     operator,
     admissions,
   } = req.body;
-  console.log(req.body);
+  //console.log(req.body);
   // Confirm data
-  if (!studentName || !studentDob || !studentSex || !studentYears) {
-    return res.status(400).json({ message: "Required data is missing" });
+  if (!id||!studentName || !studentDob || !studentSex || !studentYears) {
+    return res.status(400).json({ message: "Required student data is missing" });
   }
 
   // Does the student exist to update?

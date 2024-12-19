@@ -20,7 +20,7 @@ const employeeAssessmentSchema = new mongoose.Schema(
       date: { type: Date },
       assessor: { type: String,  },
       assessmentComment: { type: String },
-      assessmentScore: { type: Number },
+      assessmentScore: { type: String },
     },
   },
   { _id: false }
@@ -34,11 +34,8 @@ const employeeWorkHistorySchema = new mongoose.Schema(
       toDate: { type: Date },
       position: { type: String,  set: capitalizeFirstLetter, },
       contractType: { type: String,  set: capitalizeFirstLetter, },
-      salaryPackage: { 
-		basic:{type: Number },
-		cnss:{type: Number},
-		other:{type: Number },
-	 },
+      salaryPackage: {type: String },
+	 
     },
   },
   { _id: false }
@@ -52,9 +49,9 @@ const employeeSchema = new mongoose.Schema({
 		contractType: { type: String, required: true, set: capitalizeFirstLetter, },
 		salaryPackage: { 
 			payment: { type: String, required: true },
-			basic:{type: Number, required: true },
-			cnss:{type: Number},
-			other:{type: Number },
+			basic:{type: String, required: true },
+			cnss:{type: String},
+			other:{type: String },
 	 },
   },
   employeeIsActive: { type: Boolean },

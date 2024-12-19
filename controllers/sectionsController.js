@@ -486,7 +486,7 @@ const createNewSection = asyncHandler(async (req, res) => {
   /////////////////new will be with no ending date
   console.log(req?.body);
   const {
-    sectionLabel,
+   sectionLabel,
     sectionYear,
     students,
     sectionColor,

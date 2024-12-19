@@ -10,10 +10,10 @@ const mongoose = require('mongoose')
 // @access Private // later we will establish authorisations
 const getAllClassrooms = asyncHandler(async (req, res) => {
    // console.log('helloooooooo')
-    
+    const{id}=req?.query
         // Check if an ID is passed as a query parameter
-        if (req.query.id) {
-            const { id } = req.query;
+        if (id) {
+           
 
             // Find a single attended school by its ID
             const classroom = await Classroom.findOne({ _id: id }).lean();

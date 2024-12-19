@@ -139,8 +139,7 @@ const createNewLeave = asyncHandler(async (req, res) => {
     leaveIsPartDay,
     leaveStartDate,
     leaveEndDate,
-    leaveStartTime,
-    leaveEndTime,
+
     leaveComment,
     leaveOperator,
     leaveCreator,
@@ -170,6 +169,7 @@ const createNewLeave = asyncHandler(async (req, res) => {
     leaveIsPartDay: leaveIsPartDay,
     leaveStartDate: leaveStartDate,
     leaveEndDate: leaveEndDate,
+
     leaveComment: leaveComment,
     leaveOperator: leaveOperator,
     leaveCreator: leaveCreator,
@@ -191,37 +191,37 @@ const createNewLeave = asyncHandler(async (req, res) => {
 // @route PATCH 'desk/leave
 // @access Private
 const updateLeave = asyncHandler(async (req, res) => {
-  ////////////update teh students while updating and creating and deleting.
-  // set all other related sessions to ending date where you have a student from that leave in any other, the latter will have an ending date
+  //no need for start timer and end timne because they are already included in teh start date and end date
   const {
     id,
     leaveYear,
     leaveMonth,
-    leaveAmount,
-    leaveNote,
-    leaveCategory,
-    leaveItems,
-    leavePayee,
-    leaveDate,
-    leavePaymentDate,
-    leaveService,
-    leaveMethod,
+    leaveEmployee,
+    leaveIsApproved,
+    leaveIsPaidLeave,
+    leaveIsSickLeave,
+    leaveIsPartDay,
+    leaveStartDate,
+    leaveEndDate,
+
+    leaveComment,
     leaveOperator,
   } = req?.body;
-
+ 
   // Confirm data
   if (
     !id ||
     !leaveYear ||
     !leaveMonth ||
-    !leaveAmount ||
-    !leaveCategory ||
-    !leaveItems ||
-    leaveItems?.length < 1 ||
-    !leavePayee ||
-    !leaveService ||
-    !leaveDate ||
-    !leaveMethod
+    !leaveEmployee ||
+    leaveIsApproved === undefined ||
+    leaveIsPaidLeave === undefined ||
+    leaveIsSickLeave === undefined ||
+    leaveIsPartDay === undefined ||
+    !leaveStartDate ||
+    !leaveEndDate ||
+    
+    !leaveOperator
   ) {
     return res.status(400).json({ message: "Required data is missing" });
   }
@@ -232,19 +232,16 @@ const updateLeave = asyncHandler(async (req, res) => {
   if (!leaveToUpdate) {
     return res.status(400).json({ message: "Leave to update not found" });
   }
-
   leaveToUpdate.leaveYear = leaveYear;
   leaveToUpdate.leaveMonth = leaveMonth;
-  leaveToUpdate.leaveAmount = leaveAmount;
-  leaveToUpdate.leaveCategory = leaveCategory;
-  leaveToUpdate.leaveItems = leaveItems;
-  leaveToUpdate.leavePayee = leavePayee;
-  leaveToUpdate.leaveService = leaveService;
-  leaveToUpdate.leaveDate = leaveDate;
-  leaveToUpdate.leaveMethod = leaveMethod;
-  leaveToUpdate.leaveNote = leaveNote;
-  leaveToUpdate.leavePaymentDate = leavePaymentDate;
-  //leaveToUpdate.leaveCategories=leaveCategories
+  leaveToUpdate.leaveIsApproved = leaveIsApproved;
+  leaveToUpdate.leaveIsPaidLeave = leaveIsPaidLeave;
+  leaveToUpdate.leaveIsSickLeave = leaveIsSickLeave;
+  leaveToUpdate.leaveIsPartDay = leaveIsPartDay;
+  leaveToUpdate.leaveStartDate = leaveStartDate;
+  leaveToUpdate.leaveEndDate = leaveEndDate;
+  leaveToUpdate.leaveComment = leaveComment;
+  leaveToUpdate.leaveOperator = leaveOperator;
   leaveToUpdate.leaveOperator = leaveOperator;
 
   //console.log(leaveToUpdate,'leaveToUpdate')
@@ -282,7 +279,7 @@ const deleteLeave = asyncHandler(async (req, res) => {
 
   const reply = `Deleted ${result?.deletedCount} leave`;
 
-  return res.json({message:reply});
+  return res.json({ message: reply });
 });
 
 module.exports = {

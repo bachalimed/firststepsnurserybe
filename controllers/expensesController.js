@@ -64,7 +64,7 @@ const getAllExpenses = asyncHandler(async (req, res) => {
   //console.log("helloooooooo");
 
   // Check if an ID is passed as a query parameter
-  const { id, criteria, selectedYear } = req.query;
+  const { id, criteria, selectedYear } = req?.query;
   if (id) {
     //console.log("nowwwwwwwwwwwwwwwwwwwwwww here");
 
@@ -105,7 +105,7 @@ const getAllExpenses = asyncHandler(async (req, res) => {
     .populate({path:'expenseService', select:'serviceType'})
     .populate({path:'expenseCategory', select:'expenseCategoryLabel'})
     .lean();
-
+   
     if (!expenses) {
       return res.status(400).json({ message: "Expenses not found" });
     }
@@ -231,7 +231,7 @@ const updateExpense = asyncHandler(async (req, res) => {
     !expenseMethod
     
   ){
-    return res.status(400).json({ message: "Required data is missing" });
+    return res.status(400).json({ message: "Required expense data is missing" });
   }
   
   // Does the expense exist to update?

@@ -48,7 +48,7 @@ const getAllServices = asyncHandler(async (req, res) => {
           //console.log('returned res', services)
            return res.json(services)}
         }
-  //will retreive according to the id
+  
  else {
   const services = await Service.find().lean()//this will not return the extra data(lean)
   //console.log('with no select')

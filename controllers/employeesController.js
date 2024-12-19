@@ -543,7 +543,7 @@ const deleteEmployee = asyncHandler(async (req, res) => {
   const employee = await Employee.findById(id).exec();
 
   if (!employee) {
-    return res.status(400).json({ message: "Employee not found" });
+    return res.status(400).json({ message: "Employeee not found" });
   }
   const user = await User.findOne({ isEmployee: id });
 
