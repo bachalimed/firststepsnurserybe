@@ -8,7 +8,6 @@ const mongoose = require("mongoose");
 
 
 
-
 /**
  * Function to get enrolment statistics by month, including service types and trends.
  * @param {Number} selectedYear - The selected academic year to filter enrolments.
@@ -152,8 +151,32 @@ const getAllEnrolments = asyncHandler(async (req, res) => {
           select: "-serviceAnchor -serviceCreator -serviceOperator",
         },
       })
-      .populate("enrolmentInvoice")
+      .populate({
+        path: "enrolmentInvoice",
+        populate: {
+          path: "invoicePayment",
+        },
+      })
       .lean();
+    // const enrolments = await Enrolment.find({
+    //   enrolmentYear: selectedYear,
+    //   enrolmentMonth: selectedMonth,
+    // })
+    //   .populate(
+    //     "student",
+    //     "-studentDob -studentEducation -operator -studentGardien"
+    //   )
+    //   .populate("service", "-serviceAnchor -serviceCreator -serviceOperator")
+    //   .populate({
+    //     path: "admission",
+    //     select: "-admissionCreator -admissionOperator -student -updatedAt",
+    //     populate: {
+    //       path: "agreedServices.service",
+    //       select: "-serviceAnchor -serviceCreator -serviceOperator",
+    //     },
+    //   })
+    //   .populate("enrolmentInvoice")
+    //   .lean();
 
     //console.log("Fetched Enrolments:", enrolments); // Debug log
 

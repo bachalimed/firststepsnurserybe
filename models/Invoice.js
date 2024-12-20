@@ -14,7 +14,6 @@ const invoiceSchema = new mongoose.Schema(
       required: true,
       set: capitalizeFirstLetter,
     },
-
     invoiceDueDate: { type: Date, index: true, required: true },
     invoiceIssueDate: { type: Date, index: true, required: true },
     invoiceIsFullyPaid: { type: Boolean, index: true },
