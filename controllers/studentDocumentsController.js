@@ -444,12 +444,12 @@ const deleteStudentDocument = asyncHandler(async (req, res) => {
         const result  = await StudentDocument.deleteOne({ _id: id });
 
         // Respond with success message
-        const reply = `Deleted ${result?.deletedCount} student document and file ${foundDocument.file}`;
+        const reply = `Deleted ${result?.deletedCount} student document record and file: ${foundDocument.file}`;
         res.json({ message: reply });
         
     } catch (err) {
         console.error('Error deleting document:', err);
-        res.status(500).json({ message: 'Error deleting document' });
+        res.status(500).json({ message: `Error deleting document, ${err}` });
     }
 });
 

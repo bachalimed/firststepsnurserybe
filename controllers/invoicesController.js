@@ -211,7 +211,7 @@ const createNewInvoice = asyncHandler(async (req, res) => {
   //Confirm data is present in the request with all required fields
 
   if (!formData || formData.length < 1) {
-    return res.status(400).json({ message: "no proper data received" }); //400 : bad request
+    return res.status(400).json({ message: "No data received" }); //400 : bad request
   }
   // restructure the data
   try {
