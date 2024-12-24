@@ -5,15 +5,7 @@ function capitalizeFirstLetter(str) {
   return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
-// const studentsSchema = new mongoose.Schema(
-//   {
-//     student: {
-//       type: mongoose.Schema.Types.ObjectId, // Reference to the user who created the section
-//       ref: "Student",
-//     },
-//   },
-//   { _id: false }
-// );
+
 
 const SectionSchema = new mongoose.Schema(
   {

@@ -1,6 +1,6 @@
 const Payslip = require("../models/Payslip");
 const User = require("../models/User");
-const Leave= require("../models/Leave");
+const Leave = require("../models/Leave");
 //const Employee = require('../models/Employee')//we might need the employee module in this controller
 const asyncHandler = require("express-async-handler"); //instead of using try catch
 
@@ -12,22 +12,23 @@ const getPayslipsByYear = async (selectedYear) => {
     // Fetch payslips with the required employee and user data
     const payslips = await Payslip.find({ payslipYear: selectedYear })
       .populate({
-        path: 'payslipEmployee', // Populate the employee field
-        select: 'employeeCurrentEmployment' // Only select the necessary field
+        path: "payslipEmployee", // Populate the employee field
+        select: "employeeCurrentEmployment", // Only select the necessary field
       })
       .populate({
-        path: 'payslipLeaveDays', // Populate the employee field
-        select: '-leaveOperator -leaveCreator -leaveEmployee -leaveYear -leaveMonth' // Only select the necessary fields
+        path: "payslipLeaveDays", // Populate the employee field
+        select:
+          "-leaveOperator -leaveCreator -leaveEmployee -leaveYear -leaveMonth", // Only select the necessary fields
       })
       .lean(); // Convert documents to plain JavaScript objects for easier manipulation
-      // Add user information for each employee
-      for (const payslip of payslips) {
-        if (payslip?.payslipEmployee) {
-          const user = await User.findOne(
-            { employeeId: payslip?.payslipEmployee }, // Match the employee ID
-            'userFullName' // Select only the userFullName field
-          ).lean();
-         // console.log(user,'user')
+    // Add user information for each employee
+    for (const payslip of payslips) {
+      if (payslip?.payslipEmployee) {
+        const user = await User.findOne(
+          { employeeId: payslip?.payslipEmployee }, // Match the employee ID
+          "userFullName" // Select only the userFullName field
+        ).lean();
+        // console.log(user,'user')
 
         // Attach user information to the payslip
         payslip.payslipEmployee.userFullName = user ? user.userFullName : null;
@@ -36,32 +37,29 @@ const getPayslipsByYear = async (selectedYear) => {
 
     return payslips;
   } catch (error) {
-    console.error('Error fetching payslips:', error);
+    console.error("Error fetching payslips:", error);
     throw error;
   }
 };
-
-
-
 
 //helper for finances stats
 const getPayslipsStats = async (selectedYear) => {
   try {
     const result = await Payslip.aggregate([
       {
-        $match: { payslipYear: selectedYear } // Filter invoices by the selected year
+        $match: { payslipYear: selectedYear }, // Filter invoices by the selected year
       },
       {
         $addFields: {
-          payslipAmountAsNumber: { $toDouble: "$payslipAmount" } // Convert string to number
-        }
+          payslipAmountAsNumber: { $toDouble: "$payslipAmount" }, // Convert string to number
+        },
       },
       {
         $group: {
           _id: null, // No grouping required
-          totalPayslipsAmount: { $sum: "$payslipAmountAsNumber" } // Sum converted values
-        }
-      }
+          totalPayslipsAmount: { $sum: "$payslipAmountAsNumber" }, // Sum converted values
+        },
+      },
     ]);
 
     // If no results, return 0
@@ -72,26 +70,6 @@ const getPayslipsStats = async (selectedYear) => {
     throw error;
   }
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 // @desc Get all payslip
 // @route GET 'desk/payslip
@@ -105,9 +83,7 @@ const getAllPayslips = asyncHandler(async (req, res) => {
     //console.log("nowwwwwwwwwwwwwwwwwwwwwww here");
 
     // Find a single payslip by its ID
-    const payslip = await Payslip.findOne({ _id: id })
-     
-      .lean();
+    const payslip = await Payslip.findOne({ _id: id }).lean();
 
     if (!payslip) {
       return res.status(400).json({ message: "Payslip not found" });
@@ -117,26 +93,25 @@ const getAllPayslips = asyncHandler(async (req, res) => {
     return res.json([payslip]); //we need it inside  an array to avoid response data error
   }
 
-  if (selectedYear !== "1000" && criteria==="payslipsTotalStats") {
-
+  if (selectedYear !== "1000" && criteria === "payslipsTotalStats") {
     try {
       const totalPayslipsAmount = await getPayslipsStats(selectedYear);
-  
+
       return res.status(200).json({
         message: "payslips and total amount retrieved successfully",
         selectedYear,
-        totalPayslipsAmount
+        totalPayslipsAmount,
       });
     } catch (error) {
-     return  res.status(500).json({
+      return res.status(500).json({
         message: "Error retrieving payslips",
-        error: error.message
+        error: error.message,
       });
     }
-  };
+  }
   if (selectedYear !== "1000") {
     // Find a single payslip by its ID
-    const payslips = await getPayslipsByYear(selectedYear)
+    const payslips = await getPayslipsByYear(selectedYear);
     //console.log(payslips,'payslips')
 
     if (!payslips) {
@@ -147,7 +122,6 @@ const getAllPayslips = asyncHandler(async (req, res) => {
     return res.json(payslips); //we need it inside  an array to avoid response data error
   }
 
-  
   // If no ID is provided, fetch all payslips
 });
 
@@ -161,66 +135,55 @@ const createNewPayslip = asyncHandler(async (req, res) => {
   const {
     payslipYear,
     payslipMonth,
-    payslipAmount,
+    payslipWorkdays,
     payslipNote,
-    payslipCategory,
-    payslipItems,
-    payslipPayee,
-    payslipService,
-    payslipDate,
+    payslipEmployee,
+    payslipEmployeeName,
+    payslipIsApproved,
     payslipPaymentDate,
-    payslipMethod,
-    payslipOperator,
+    payslipLeaveDays,
+    payslipSalaryComponents,
+
     payslipCreator,
   } = req?.body; //this will come from front end we put all the fields o fthe collection here
-//console.log(payslipItems,'1')
+  //console.log(payslipItems,'1')
   //Confirm data is present in the request with all required fields
 
   if (
     !payslipYear ||
     !payslipMonth ||
-    !payslipAmount ||
-    !payslipCategory||
-    !payslipItems||
-    payslipItems?.length<1 ||
-    !payslipPayee ||
-    !payslipService ||
-    !payslipCreator||
-    !payslipDate||
-    !payslipMethod||
+    !payslipEmployeeName ||
+    !payslipWorkdays ||
+    !payslipEmployee ||
+    !payslipSalaryComponents ||
     !payslipCreator
   ) {
-    return res
-      .status(400)
-      .json({ message: "Required data is missing" }); //400 : bad request
+    return res.status(400).json({ message: "Required data is missing" }); //400 : bad request
   }
 
- 
-
   const payslipObject = {
-    payslipYear:payslipYear,
-    payslipMonth:payslipMonth,
-    payslipAmount:payslipAmount,
-    payslipNote:payslipNote,
-    payslipCategory:payslipCategory,
-    payslipItems:payslipItems,
-    payslipPayee:payslipPayee,
-    payslipService:payslipService,
-    payslipDate:payslipDate,
-    payslipPaymentDate:payslipPaymentDate,
-    payslipMethod :payslipMethod,
-    payslipOperator :payslipOperator,
-    payslipCreator:payslipCreator,
+    payslipYear: payslipYear,
+    payslipMonth: payslipMonth,
+    payslipWorkdays: payslipWorkdays,
+    payslipNote: payslipNote,
+    payslipEmployee: payslipEmployee,
+    payslipEmployeeName: payslipEmployeeName,
+    payslipIsApproved: payslipIsApproved,
+    payslipPaymentDate: payslipPaymentDate,
+    payslipLeaveDays: payslipLeaveDays,
+    payslipSalaryComponents: payslipSalaryComponents,
+    payslipCreator: payslipCreator,
   }; //construct new payslip to be stored
 
+
+  const duplicate = await Payslip.findOne({payslipMonth:payslipMonth, payslipYear:payslipYear,payslipEmployee:payslipEmployee})
+  if(duplicate){ return res.status(400).json({ message: "Duplicate payslip found" });}
   // Create and store new payslip
   const payslip = await Payslip.create(payslipObject);
   if (!payslip) {
-    return res
-      .status(400)
-      .json({ message: "Invalid data received" });
+    return res.status(400).json({ message: "Invalid data received" });
   }
-  // If created 
+  // If created
   //console.log(payslip?.payslipItems,'2')
   return res.status(201).json({
     message: `Payslip for created successfully`,
@@ -234,73 +197,76 @@ const updatePayslip = asyncHandler(async (req, res) => {
   ////////////update teh students while updating and creating and deleting.
   // set all other related sessions to ending date where you have a student from that payslip in any other, the latter will have an ending date
   const {
-    id,
+    _id,
     payslipYear,
-        payslipMonth,
-        payslipAmount,
-        payslipNote,
-        payslipCategory,
-        payslipItems,
-        payslipPayee,
-        payslipDate,
-        payslipPaymentDate,
-        payslipService,
-        payslipMethod,
-        payslipOperator,
-  } = req?.body;
+    payslipMonth,
+    payslipWorkdays,
+    payslipNote,
+    payslipEmployee,
+    payslipEmployeeName,
+    payslipIsApproved,
+    payslipPaymentDate,
+    payslipLeaveDays,
+    payslipSalaryComponents,
 
+    payslipOperator,
+  } = req?.body;
+console.log(_id,
+  payslipYear,
+  payslipMonth,
+  payslipWorkdays,
+  payslipNote,
+  payslipEmployee,
+  payslipEmployeeName,
+  payslipIsApproved,
+  payslipPaymentDate,
+  payslipLeaveDays,
+  payslipSalaryComponents,
+
+  payslipOperator)
   // Confirm data
-  if (!id||
+  if (
+    !_id ||
     !payslipYear ||
     !payslipMonth ||
-    !payslipAmount ||
-    !payslipCategory||
-    !payslipItems||
-    payslipItems?.length<1 ||
-    !payslipPayee ||
-    !payslipService ||
-   
-    !payslipDate||
-    !payslipMethod
+    !payslipEmployee ||
+    !payslipEmployeeName||
+    !payslipLeaveDays ||
+   ! payslipWorkdays||
     
-  ){
+    !payslipSalaryComponents
+   
+  ) {
     return res.status(400).json({ message: "Required data is missing" });
   }
-  
+
   // Does the payslip exist to update?
-  const payslipToUpdate = await Payslip.findById(id).exec(); //we did not lean becausse we need the save method attached to the response
+  const payslipToUpdate = await Payslip.findById(_id).exec(); //we did not lean becausse we need the save method attached to the response
 
   if (!payslipToUpdate) {
     return res.status(400).json({ message: "Payslip to update not found" });
   }
- 
-  payslipToUpdate.payslipYear=payslipYear
-  payslipToUpdate.payslipMonth=payslipMonth
-  payslipToUpdate.payslipAmount=payslipAmount
-  payslipToUpdate.payslipCategory=payslipCategory
-  payslipToUpdate.payslipItems=payslipItems
-  payslipToUpdate.payslipPayee=payslipPayee
-  payslipToUpdate.payslipService=payslipService
-  payslipToUpdate.payslipDate=payslipDate
-  payslipToUpdate.payslipMethod=payslipMethod
-  payslipToUpdate.payslipNote=payslipNote
-  payslipToUpdate.payslipPaymentDate=payslipPaymentDate
-  //payslipToUpdate.payslipCategories=payslipCategories
-  payslipToUpdate.payslipOperator=payslipOperator
 
+  payslipToUpdate.payslipYear = payslipYear;
+  payslipToUpdate.payslipMonth = payslipMonth;
+  payslipToUpdate.payslipEmployee = payslipEmployee;
+  payslipToUpdate.payslipEmployeeName = payslipEmployeeName;
+  payslipToUpdate.payslipLeaveDays = payslipLeaveDays;
+  payslipToUpdate.payslipWorkdays = payslipWorkdays;
+  payslipToUpdate.payslipIsApproved = payslipIsApproved;
+  payslipToUpdate.payslipSalaryComponents = payslipSalaryComponents;
+  payslipToUpdate.payslipOperator = payslipOperator;
+  payslipToUpdate.payslipPaymentDate = payslipPaymentDate;
+  payslipToUpdate.payslipNote = payslipNote;
 
- 
-    //console.log(payslipToUpdate,'payslipToUpdate')
-    const updatedPayslip = await payslipToUpdate.save(); //save old payslip
-    if (!updatedPayslip) {
-      return res.status(400).json({ message: "invalid data received" });
-    }
-      return res.status(201).json({
-        message: `Payslip updated successfully`,
-      })
-
- 
-
+  //console.log(payslipToUpdate,'payslipToUpdate')
+  const updatedPayslip = await payslipToUpdate.save(); //save old payslip
+  if (!updatedPayslip) {
+    return res.status(400).json({ message: "invalid data received" });
+  }
+  return res.status(201).json({
+    message: `Payslip updated successfully`,
+  });
 });
 
 //--------------------------------------------------------------------------------------1
@@ -328,7 +294,7 @@ const deletePayslip = asyncHandler(async (req, res) => {
 
   const reply = `Deleted ${result?.deletedCount} payslip`;
 
-  return res.json({message:reply});
+  return res.json({ message: reply });
 });
 
 module.exports = {

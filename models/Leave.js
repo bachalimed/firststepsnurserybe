@@ -14,7 +14,7 @@ const leaveSchema = new mongoose.Schema({
     index: true,
     ref: "Employee",
   },
-  leaveIsApproved: { type: Boolean, required: true },
+  leaveIsGiven: { type: Boolean, required: true },
   leaveIsPaidLeave: { type: Boolean, required: true },
   leaveIsSickLeave: { type: Boolean, required: true },
   leaveIsPartDay: { type: Boolean, required: true },

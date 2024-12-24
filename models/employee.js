@@ -50,8 +50,9 @@ const employeeSchema = new mongoose.Schema({
 		salaryPackage: { 
 			payment: { type: String, required: true },
 			basic:{type: String, required: true },
-			cnss:{type: String},
+			
 			other:{type: String },
+			allowance:{type: String },
 	 },
   },
   employeeIsActive: { type: Boolean },

@@ -52,6 +52,11 @@ const userSchema = new mongoose.Schema({
 
     default: true,
   },
+  isForgotPassword: {
+    type: Boolean,
+
+    default: false,
+  },
   userRoles: [
     {
       type: String,

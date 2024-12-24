@@ -133,7 +133,7 @@ const createNewLeave = asyncHandler(async (req, res) => {
     leaveYear,
     leaveMonth,
     leaveEmployee,
-    leaveIsApproved,
+    leaveIsGiven,
     leaveIsPaidLeave,
     leaveIsSickLeave,
     leaveIsPartDay,
@@ -163,7 +163,7 @@ const createNewLeave = asyncHandler(async (req, res) => {
     leaveYear: leaveYear,
     leaveMonth: leaveMonth,
     leaveEmployee: leaveEmployee,
-    leaveIsApproved: leaveIsApproved,
+    leaveIsGiven: leaveIsGiven,
     leaveIsPaidLeave: leaveIsPaidLeave,
     leaveIsSickLeave: leaveIsSickLeave,
     leaveIsPartDay: leaveIsPartDay,
@@ -197,7 +197,7 @@ const updateLeave = asyncHandler(async (req, res) => {
     leaveYear,
     leaveMonth,
     leaveEmployee,
-    leaveIsApproved,
+    leaveIsGiven,
     leaveIsPaidLeave,
     leaveIsSickLeave,
     leaveIsPartDay,
@@ -214,7 +214,7 @@ const updateLeave = asyncHandler(async (req, res) => {
     !leaveYear ||
     !leaveMonth ||
     !leaveEmployee ||
-    leaveIsApproved === undefined ||
+    leaveIsGiven === undefined ||
     leaveIsPaidLeave === undefined ||
     leaveIsSickLeave === undefined ||
     leaveIsPartDay === undefined ||
@@ -234,7 +234,7 @@ const updateLeave = asyncHandler(async (req, res) => {
   }
   leaveToUpdate.leaveYear = leaveYear;
   leaveToUpdate.leaveMonth = leaveMonth;
-  leaveToUpdate.leaveIsApproved = leaveIsApproved;
+  leaveToUpdate.leaveIsGiven = leaveIsGiven;
   leaveToUpdate.leaveIsPaidLeave = leaveIsPaidLeave;
   leaveToUpdate.leaveIsSickLeave = leaveIsSickLeave;
   leaveToUpdate.leaveIsPartDay = leaveIsPartDay;

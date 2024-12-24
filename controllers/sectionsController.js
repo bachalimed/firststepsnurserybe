@@ -36,7 +36,6 @@ const getAllSections = asyncHandler(async (req, res) => {
     //console.log(
     // "we re heeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeere"
     // );
-
     try {
       const sections = await Section.aggregate([
         { $match: { sectionYear: selectedYear } }, // Match sections by sectionYear
@@ -146,6 +145,7 @@ const getAllSections = asyncHandler(async (req, res) => {
           $project: {
             _id: 1,
             sectionType: 1,
+            sectionColor: 1,
             sectionLabel: 1,
             sectionFrom: 1,
             sectionTo: 1,
@@ -190,6 +190,7 @@ const getAllSections = asyncHandler(async (req, res) => {
             _id: "$_id",
             sectionType: { $first: "$sectionType" },
             sectionLabel: { $first: "$sectionLabel" },
+            sectionColor: { $first: "$sectionColor" },
             sectionFrom: { $first: "$sectionFrom" },
             sectionTo: { $first: "$sectionTo" },
             sectionAnimator: { $first: "$sectionAnimator" },

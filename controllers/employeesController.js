@@ -222,14 +222,29 @@ const getAllEmployees = asyncHandler(async (req, res) => {
   if (id) {
     // Aggregation pipeline to retrieve a specific user by employeeId and matching selected academic year
     console.log(id);
-    const user = await User.findOne({ _id: id }).populate("employeeId").lean();
+    const user = await Employee.findOne({ _id: id }).populate("employeeId").lean();
 
     if (!user) {
       return res
         .status(404)
-        .json({ message: "No user found with the provided id." });
+        .json({ message: "No employee found with the provided id." });
     }
     return res.status(200).json(user);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   }
 });
 

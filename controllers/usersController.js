@@ -171,6 +171,7 @@ const updateUser = asyncHandler(async (req, res) => {
   const { formData } = req?.body;
   const {
     id,
+    //isForgotPassword,
     oldPassword,
     newPassword1,
     userFullName,
@@ -190,17 +191,39 @@ const updateUser = asyncHandler(async (req, res) => {
     criteria,
   } = formData;
 
+  if (criteria === "forgotPassword") {
+    if (!username) {
+      return res.status(400).json({ message: "Required data is missing" });
+    }
+    const user = await User.findOne({ username: username }).exec(); //we did not lean becausse we need the save method attached to the response
+
+    if (!user) {
+      return res.status(400).json({ message: "User not found" });
+    }
+
+    // Allow updates to the original user
+    if (user?.isForgotPassword) {
+      return res.status(409).json({ message: "Request already submitted" });
+    }
+    user.isForgotPassword = true;
+
+    const updatedUser = await user.save(); //save method received when we did not include lean
+    //console.log(updatedUser);
+
+    return res.json({
+      message: `Request saved, we will contact  you with new login credentials`,
+    });
+  }
   if (criteria === "resetPassword") {
     if (!id || !oldPassword || !newPassword1) {
       return res.status(400).json({ message: "Required data is missing" });
     }
     const user = await User.findById(id).exec(); //we did not lean becausse we need the save method attached to the response
 
- 
     if (!user) {
       return res.status(400).json({ message: "User not found" });
     }
-//console.log(user,'user')
+    //console.log(user,'user')
     // Check for duplicate
     const duplicate = await User.findOne({ username }).lean().exec();
 
@@ -209,13 +232,13 @@ const updateUser = asyncHandler(async (req, res) => {
       return res.status(409).json({ message: "Duplicate username found" });
     }
 
-const passwordMatch = await bcrypt.compare(oldPassword, user.password)
+    const passwordMatch = await bcrypt.compare(oldPassword, user.password);
 
     if (!passwordMatch) {
       return res.status(409).json({ message: "old password not matching" });
     }
     // Hash new password
- 
+
     user.password = await bcrypt.hash(newPassword1, 10); // salt rounds
     const updatedUser = await user.save(); //save method received when we did not include lean
     //console.log(updatedUser);
@@ -230,9 +253,7 @@ const passwordMatch = await bcrypt.compare(oldPassword, user.password)
     !userRoles.length ||
     typeof userIsActive !== "boolean"
   ) {
-    return res
-      .status(400)
-      .json({ message: "Required data is missing" });
+    return res.status(400).json({ message: "Required data is missing" });
   }
 
   // Does the user exist to update?
@@ -255,7 +276,7 @@ const passwordMatch = await bcrypt.compare(oldPassword, user.password)
   user.userRoles = userRoles;
   user.userAllowedActions = userAllowedActions;
   user.accessToken = accessToken;
-
+user.isForgotPassword = false// incase we updated a lost password
   user.familyId = familyId?.length === 24 ? familyId : undefined;
   user.employeeId = employeeId?.length === 24 ? employeeId : undefined;
   user.userDob = userDob;
@@ -307,7 +328,7 @@ const deleteUser = asyncHandler(async (req, res) => {
 
   const reply = `Deleted ${result?.deletedCount} user`;
 
-  return res.json({message:reply});
+  return res.json({ message: reply });
 });
 
 module.exports = {
