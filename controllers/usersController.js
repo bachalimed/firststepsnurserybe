@@ -191,29 +191,29 @@ const updateUser = asyncHandler(async (req, res) => {
     criteria,
   } = formData;
 
-  if (criteria === "forgotPassword") {
-    if (!username) {
-      return res.status(400).json({ message: "Required data is missing" });
-    }
-    const user = await User.findOne({ username: username }).exec(); //we did not lean becausse we need the save method attached to the response
+  // if (criteria === "forgotPassword") {
+  //   if (!username) {
+  //     return res.status(400).json({ message: "Required data is missing" });
+  //   }
+  //   const user = await User.findOne({ username: username }).exec(); //we did not lean becausse we need the save method attached to the response
 
-    if (!user) {
-      return res.status(400).json({ message: "User not found" });
-    }
+  //   if (!user) {
+  //     return res.status(400).json({ message: "User not found" });
+  //   }
 
-    // Allow updates to the original user
-    if (user?.isForgotPassword) {
-      return res.status(409).json({ message: "Request already submitted" });
-    }
-    user.isForgotPassword = true;
+  //   // Allow updates to the original user
+  //   if (user?.isForgotPassword) {
+  //     return res.status(409).json({ message: "Request already submitted" });
+  //   }
+  //   user.isForgotPassword = true;
 
-    const updatedUser = await user.save(); //save method received when we did not include lean
-    //console.log(updatedUser);
+  //   const updatedUser = await user.save(); //save method received when we did not include lean
+  //   //console.log(updatedUser);
 
-    return res.json({
-      message: `Request saved, we will contact  you with new login credentials`,
-    });
-  }
+  //   return res.json({
+  //     message: `Request saved, we will contact  you with new login credentials`,
+  //   });
+  // }
   if (criteria === "resetPassword") {
     if (!id || !oldPassword || !newPassword1) {
       return res.status(400).json({ message: "Required data is missing" });
@@ -237,8 +237,8 @@ const updateUser = asyncHandler(async (req, res) => {
     if (!passwordMatch) {
       return res.status(409).json({ message: "old password not matching" });
     }
+    user.isForgotPassword=false // set the lost password flag to false
     // Hash new password
-
     user.password = await bcrypt.hash(newPassword1, 10); // salt rounds
     const updatedUser = await user.save(); //save method received when we did not include lean
     //console.log(updatedUser);
@@ -276,7 +276,7 @@ const updateUser = asyncHandler(async (req, res) => {
   user.userRoles = userRoles;
   user.userAllowedActions = userAllowedActions;
   user.accessToken = accessToken;
-user.isForgotPassword = false// incase we updated a lost password
+
   user.familyId = familyId?.length === 24 ? familyId : undefined;
   user.employeeId = employeeId?.length === 24 ? employeeId : undefined;
   user.userDob = userDob;
@@ -291,8 +291,10 @@ user.isForgotPassword = false// incase we updated a lost password
 
   if (password) {
     //only if the password is requested to be updated
+    user.isForgotPassword = false// in case we updated a lost password we set the flag to false
     // Hash password
     user.password = await bcrypt.hash(password, 10); // salt rounds
+
   }
   const updatedUser = await user.save(); //save method received when we did not include lean
   console.log(updatedUser);

@@ -1,110 +1,143 @@
-const User = require('../models/User')
-const bcrypt = require('bcrypt')
-const jwt = require('jsonwebtoken')
-const asyncHandler = require('express-async-handler')
+const User = require("../models/User");
+const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
+const asyncHandler = require("express-async-handler");
 
 // @desc Login
 // @route POST /auth after the root url
 // @access Public
 const login = asyncHandler(async (req, res) => {
-    const { username, password } = req.body//we expect a username and password to come in the login request
-
-    if (!username || !password) {
-        return res.status(400).json({ message: 'Required data is missing' })
+  const { username, password, criteria } = req.body; //we expect a username and password to come in the login request
+  //forgot password request will set flag isforgotpassword in user collection
+  if (criteria === "forgotPassword") {
+    console.log("forgot password detected");
+    if (!username) {
+      return res.status(400).json({ message: "Required data is missing" });
     }
 
-    const foundUser = await User.findOne({ username }).exec()
-
-    if (!foundUser || !foundUser.userIsActive) {
-        return res.status(401).json({ message: 'Unauthorized: user not found or user is not Active' })
+    const userFound = await User.findOne({ username }).exec();
+    if (!userFound) {
+      return res
+        .status(401)
+        .json({ message: "No user found for the provided username" });
+    }
+    if (userFound.isForgotPassword) {
+      return res.status(401).json({ message: "Password reset request already submitted" });
     }
 
-    const match = await bcrypt.compare(password, foundUser.password)
+    userFound.isForgotPassword = true;
 
-    if (!match) return res.status(401).json({ message: 'Unauthorized password not matching' })
+    const updatedUser = await userFound.save(); //save method received when we did not include lean
 
-//create access token
-    const accessToken = jwt.sign(
-        {
-            "UserInfo": {
-                "userId": foundUser._id,
-                "username": foundUser.username,
-                "userRoles": foundUser.userRoles,
-                "userAllowedActions": foundUser.userAllowedActions
-            }
-        },
-        process.env.ACCESS_TOKEN_SECRET,
-        { expiresIn: '15m' }//access token expires in 15 minutes
-    )
-//ceate refresh token
-    const refreshToken = jwt.sign(
-        { "username": foundUser.username },
-        process.env.REFRESH_TOKEN_SECRET,
-        { expiresIn: '7d' }
-    )
+    return res.json({
+      message: `Request submitted successfully`,
+    });
+  }
+  // normal login path starts here
+  if (!username || !password) {
+    return res.status(400).json({ message: "Required data is missing" });
+  }
 
-    // Create secure cookie with refresh token 
-    res.cookie('jwt', refreshToken, {
-        httpOnly: true, //accessible only by web server 
-        secure: true, //https
-        sameSite: 'None', //cross-site cookie if we host front and backend in separate sites
-        maxAge: 7 * 24 * 60 * 60 * 1000 //cookie expiry 1week here: better set to match rT of 7days
-    })
-    
-    // Send accessToken containing username and roles 
-    res.json({ accessToken })
-})
+  const foundUser = await User.findOne({ username }).exec();
+
+  if (!foundUser || !foundUser.userIsActive) {
+    return res
+      .status(401)
+      .json({ message: "Unauthorized: user not found or user is not Active" });
+  }
+
+  const match = await bcrypt.compare(password, foundUser.password);
+
+  if (!match)
+    return res
+      .status(401)
+      .json({ message: "Unauthorized password not matching" });
+
+  //create access token
+  const accessToken = jwt.sign(
+    {
+      UserInfo: {
+        userId: foundUser._id,
+        username: foundUser.username,
+        userRoles: foundUser.userRoles,
+        userAllowedActions: foundUser.userAllowedActions,
+      },
+    },
+    process.env.ACCESS_TOKEN_SECRET,
+    { expiresIn: "15m" } //access token expires in 15 minutes
+  );
+  //ceate refresh token
+  const refreshToken = jwt.sign(
+    { username: foundUser.username },
+    process.env.REFRESH_TOKEN_SECRET,
+    { expiresIn: "7d" }
+  );
+
+  // Create secure cookie with refresh token
+  res.cookie("jwt", refreshToken, {
+    httpOnly: true, //accessible only by web server
+    secure: true, //https
+    sameSite: "None", //cross-site cookie if we host front and backend in separate sites
+    maxAge: 7 * 24 * 60 * 60 * 1000, //cookie expiry 1week here: better set to match rT of 7days
+  });
+
+  // Send accessToken containing username and roles
+  res.json({ accessToken });
+});
 
 // @desc Refresh
 // @route GET /auth/refresh
 // @access Public - because access token has expired
 const refresh = (req, res) => {
-    const cookies = req.cookies
+  const cookies = req.cookies;
 
-    if (!cookies?.jwt) return res.status(401).json({ message: 'Unauthorized, no cookie found' })
+  if (!cookies?.jwt)
+    return res.status(401).json({ message: "Unauthorized, no cookie found" });
 
-    const refreshToken = cookies.jwt
+  const refreshToken = cookies.jwt;
 
-    jwt.verify(
-        refreshToken,
-        process.env.REFRESH_TOKEN_SECRET,
-        asyncHandler(async (err, decoded) => {
-            if (err) return res.status(403).json({ message: 'Forbidden' })
+  jwt.verify(
+    refreshToken,
+    process.env.REFRESH_TOKEN_SECRET,
+    asyncHandler(async (err, decoded) => {
+      if (err) return res.status(403).json({ message: "Forbidden" });
 
-            const foundUser = await User.findOne({ username: decoded.username }).exec()
+      const foundUser = await User.findOne({
+        username: decoded.username,
+      }).exec();
 
-            if (!foundUser) return res.status(401).json({ message: 'Unauthorized' })
+      if (!foundUser) return res.status(401).json({ message: "Unauthorized" });
 
-            const accessToken = jwt.sign(
-                {
-                    "UserInfo": {
-                        "userId": foundUser._id,
-                        "username": foundUser.username,
-                        "userRoles": foundUser.userRoles,
-                        "userAllowedActions": foundUser.userAllowedActions
-                    }
-                },
-                process.env.ACCESS_TOKEN_SECRET,
-                { expiresIn: '15m' }
-            )
+      const accessToken = jwt.sign(
+        {
+          UserInfo: {
+            userId: foundUser._id,
+            username: foundUser.username,
+            userRoles: foundUser.userRoles,
+            userAllowedActions: foundUser.userAllowedActions,
+          },
+        },
+        process.env.ACCESS_TOKEN_SECRET,
+        { expiresIn: "15m" }
+      );
 
-            res.json({ accessToken })
-        })
-    )
-}
+      res.json({ accessToken });
+    })
+  );
+};
 
 // @desc Logout
 // @route POST /auth/logout
 // @access Public - just to clear cookie if exists
 const logout = (req, res) => {
-    const cookies = req.cookies
-    if (!cookies?.jwt) return res.sendStatus(204) //No content
-    res.clearCookie('jwt', { httpOnly: true, sameSite: 'None', secure: true })
-    res.json({ message: 'Cookie cleared' })
-}
+  const cookies = req.cookies;
+  if (!cookies?.jwt) return res.sendStatus(204); //No content
+  res.clearCookie("jwt", { httpOnly: true, sameSite: "None", secure: true });
+  res.json({ message: "Cookie cleared" });
+};
 
 module.exports = {
-    login,
-    refresh,
-    logout
-}
+  login,
+  refresh,
+  logout,
+};
