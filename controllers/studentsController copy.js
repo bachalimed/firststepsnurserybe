@@ -228,7 +228,7 @@ const getAllStudents = asyncHandler(async (req, res) => {
         }
       } 
        if (selectedYear !== "1000" && criteria === "withSections") {
-        console.log("with   sectionnssssssssssssssssssssssssssssssssssss");
+       // console.log("with   sectionnssssssssssssssssssssssssssssssssssss");
         const students = await Student.find({
           "studentYears.academicYear": selectedYear,
         })

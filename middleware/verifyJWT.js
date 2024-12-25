@@ -1,4 +1,4 @@
-//this will verify the cookies for us, needs to be applied to all protected routes(that need authetication)
+//this will verify the cookies for us for every request received, needs to be applied to all protected routes(that need authetication)
 
 const jwt = require('jsonwebtoken')
 

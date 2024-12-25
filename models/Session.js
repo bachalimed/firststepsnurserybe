@@ -80,9 +80,12 @@ const SessionSchema = new mongoose.Schema(
     FollowingID: {
       type: String, // To uniquely identify recurring instances
     },
-    RecurrenceException: [{////////////////////////shoulnt be an array?
+    RecurrenceException: {////////////////////////shoulnt be an array?it is working as string separated by commas ,,,, apparently
       type: String, // Dates to exclude from the recurrence series
-    }],
+    },
+    // RecurrenceException: {////////////////////////shoulnt be an array?
+    //   type: String, // Dates to exclude from the recurrence series
+    // },
     IsAllDay: {
       type: Boolean,
       default: false,

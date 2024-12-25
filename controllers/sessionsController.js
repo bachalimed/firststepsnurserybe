@@ -614,18 +614,20 @@ const deleteSession = asyncHandler(async (req, res) => {
   if (!session) {
     return res.status(400).json({ message: "Session not found" });
   }
-
+  
   switch (operationType) {
     case "deleteSession": //delete single separate event
-      const ressul = await session.deleteOne();
-      res.json({
-        message: `Deleted ${ressul.deletedCount} session`,
-      });
-      break;
-
-    case "deleteOccurence": //after deletion of single event in series
-      //console.log(extraException, id);
+    const ressul = await session.deleteOne();
+    return res.json({
+      message: `Deleted ${ressul.deletedCount} session`,
+    });
+    break;
+    
+    case "deleteOccurence": // deletion of single event in series
+    //console.log(extraException, id);
+    //console.log('weerer heerererekjrhehr')
       if (!session.RecurrenceException) {
+       
         session.RecurrenceException = extraException; // If empty, start with the new exception
       } else {
         const exceptionsArray = session.RecurrenceException.split(",");
@@ -637,7 +639,7 @@ const deleteSession = asyncHandler(async (req, res) => {
       }
       const updatedRecurrenceExceptionSession = await session.save(); //save method received when we did not include lean
 
-      res.json({
+      return res.json({
         message: `Deleted occurence ${extraException} for Master session`,
       });
       break;
@@ -646,7 +648,7 @@ const deleteSession = asyncHandler(async (req, res) => {
     case "deleteSeries": //delete all series even those that have been edited
       const res1 = await session.deleteOne();
       const result = await Session.deleteMany({ RecurrenceID: id });
-      res.json({
+      return res.json({
         message: `Deleted ${res1.deletedCount} session ${result.deletedCount} additional related sessions in the series`,
       });
       break;

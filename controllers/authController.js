@@ -7,8 +7,12 @@ const asyncHandler = require("express-async-handler");
 // @route POST /auth after the root url
 // @access Public
 const login = asyncHandler(async (req, res) => {
-  const { username, password, criteria } = req.body; //we expect a username and password to come in the login request
-  //forgot password request will set flag isforgotpassword in user collection
+  const { username, password, criteria } = req.body; //we expect a username and password to come in the login request,
+  const USER_REGEX = /^[A-z 0-9]{6,20}$/;
+  if (criteria && !USER_REGEX.test(criteria)) {//secury to avoid injectionof code
+    return res.status(400).json({ message: "Unauthorised" });
+  }
+  //forgot password request will set flag isforgotpassword in user collection so that the admin updated the password
   if (criteria === "forgotPassword") {
     console.log("forgot password detected");
     if (!username) {
@@ -22,7 +26,9 @@ const login = asyncHandler(async (req, res) => {
         .json({ message: "No user found for the provided username" });
     }
     if (userFound.isForgotPassword) {
-      return res.status(401).json({ message: "Password reset request already submitted" });
+      return res
+        .status(401)
+        .json({ message: "Password reset request already submitted" });
     }
 
     userFound.isForgotPassword = true;
@@ -78,7 +84,7 @@ const login = asyncHandler(async (req, res) => {
     httpOnly: true, //accessible only by web server
     secure: true, //https
     sameSite: "None", //cross-site cookie if we host front and backend in separate sites
-    maxAge: 7 * 24 * 60 * 60 * 1000, //cookie expiry 1week here: better set to match rT of 7days
+    maxAge: 7 * 24 * 60 * 60 * 1000, //cookie expiry 7days here: to match rT of 7days
   });
 
   // Send accessToken containing username and roles
@@ -131,6 +137,7 @@ const refresh = (req, res) => {
 // @access Public - just to clear cookie if exists
 const logout = (req, res) => {
   const cookies = req.cookies;
+  //if no cookie is there
   if (!cookies?.jwt) return res.sendStatus(204); //No content
   res.clearCookie("jwt", { httpOnly: true, sameSite: "None", secure: true });
   res.json({ message: "Cookie cleared" });
