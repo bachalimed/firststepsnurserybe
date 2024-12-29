@@ -66,6 +66,7 @@ const totalExpensesAmount = monthlyExpenses.reduce(
   0
 );
 
+
 //console.log(totalExpensesAmount,'totalExpensesAmount')
     return {
       totalExpensesAmount,
