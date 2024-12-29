@@ -1,4 +1,5 @@
 const Expense = require("../models/Expense");
+const ExpenseCategory = require("../models/ExpenseCategory");
 const Payee = require("../models/Payee");
 
 //const Employee = require('../models/Employee')//we might need the employee module in this controller
@@ -6,55 +7,75 @@ const asyncHandler = require("express-async-handler"); //instead of using try ca
 
 const mongoose = require("mongoose");
 
-
-
 //helper for finances stats
 const getExpensesStats = async (selectedYear) => {
   try {
     const result = await Expense.aggregate([
       {
-        $match: { expenseYear: selectedYear } // Filter invoices by the selected year
+        $match: { expenseYear: selectedYear }, // Filter expenses by the selected year
+      },
+      {
+        $lookup: {
+          from: "expenseCategories", // Collection name for expense categories
+          localField: "expenseCategory", // Field in Expense collection
+          foreignField: "_id", // Field in ExpenseCategory collection
+          as: "categoryDetails", // Output array field
+        },
+      },
+      {
+        $unwind: "$categoryDetails", // Deconstruct the array to get a single object
       },
       {
         $addFields: {
-          expenseAmountAsNumber: { $toDouble: "$expenseAmount" } // Convert string to number
-        }
+          expenseAmountAsNumber: { $toDouble: "$expenseAmount" }, // Convert string to number
+        },
       },
       {
         $group: {
-          _id: null, // No grouping required
-          totalExpensesAmount: { $sum: "$expenseAmountAsNumber" } // Sum converted values
-        }
-      }
+          _id: { month: "$expenseMonth", category: "$categoryDetails.expenseCategoryLabel" }, // Group by month and category label
+          totalCategoryAmount: { $sum: "$expenseAmountAsNumber" }, // Sum amounts for each category
+        },
+      },
+      {
+        $group: {
+          _id: "$_id.month", // Group by month
+          categories: {
+            $push: {
+              category: "$_id.category",
+              categoryTotal: "$totalCategoryAmount",
+            },
+          },
+          expenseMonthlyTotal: { $sum: "$totalCategoryAmount" }, // Calculate total per month
+        },
+      },
+      {
+        $sort: { _id: 1 }, // Sort by month (ascending)
+      },
     ]);
+//console.log(result[0],'result')
+// Convert results to desired format
+const monthlyExpenses = result.map((item) => ({
+  expenseMonth: item._id, // Month
+  expensesMonthlyTotal: item.expenseMonthlyTotal, // Total for the month
+  categories: item.categories, // Categories with totals for the month
+}));
 
-    // If no results, return 0
-    const totalAmount = result.length > 0 ? result[0].totalExpensesAmount : 0;
-    return totalAmount;
+// Calculate total expenses for the year
+const totalExpensesAmount = monthlyExpenses.reduce(
+  (sum, month) => sum + month.expenseMonthlyTotal,
+  0
+);
+
+//console.log(totalExpensesAmount,'totalExpensesAmount')
+    return {
+      totalExpensesAmount,
+      monthlyExpenses,
+    };
   } catch (error) {
-    console.error("Error computing invoices sum:", error);
+    console.error("Error computing expenses stats:", error);
     throw error;
   }
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 // @desc Get all expense
@@ -70,8 +91,7 @@ const getAllExpenses = asyncHandler(async (req, res) => {
 
     // Find a single expense by its ID
     const expense = await Expense.findOne({ _id: id })
-     
-      .lean();
+    .lean();
 
     if (!expense) {
       return res.status(400).json({ message: "Expense not found" });
@@ -81,31 +101,31 @@ const getAllExpenses = asyncHandler(async (req, res) => {
     return res.json([expense]); //we need it inside  an array to avoid response data error
   }
 
-  if (selectedYear !== "1000" && criteria==="expensesTotalStats") {
-
+  if (selectedYear !== "1000" && criteria === "expensesTotalStats") {
     try {
-      const totalExpensesAmount = await getExpensesStats(selectedYear);
-  
+      const {totalExpensesAmount,
+        monthlyExpenses}= await getExpensesStats(selectedYear);
+// console.log(monthlyExpenses,'monthlyExpenses')
       return res.status(200).json({
-        message: "expenses and total amount retrieved successfully",
         selectedYear,
-        totalExpensesAmount
+        totalExpensesAmount,
+        monthlyExpenses,
       });
     } catch (error) {
-     return  res.status(500).json({
+      return res.status(500).json({
         message: "Error retrieving expenses",
-        error: error.message
+        error: error.message,
       });
     }
-  };
+  }
   if (selectedYear !== "1000") {
     // Find a single expense by its ID
     const expenses = await Expense.find()
-    .populate({path:'expensePayee',select:'payeeLabel'})
-    .populate({path:'expenseService', select:'serviceType'})
-    .populate({path:'expenseCategory', select:'expenseCategoryLabel'})
-    .lean();
-   
+      .populate({ path: "expensePayee", select: "payeeLabel" })
+      .populate({ path: "expenseService", select: "serviceType" })
+      .populate({ path: "expenseCategory", select: "expenseCategoryLabel" })
+      .lean();
+
     if (!expenses) {
       return res.status(400).json({ message: "Expenses not found" });
     }
@@ -114,7 +134,6 @@ const getAllExpenses = asyncHandler(async (req, res) => {
     return res.json(expenses); //we need it inside  an array to avoid response data error
   }
 
-  
   // If no ID is provided, fetch all expenses
 });
 
@@ -140,54 +159,48 @@ const createNewExpense = asyncHandler(async (req, res) => {
     expenseOperator,
     expenseCreator,
   } = req?.body; //this will come from front end we put all the fields o fthe collection here
-//console.log(expenseItems,'1')
+  //console.log(expenseItems,'1')
   //Confirm data is present in the request with all required fields
 
   if (
     !expenseYear ||
     !expenseMonth ||
     !expenseAmount ||
-    !expenseCategory||
-    !expenseItems||
-    expenseItems?.length<1 ||
+    !expenseCategory ||
+    !expenseItems ||
+    expenseItems?.length < 1 ||
     !expensePayee ||
     !expenseService ||
-    !expenseCreator||
-    !expenseDate||
-    !expenseMethod||
+    !expenseCreator ||
+    !expenseDate ||
+    !expenseMethod ||
     !expenseCreator
   ) {
-    return res
-      .status(400)
-      .json({ message: "Required data is missing" }); //400 : bad request
+    return res.status(400).json({ message: "Required data is missing" }); //400 : bad request
   }
 
- 
-
   const expenseObject = {
-    expenseYear:expenseYear,
-    expenseMonth:expenseMonth,
-    expenseAmount:expenseAmount,
-    expenseNote:expenseNote,
-    expenseCategory:expenseCategory,
-    expenseItems:expenseItems,
-    expensePayee:expensePayee,
-    expenseService:expenseService,
-    expenseDate:expenseDate,
-    expensePaymentDate:expensePaymentDate,
-    expenseMethod :expenseMethod,
-    expenseOperator :expenseOperator,
-    expenseCreator:expenseCreator,
+    expenseYear: expenseYear,
+    expenseMonth: expenseMonth,
+    expenseAmount: expenseAmount,
+    expenseNote: expenseNote,
+    expenseCategory: expenseCategory,
+    expenseItems: expenseItems,
+    expensePayee: expensePayee,
+    expenseService: expenseService,
+    expenseDate: expenseDate,
+    expensePaymentDate: expensePaymentDate,
+    expenseMethod: expenseMethod,
+    expenseOperator: expenseOperator,
+    expenseCreator: expenseCreator,
   }; //construct new expense to be stored
 
   // Create and store new expense
   const expense = await Expense.create(expenseObject);
   if (!expense) {
-    return res
-      .status(400)
-      .json({ message: "Invalid data received" });
+    return res.status(400).json({ message: "Invalid data received" });
   }
-  // If created 
+  // If created
   //console.log(expense?.expenseItems,'2')
   return res.status(201).json({
     message: `Expense created successfully `,
@@ -203,70 +216,67 @@ const updateExpense = asyncHandler(async (req, res) => {
   const {
     id,
     expenseYear,
-        expenseMonth,
-        expenseAmount,
-        expenseNote,
-        expenseCategory,
-        expenseItems,
-        expensePayee,
-        expenseDate,
-        expensePaymentDate,
-        expenseService,
-        expenseMethod,
-        expenseOperator,
+    expenseMonth,
+    expenseAmount,
+    expenseNote,
+    expenseCategory,
+    expenseItems,
+    expensePayee,
+    expenseDate,
+    expensePaymentDate,
+    expenseService,
+    expenseMethod,
+    expenseOperator,
   } = req?.body;
 
   // Confirm data
-  if (!id||
+  if (
+    !id ||
     !expenseYear ||
     !expenseMonth ||
     !expenseAmount ||
-    !expenseCategory||
-    !expenseItems||
-    expenseItems?.length<1 ||
+    !expenseCategory ||
+    !expenseItems ||
+    expenseItems?.length < 1 ||
     !expensePayee ||
     !expenseService ||
-   
-    !expenseDate||
+    !expenseDate ||
     !expenseMethod
-    
-  ){
-    return res.status(400).json({ message: "Required expense data is missing" });
+  ) {
+    return res
+      .status(400)
+      .json({ message: "Required expense data is missing" });
   }
-  
+
   // Does the expense exist to update?
   const expenseToUpdate = await Expense.findById(id).exec(); //we did not lean becausse we need the save method attached to the response
 
   if (!expenseToUpdate) {
     return res.status(400).json({ message: "Expense to update not found" });
   }
- 
-  expenseToUpdate.expenseYear=expenseYear
-  expenseToUpdate.expenseMonth=expenseMonth
-  expenseToUpdate.expenseAmount=expenseAmount
-  expenseToUpdate.expenseCategory=expenseCategory
-  expenseToUpdate.expenseItems=expenseItems
-  expenseToUpdate.expensePayee=expensePayee
-  expenseToUpdate.expenseService=expenseService
-  expenseToUpdate.expenseDate=expenseDate
-  expenseToUpdate.expenseMethod=expenseMethod
-  expenseToUpdate.expenseNote=expenseNote
-  expenseToUpdate.expensePaymentDate=expensePaymentDate
+
+  expenseToUpdate.expenseYear = expenseYear;
+  expenseToUpdate.expenseMonth = expenseMonth;
+  expenseToUpdate.expenseAmount = expenseAmount;
+  expenseToUpdate.expenseCategory = expenseCategory;
+  expenseToUpdate.expenseItems = expenseItems;
+  expenseToUpdate.expensePayee = expensePayee;
+  expenseToUpdate.expenseService = expenseService;
+  expenseToUpdate.expenseDate = expenseDate;
+  expenseToUpdate.expenseMethod = expenseMethod;
+  expenseToUpdate.expenseNote = expenseNote;
+  expenseToUpdate.expensePaymentDate = expensePaymentDate;
   //expenseToUpdate.expenseCategories=expenseCategories
-  expenseToUpdate.expenseOperator=expenseOperator
+  expenseToUpdate.expenseOperator = expenseOperator;
 
-
-    //console.log(expenseToUpdate,'expenseToUpdate')
-    const updatedExpense = await expenseToUpdate.save(); //save old expense
-    if (!updatedExpense) {
-      return res.status(400).json({ message: "invalid data received" });
-    }
-      return res.status(201).json({
-        message: `Expense updated successfully`,
-      })
-
- 
-
+  //console.log(expenseToUpdate,'expenseToUpdate')
+  const updatedExpense = await expenseToUpdate.save(); //save old expense
+  if (!updatedExpense) {
+    return res.status(400).json({ message: "invalid data received" });
+  }
+  return res.status(201).json({
+    message: `Expense updated successfully`,
+  });
 });
 
 //--------------------------------------------------------------------------------------1
@@ -294,7 +304,7 @@ const deleteExpense = asyncHandler(async (req, res) => {
 
   const reply = `Deleted ${result?.deletedCount} Expense`;
 
-  return res.json({message:reply});
+  return res.json({ message: reply });
 });
 
 module.exports = {

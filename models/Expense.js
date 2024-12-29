@@ -5,22 +5,22 @@ function capitalizeFirstLetter(str) {
   return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
-const expenseItemsSchema = new mongoose.Schema(
-  {
-    expenseCategory: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "ExpenseCategory",
-      required: true,
-    },
-    expenseCategoryItems: [{
-      type: String,
-      index: true,
-      required: true,
-      set: capitalizeFirstLetter,
-    }],
-  },
-  { _id: false }
-);
+// const expenseItemsSchema = new mongoose.Schema(
+//   {
+//     expenseCategory: {
+//       type: mongoose.Schema.Types.ObjectId,
+//       ref: "ExpenseCategory",
+//       required: true,
+//     },
+//     expenseCategoryItems: [{
+//       type: String,
+//       index: true,
+//       required: true,
+//       set: capitalizeFirstLetter,
+//     }],
+//   },
+//   { _id: false }
+// );
 
 const expenseSchema = new mongoose.Schema(
   {

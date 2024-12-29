@@ -6,7 +6,7 @@ const asyncHandler = require("express-async-handler"); //instead of using try ca
 
 const mongoose = require("mongoose");
 
-//helper function to provide sue date for invoices
+//helper function to provide due date for invoices
 const calculateDueDate = (enrolmentMonth, enrolmentYear) => {
   // Define the mapping for month to part of the academic year
   const firstPartMonths = ["September", "October", "November", "December"];
@@ -36,7 +36,6 @@ const calculateDueDate = (enrolmentMonth, enrolmentYear) => {
   return `${yearToUse}-${formattedMonth}-01`;
 };
 
-//helper for finances stats
 const getInvoicesStats = async (selectedYear) => {
   try {
     const result = await Invoice.aggregate([
@@ -50,20 +49,62 @@ const getInvoicesStats = async (selectedYear) => {
       },
       {
         $group: {
-          _id: null, // No grouping required
-          totalInvoicedAmount: { $sum: "$invoiceAmountAsNumber" }, // Sum converted values
+          _id: "$invoiceMonth", // Group by invoiceMonth
+          monthlyInvoices: { $sum: "$invoiceAmountAsNumber" }, // Sum converted values for each month
         },
+      },
+      {
+        $sort: { _id: 1 }, // Sort by month in ascending order
       },
     ]);
 
-    // If no results, return 0
-    const totalAmount = result.length > 0 ? result[0].totalInvoicedAmount : 0;
-    return totalAmount;
+    // Calculate total invoiced amount
+    const totalInvoicesAmount = result.reduce(
+      (sum, { monthlyInvoices }) => sum + monthlyInvoices,
+      0
+    );
+
+    // Map results to desired format
+    const monthlyInvoices = result.map(({ _id, monthlyInvoices }) => ({
+      invoiceMonth: _id,
+      invoicesMonthlyTotal: monthlyInvoices,
+    }));
+
+    return { totalInvoicesAmount, monthlyInvoices };
   } catch (error) {
-    console.error("Error computing invoices sum:", error);
+    console.error("Error computing invoices stats:", error);
     throw error;
   }
 };
+
+// //helper for finances stats
+// const getInvoicesStats = async (selectedYear) => {
+//   try {
+//     const result = await Invoice.aggregate([
+//       {
+//         $match: { invoiceYear: selectedYear }, // Filter invoices by the selected year
+//       },
+//       {
+//         $addFields: {
+//           invoiceAmountAsNumber: { $toDouble: "$invoiceAmount" }, // Convert string to number
+//         },
+//       },
+//       {
+//         $group: {
+//           _id: null, // No grouping required
+//           totalInvoicedAmount: { $sum: "$invoiceAmountAsNumber" }, // Sum converted values
+//         },
+//       },
+//     ]);
+
+//     // If no results, return 0
+//     const totalAmount = result.length > 0 ? result[0].totalInvoicedAmount : 0;
+//     return totalAmount;
+//   } catch (error) {
+//     console.error("Error computing invoices sum:", error);
+//     throw error;
+//   }
+// };
 
 // @desc Get all invoice
 // @route GET 'desk/invoice
@@ -104,12 +145,14 @@ const getAllInvoices = asyncHandler(async (req, res) => {
   }
   if (selectedYear !== "1000" && criteria === "invoicesTotalStats") {
     try {
-      const totalInvoicedAmount = await getInvoicesStats(selectedYear);
-
+      const { totalInvoicesAmount, monthlyInvoices } = await getInvoicesStats(
+        selectedYear
+      );
+console.log(monthlyInvoices)
       return res.status(200).json({
-        message: "Invoices and total amount retrieved successfully",
         selectedYear,
-        totalInvoicedAmount,
+        totalInvoicesAmount,
+        monthlyInvoices,
       });
     } catch (error) {
       return res.status(500).json({

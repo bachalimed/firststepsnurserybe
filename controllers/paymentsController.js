@@ -12,29 +12,67 @@ const getPaymentsStats = async (selectedYear) => {
   try {
     const result = await Payment.aggregate([
       {
-        $match: { paymentYear: selectedYear }, // Filter payments by the selected year
+        $match: {
+          paymentYear: selectedYear, // Filter payments by the selected year
+        },
       },
       {
         $addFields: {
-          paymentAmountAsNumber: { $toDouble: "$paymentAmount" }, // Convert string to number
+          paymentAmountAsNumber: { $toDouble: "$paymentAmount" }, // Convert paymentAmount to number
+          paymentMonth: {
+            $month: "$paymentDate", // Extract the month from paymentDate
+          },
         },
       },
       {
         $group: {
-          _id: null, // No grouping required
-          totalPaymentAmount: { $sum: "$paymentAmountAsNumber" }, // Sum converted values
+          _id: "$paymentMonth", // Group by extracted month
+          monthlyTotal: { $sum: "$paymentAmountAsNumber" }, // Sum payment amounts per month
         },
+      },
+      {
+        $sort: { _id: 1 }, // Sort by month number (ascending)
       },
     ]);
 
-    // If no results, return 0
-    const totalAmount = result.length > 0 ? result[0].totalPaymentAmount : 0;
-    return totalAmount;
+    // Convert month numbers to month names
+    const monthNames = [
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December",
+    ];
+
+    // Calculate the total amount and format results with month names
+    const totalAmount = result.reduce(
+      (sum, month) => sum + month.monthlyTotal,
+      0
+    );
+
+    const monthlyPayments = result.map((item) => ({
+      paymentMonth: monthNames[item._id - 1], // Convert month number to name
+      paymentsMonthlyTotal: item.monthlyTotal,
+    }));
+
+    return {
+      totalPaymentsAmount: totalAmount,
+      monthlyPayments,
+    };
   } catch (error) {
-    console.error("Error computing payments sum:", error);
+    console.error("Error computing payments stats:", error);
     throw error;
   }
 };
+
+
 
 // @desc Get all payment
 // @route GET 'desk/payment
@@ -65,9 +103,9 @@ const getAllPayments = asyncHandler(async (req, res) => {
   ) {
     // Find a single payment by its ID
     try {
-      const totalPayments = await getPaymentsStats(selectedYear);
-      console.log(totalPayments, "totalPayments");
-      return res.status(200).json({ totalPayments });
+      const {totalPaymentsAmount,monthlyPayments} = await getPaymentsStats(selectedYear);
+      
+      return res.status(200).json({ totalPaymentsAmount, monthlyPayments});
     } catch (error) {
       return res
         .status(500)
