@@ -177,7 +177,7 @@ const updateUser = asyncHandler(async (req, res) => {
     userFullName,
     username,
     password,
-    accessToken,
+    refreshToken,
     userAllowedActions,
     familyId,
     employeeId,
@@ -275,7 +275,7 @@ const updateUser = asyncHandler(async (req, res) => {
   user.username = username;
   user.userRoles = userRoles;
   user.userAllowedActions = userAllowedActions;
-  user.accessToken = accessToken;
+  user.refreshToken = refreshToken;
 
   user.familyId = familyId?.length === 24 ? familyId : undefined;
   user.employeeId = employeeId?.length === 24 ? employeeId : undefined;

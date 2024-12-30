@@ -11,7 +11,7 @@ const corsOptions = require('./config/corsOptions')
 const connectDB = require('./config/dbConn')
 const mongoose = require('mongoose')
 const PORT = process.env.PORT ||3500
-
+const verifyJWT = require("./middleware/verifyJWT");
 
 console.log(process.env.NODE_ENV)
 
@@ -27,7 +27,14 @@ app.use(cookieParser())
 
 app.use('/', express.static(path.join(__dirname, 'public')))
 app.use('/', require('./routes/root'))
+
+//access token before verify because it issues accessa dn cookies with refresh token
 app.use('/auth', require('./routes/authRoutes'))
+// //access token before verify 
+// app.use('/refresh', require('./routes/refreshRoutes'))
+//all routes after this need access token present to  run
+app.use(verifyJWT);
+
 //app.use('/admin/usersManagement/', require('./routes/userRoutes'))//this was hidden for testing, was visible and working
 app.use('/admin/usersManagement/photos/', require('./routes/photoStorageRoutes'))//will try to access user controller toupdate the photo
 app.use('/admin/usersManagement/users/', require('./routes/userRoutes'))//this will decide which request is used from front end

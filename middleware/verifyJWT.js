@@ -1,5 +1,5 @@
 //this will verify the cookies for us for every request received, needs to be applied to all protected routes(that need authetication)
-
+require("dotenv").config();
 const jwt = require('jsonwebtoken')
 
 const verifyJWT = (req, res, next) => {
