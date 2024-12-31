@@ -62,7 +62,7 @@ const monthlyExpenses = result.map((item) => ({
 
 // Calculate total expenses for the year
 const totalExpensesAmount = monthlyExpenses.reduce(
-  (sum, month) => sum + month.expenseMonthlyTotal,
+  (sum, month) => sum + month.expensesMonthlyTotal,
   0
 );
 

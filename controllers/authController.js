@@ -94,7 +94,7 @@ const login = async (req, res) => {
   if (cookies?.jwt) {
     //case of usre loged and did not use access token,we need toclear the all refereshtoken (maybe stolen rt)
     const refreshToken = cookies.jwt;
-    const foundToken = await User.findOne({ refreshT }).exec();
+    const foundToken = await User.findOne({ refreshToken }).exec();
 
     //detected reuser of rt
     if (!foundToken) {
