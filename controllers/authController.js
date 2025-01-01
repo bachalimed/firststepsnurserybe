@@ -45,6 +45,8 @@ const login = async (req, res) => {
   // normal login path starts here
 
   const cookies = req.cookies;
+
+ // console.log(`cookie available at login: ${JSON.stringify(cookies)}`);
   if (!username || !password) {
     return res.status(400).json({ message: "Required data is missing" });
   }
@@ -92,11 +94,11 @@ const login = async (req, res) => {
 
   //remove old cookie
   if (cookies?.jwt) {
-    //case of usre loged and did not use access token,we need toclear the all refereshtoken (maybe stolen rt)
+    //case of usre loged and did not use access token,we need to clear  all refereshtoken (maybe stolen rt)
     const refreshToken = cookies.jwt;
     //const foundToken = await User.findOne({ refreshToken }).exec();//////////////////////////////////////////////////
     const foundToken = await User.findOne({ refreshToken: { $in: [refreshToken] } }).exec();
-    //detected reuser of rt
+    //detected reuse of rt
     if (!foundToken) {
       console.log("attempt reuse of rt at login");
       //clear all previous rt
@@ -119,6 +121,7 @@ const login = async (req, res) => {
 
   // Send accessToken containing username and roles
   res.json({ accessToken });
+  
 };
 
 // @desc Refresh
@@ -126,7 +129,7 @@ const login = async (req, res) => {
 // @access Public - because access token has expired
 const refresh = async (req, res) => {
   const cookies = req.cookies;
-
+console.log(cookies,'cookies at refresh')
   if (!cookies?.jwt)
     return res.status(401).json({ message: "Unauthorized, no cookie found" });
 
@@ -182,6 +185,7 @@ const foundUser = await User.findOne({ refreshToken: { $in: [refreshToken] } }).
 
       // if (!foundUser) return res.status(401).json({ message: "Unauthorized" });
 
+      //refresh token still valid
       const accessToken = jwt.sign(
         {
           UserInfo: {
@@ -233,7 +237,7 @@ const logout = async (req, res) => {
     res.clearCookie("jwt", { httpOnly: true, sameSite: "None", secure: true });
     return res.sendStatus(204);
   }
-console.log(foundUser,'foundUser')
+//console.log(foundUser,'foundUser')
   // Delete refreshToken in db
   foundUser.refreshToken = foundUser.refreshToken.filter(
     (rt) => rt !== refreshToken
