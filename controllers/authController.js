@@ -75,7 +75,7 @@ const login = async (req, res) => {
       },
     },
     process.env.ACCESS_TOKEN_SECRET,
-    { expiresIn: "59m" } //access token expires in 15 minutes
+    { expiresIn: "15m" } //access token expires in 15 minutes
   );
   //ceate refresh token
   const newRefreshToken = jwt.sign(
@@ -94,8 +94,8 @@ const login = async (req, res) => {
   if (cookies?.jwt) {
     //case of usre loged and did not use access token,we need toclear the all refereshtoken (maybe stolen rt)
     const refreshToken = cookies.jwt;
-    const foundToken = await User.findOne({ refreshToken }).exec();
-
+    //const foundToken = await User.findOne({ refreshToken }).exec();//////////////////////////////////////////////////
+    const foundToken = await User.findOne({ refreshToken: { $in: [refreshToken] } }).exec();
     //detected reuser of rt
     if (!foundToken) {
       console.log("attempt reuse of rt at login");
@@ -134,7 +134,9 @@ const refresh = async (req, res) => {
   //delete the cookie after getting the jwt tooken from it
   res.clearCookie("jwt", { httpOnly: true, sameSite: "None", secure: true });
   //check the token saved with the user
-  const foundUser = await User.findOne({ refreshToken }).exec();
+//  const foundUser = await User.findOne({ refreshToken }).exec();//////////////////////////////////////
+const foundUser = await User.findOne({ refreshToken: { $in: [refreshToken] } }).exec();
+
 
   //detected refesh token reuse (using a valid old refersh token), delete all referesh tokens of that account
   if (!foundUser) {
@@ -190,7 +192,7 @@ const refresh = async (req, res) => {
           },
         },
         process.env.ACCESS_TOKEN_SECRET,
-        { expiresIn: "59m" }
+        { expiresIn: "15m" }
       );
 
       //ceate refresh token
@@ -225,21 +227,23 @@ const logout = async (req, res) => {
   if (!cookies?.jwt) return res.sendStatus(204); //No content
   const refreshToken = cookies.jwt;
   // Is refreshToken in db?
-  const foundUser = await User.findOne({ refreshToken }).exec();
+  //const foundUser = await User.findOne({ refreshToken }).exec();//////////////////
+  const foundUser = await User.findOne({ refreshToken: { $in: [refreshToken] } }).exec();
   if (!foundUser) {
     res.clearCookie("jwt", { httpOnly: true, sameSite: "None", secure: true });
     return res.sendStatus(204);
   }
-
+console.log(foundUser,'foundUser')
   // Delete refreshToken in db
   foundUser.refreshToken = foundUser.refreshToken.filter(
     (rt) => rt !== refreshToken
   );
   const result = await foundUser.save();
-  console.log(result);
+  //console.log(result);
 
   res.clearCookie("jwt", { httpOnly: true, sameSite: "None", secure: true });
-  res.sendStatus(204);
+  res.sendStatus(204)
+  console.log('logged out now')
 };
 
 module.exports = {
