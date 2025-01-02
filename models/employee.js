@@ -40,7 +40,6 @@ const employeeWorkHistorySchema = new mongoose.Schema(
   { _id: false }
 );
 
-
 const employeeSchema = new mongoose.Schema({
   	employeeCurrentEmployment: {
 		position: { type: String, required: true, set: capitalizeFirstLetter, },
