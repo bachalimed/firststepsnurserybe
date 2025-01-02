@@ -1,7 +1,6 @@
 const ExpenseCategory = require("../models/ExpenseCategory");
 const Service = require("../models/Service");
 
-//const Employee = require('../models/Employee')//we might need the employee module in this controller
 const asyncHandler = require("express-async-handler"); //instead of using try catch
 
 const mongoose = require("mongoose");

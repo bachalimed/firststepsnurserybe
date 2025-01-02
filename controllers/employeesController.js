@@ -1,8 +1,6 @@
 const Employee = require("../models/Employee");
 const User = require("../models/User"); //we might need the user controller with this model
 
-// const studentController = require ('../controllers/studentsController')
-// const Student = require ('../models/Student')
 const asyncHandler = require("express-async-handler"); //instead of using try catch
 const bcrypt = require("bcrypt"); //to hash passwords before saving them
 const mongoose = require("mongoose");

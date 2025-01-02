@@ -4,7 +4,6 @@ const upload = require('./../config/multerConfig')
 
 
 const employeeDocumentsController = require('../controllers/employeeDocumentsController')
-const EmployeeDocument = require('../models/EmployeeDocument')
 
 
 
