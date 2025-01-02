@@ -5,8 +5,7 @@ const asyncHandler = require("express-async-handler"); //instead of using try ca
 const bcrypt = require("bcrypt"); //to hash passwords before saving them
 const mongoose = require("mongoose");
 
-console.log("Current directory:", __dirname);
-console.log("Looking for:", require.resolve("../models/Employee"));
+
 // @desc Get all employees, for the given year, if year is 1000 retreive all employees
 // @route GET /hr/employees
 // @access Private // later we will establish authorisations
