@@ -1,7 +1,5 @@
 // const User = require('../models/User')
 const Enrolment = require("../models/Enrolment"); //we might need the parent module in this controller
-const Student = require("../models/Student");
-const Service = require("../models/Service"); //we might need the employee module in this controller
 const asyncHandler = require("express-async-handler"); //instead of using try catch
 
 const mongoose = require("mongoose");

@@ -2,9 +2,7 @@
 const StudentDocument = require('../models/StudentDocument')
 const StudentDocumentsList = require('../models/StudentDocumentsList')
 const Family = require('../models/Family')
-const Student = require('../models/Student')
 
-const path = require('path');
 const fs = require('fs');
 const mime = require('mime-types');
 

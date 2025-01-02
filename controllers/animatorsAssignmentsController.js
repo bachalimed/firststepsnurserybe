@@ -1,7 +1,6 @@
- const User = require('../models/User')
+
 const AnimatorsAssignment = require("../models/AnimatorsAssignment");
- const Employee = require("../models/Employee");
- const AttendedSchool = require("../models/AttendedSchool");
+
 
 const asyncHandler = require("express-async-handler"); //instead of using try catch
 

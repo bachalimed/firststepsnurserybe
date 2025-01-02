@@ -1,7 +1,6 @@
 // const User = require('../models/User')
 const Section = require("../models/Section");
 const Student = require("../models/Student");
-const AttendedSchool = require("../models/AttendedSchool");
 
 //const Employee = require('../models/Employee')//we might need the employee module in this controller
 const asyncHandler = require("express-async-handler"); //instead of using try catch
