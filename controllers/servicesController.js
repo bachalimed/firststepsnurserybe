@@ -12,7 +12,7 @@ const getAllServices = asyncHandler(async (req, res) => {
   //console.log('teh request', req.query)
  
  
-  //console.log(selectedYear, "sleected year inback")
+  
   //will retrive all teh services
   if (selectedYear === '1000'){
       const services = await Service.find().lean()

@@ -182,7 +182,7 @@ const getAllStudents = asyncHandler(async (req, res) => {
   //console.log('teh request', req.query)
   const { selectedYear, criteria, id } = req.query; //maybe replace the conditionals with the current year that we get  from middleware
 
-  //console.log(selectedYear, "sleected year inback")
+ 
   //will retrive all teh students
 
   //  we check if the criteria : 'No Family ' for any year to add student to family

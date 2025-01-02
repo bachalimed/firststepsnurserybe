@@ -1,13 +1,12 @@
-const User = require("../models/User"); 
-const Employee = require("../models/Employee.js")
+const User = require("../models/User");
+const Employee = require("../models/Employee");
 
 const asyncHandler = require("express-async-handler"); //instead of using try catch
 const bcrypt = require("bcrypt"); //to hash passwords before saving them
 const mongoose = require("mongoose");
 
-
-console.log('Current directory:', __dirname);
-console.log('Looking for:', require.resolve('../models/Employee'));
+console.log("Current directory:", __dirname);
+console.log("Looking for:", require.resolve("../models/Employee"));
 // @desc Get all employees, for the given year, if year is 1000 retreive all employees
 // @route GET /hr/employees
 // @access Private // later we will establish authorisations
@@ -50,7 +49,7 @@ const formatUsers = (users) => {
 const getAllEmployees = asyncHandler(async (req, res) => {
   const { selectedYear, criteria, id } = req.query; //maybe replace the conditionals with the current year that we get  from middleware
   if (selectedYear) {
-    console.log(selectedYear, "sleected year inback");
+    //console.log(selectedYear, "sleected year inback");
     //will retrive all teh students
     if (selectedYear === "1000") {
       // Aggregation pipeline to retrieve users with matching employeeYears.academicYear
@@ -223,7 +222,7 @@ const getAllEmployees = asyncHandler(async (req, res) => {
   if (id) {
     // Aggregation pipeline to retrieve a specific user by employeeId and matching selected academic year
     console.log(id);
-    const user = await User.findOne({ _id: id }).populate("employeeId").lean();//chnaged to user instead of employee
+    const user = await User.findOne({ _id: id }).populate("employeeId").lean(); //chnaged to user instead of employee
 
     if (!user) {
       return res
@@ -231,16 +230,6 @@ const getAllEmployees = asyncHandler(async (req, res) => {
         .json({ message: "No employee found with the provided id." });
     }
     return res.status(200).json(user);
-
-
-
-
-
-
-
-
-
-
   }
 });
 
@@ -377,9 +366,7 @@ const createNewEmployee = asyncHandler(async (req, res) => {
     } else {
       //delete the user already craeted to be done
 
-      return res
-        .status(400)
-        .json({ message: "Invalid data received" });
+      return res.status(400).json({ message: "Invalid data received" });
     }
   } else {
     res.status(400).json({ message: "Invalid data received" });
@@ -417,9 +404,6 @@ const getEmployeeDetails = asyncHandler(async (req, res) => {
 module.exports = {
   getEmployeeDetails,
 };
-
-
-
 
 // @desc Update a employee, we will retrieve all information from user and parent and update and save in both collections
 // @route PATCH /hr/employees
@@ -565,7 +549,7 @@ const deleteEmployee = asyncHandler(async (req, res) => {
   if (user.isParent) {
     const result1 = await employee.deleteOne();
     const reply = `Deleted ${result1?.deletedCount} Employee`;
-    res.json({message:reply});
+    res.json({ message: reply });
   } else {
     const result1 = await employee.deleteOne();
     const result2 = await user.deleteOne();
@@ -573,7 +557,7 @@ const deleteEmployee = asyncHandler(async (req, res) => {
 
     const reply = `Deleted ${result2?.deletedCount} user and  ${result1?.deletedCount} employee `;
 
-    res.json({message:reply});
+    res.json({ message: reply });
   }
 });
 module.exports = {
