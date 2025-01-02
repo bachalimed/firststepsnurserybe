@@ -36,7 +36,7 @@ app.use('/auth', require('./routes/authRoutes'))
 app.use(verifyJWT);
 
 //app.use('/admin/usersManagement/', require('./routes/userRoutes'))//this was hidden for testing, was visible and working
-app.use('/admin/usersManagement/photos/', require('./routes/photoStorageRoutes'))//will try to access user controller toupdate the photo
+// app.use('/admin/usersManagement/photos/', require('./routes/photoStorageRoutes'))//will try to access user controller toupdate the photo
 app.use('/admin/usersManagement/users/', require('./routes/userRoutes'))//this will decide which request is used from front end
 app.use('/admin/usersManagement/:id/', require('./routes/userRoutes'))//this will decide which request is used from front end
 app.use('/admin/usersManagement/newUser/', require('./routes/userRoutes'))//check if the path photos is the correct one in storage ROutes
