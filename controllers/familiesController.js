@@ -1,8 +1,5 @@
 const Family = require("../models/Family");
-const User = require("../models/User"); //we might need the user controller with this model
-const Student = require("../models/Student");
-// const studentController = require ('../controllers/studentsController')
-// const Student = require ('../models/Student')
+const User = require("../models/User"); 
 const asyncHandler = require("express-async-handler"); //instead of using try catch
 const bcrypt = require("bcrypt"); //to hash passwords before saving them
 const mongoose = require("mongoose");
