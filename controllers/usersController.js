@@ -275,13 +275,15 @@ const updateUser = asyncHandler(async (req, res) => {
   user.username = username;
   user.userRoles = userRoles;
   user.userAllowedActions = userAllowedActions;
-  user.refreshToken = refreshToken;
+  
 
   user.familyId = familyId?.length === 24 ? familyId : undefined;
   user.employeeId = employeeId?.length === 24 ? employeeId : undefined;
   user.userDob = userDob;
   user.userSex = userSex;
   user.userIsActive = userIsActive;
+  //will empty refreshtoken if user is set inactive to prevent login
+  userIsActive ?  user.refreshToken = refreshToken: user.refreshToken = []
 
   // user.userPhoto = userPhoto
   // user.userPhotoLabel = userPhotoLabel
@@ -296,6 +298,13 @@ const updateUser = asyncHandler(async (req, res) => {
     user.password = await bcrypt.hash(password, 10); // salt rounds
 
   }
+
+ 
+  
+
+
+
+
   const updatedUser = await user.save(); //save method received when we did not include lean
   console.log(updatedUser);
 

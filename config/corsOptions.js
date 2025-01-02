@@ -10,7 +10,7 @@ const corsOptions = {
             callback(new Error('Not allowed by CORS'))
         }
     },
-    credentials: true,
+    credentials: true,//allows cookies to be sent
     optionsSuccessStatus: 200
 }
 
