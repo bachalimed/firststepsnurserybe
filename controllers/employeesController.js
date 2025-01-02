@@ -1,4 +1,4 @@
-const Employee = require("../models/Employee");
+const Employee = require("../models/Employee")
 const User = require("../models/User"); //we might need the user controller with this model
 
 const asyncHandler = require("express-async-handler"); //instead of using try catch

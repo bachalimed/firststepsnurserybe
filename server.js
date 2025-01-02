@@ -30,18 +30,13 @@ app.use('/', require('./routes/root'))
 
 //access token before verify because it issues accessa dn cookies with refresh token
 app.use('/auth', require('./routes/authRoutes'))
-// //access token before verify 
-// app.use('/refresh', require('./routes/refreshRoutes'))
+
 //all routes after this need access token present to  run
 app.use(verifyJWT);
 
-//app.use('/admin/usersManagement/', require('./routes/userRoutes'))//this was hidden for testing, was visible and working
-// app.use('/admin/usersManagement/photos/', require('./routes/photoStorageRoutes'))//will try to access user controller toupdate the photo
 app.use('/admin/usersManagement/users/', require('./routes/userRoutes'))//this will decide which request is used from front end
 app.use('/admin/usersManagement/:id/', require('./routes/userRoutes'))//this will decide which request is used from front end
 app.use('/admin/usersManagement/newUser/', require('./routes/userRoutes'))//check if the path photos is the correct one in storage ROutes
-//app.use('/notes', require('./routes/noteRoutes'))
-//app.use('/students/studentsParent/', require('./routes/parentRoutes'))//no need to specify each sub url to get the requests working
 app.use('/students/studentsParents/families/:id', require('./routes/familyRoutes'))
 app.use('/students/studentsParents/families/', require('./routes/familyRoutes'))
 app.use('/students/studentsParents/students/', require('./routes/studentRoutes'))
@@ -50,23 +45,17 @@ app.use('/students/enrolments/enrolments/', require('./routes/enrolmentRoutes'))
 app.use('/academics/sessions', require('./routes/sessionRoutes'))
 app.use('/academics/sections', require('./routes/sectionRoutes'))
 app.use('/academics/animatorsAssignments/', require('./routes/animatorsAssignmentRoutes'))
-
 app.use('/students/studentsParents/studentDocuments/', require('./routes/studentDocumentsRoutes'))
 app.use('/students/studentsParents/studentDocuments/:id/', require('./routes/studentDocumentsRoutes'))
-
 app.use('/finances/invoices/', require('./routes/invoiceRoutes'))
 app.use('/finances/payments/', require('./routes/paymentRoutes'))
 app.use('/finances/expenses/', require('./routes/expenseRoutes'))
-
 app.use('/hr/employees/employeeDocuments/', require('./routes/employeeDocumentsRoutes'))
 app.use('/hr/employees/employeeDocuments/:id/', require('./routes/employeeDocumentsRoutes'))
 app.use('/hr/employees', require('./routes/employeeRoutes'))
 app.use('/hr/payslips', require('./routes/payslipRoutes'))
 app.use('/hr/leaves', require('./routes/leaveRoutes'))
-
-
 app.use('/desk/tasks', require('./routes/taskRoutes'))
-// app.use('/desk/tasks/myTasks', require('./routes/taskRoutes') )
 app.use('/settings/academicsSet/academicYears/', require('./routes/academicYearRoutes'))
 app.use('/settings/academicsSet/attendedSchools/', require('./routes/attendedSchoolRoutes'))
 app.use('/settings/studentsSet/studentDocumentsLists/', require('./routes/studentDocumentsListRoutes'))
@@ -75,8 +64,6 @@ app.use('/settings/studentsSet/services/', require('./routes/serviceRoutes'))
 app.use('/settings/academicsSet/classrooms/', require('./routes/classroomRoutes'))
 app.use('/settings/financesSet/payees/', require('./routes/payeeRoutes'))
 app.use('/settings/financesSet/expenseCategories/', require('./routes/expenseCategoryRoutes'))
-
-
 
 
 
