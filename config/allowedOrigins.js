@@ -2,8 +2,8 @@
 //always allow use of www in the address of urls
 
 const allowedOrigins = [
-    'http://localhost:3000',
-    'https://firststepsnursery.com',
-    'https://www.firststepsnursery.com'
+    'http://localhost:3000',//this will aloow access from local host on dev environment
+    'https://firststepsnursery.onrender.com',
+    'https://www.firststepsnursery.onrender.com'
 ]
 module.exports = allowedOrigins
