@@ -5,7 +5,7 @@ const fs=require('fs')
 
 
 // Ensure the 'uploads' directory exists
-const uploadPath = path.join(__dirname, '../uploads/documents/');
+const uploadPath = path.join(__dirname, '/uploads/documents/');//////////changed from'../uploads/documents'
 if (!fs.existsSync(uploadPath)) {
     fs.mkdirSync(uploadPath, { recursive: true });
 }
