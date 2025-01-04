@@ -73,7 +73,7 @@ const login = async (req, res) => {
         },
       },
       process.env.ACCESS_TOKEN_SECRET,
-      { expiresIn: "20s" } //access token expires in 15 minutes
+      { expiresIn: "30m" } //access token expires in 15 minutes
     );
     //ceate refresh token
     const newRefreshToken = jwt.sign(
@@ -308,7 +308,7 @@ const refresh = async (req, res) => {
           },
         },
         process.env.ACCESS_TOKEN_SECRET,
-        { expiresIn: "20s" }
+        { expiresIn: "30m" }
       );
 
       const newRefreshToken = jwt.sign(
