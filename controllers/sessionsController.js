@@ -82,7 +82,7 @@ const getAllSessions = asyncHandler(async (req, res) => {
     // Step 3: Gather all attendedSchool IDs for selectedYear
     const attendedSchoolIds = [];
     sessions.forEach(session => {
-      const studentEducation = session.student.studentEducation || [];
+      const studentEducation = session.student?.studentEducation || [];
       const educationForYear = studentEducation.find(edu => edu.schoolYear === selectedYear);
       if (educationForYear && educationForYear.attendedSchool) {
         attendedSchoolIds.push(educationForYear.attendedSchool);
@@ -101,7 +101,7 @@ const getAllSessions = asyncHandler(async (req, res) => {
     // Step 5: Build final data structure with `attendedSchool` and other details
     const formattedSessions = sessions.map((session) => {
       const matchingSection = sections.find((section) =>
-        section.students.some((student) => student.toString() === session.student._id.toString())
+        section.students.some((student) => student.toString() === session.student?._id.toString())
       );
   
       if (matchingSection) {
@@ -120,7 +120,7 @@ const getAllSessions = asyncHandler(async (req, res) => {
       session.site = session?.school;
   
       // Add attendedSchool based on student's education information for the selected year
-      const studentEducation = session.student.studentEducation || [];
+      const studentEducation = session.student?.studentEducation || [];
       const educationForYear = studentEducation.find(edu => edu.schoolYear === selectedYear);
       if (educationForYear && educationForYear.attendedSchool) {
         session.attendedSchool = attendedSchoolMap[educationForYear.attendedSchool.toString()] || null;
@@ -133,9 +133,9 @@ const getAllSessions = asyncHandler(async (req, res) => {
     const flattenedSessions = formattedSessions.map((session) => ({
       ...session,
       sessionSectionId: session.section?._id,
-      sessionStudentId: session.student._id,
+      sessionStudentId: session.student?._id,
       sectionName: session.section?.name,
-      studentName: session.student.name,
+      studentName: session.student?.name,
       animator: session.animator,
       classroom: session.classroom,
       attendedSchool: session.attendedSchool, // Included in final flattened structure

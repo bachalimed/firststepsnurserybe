@@ -8,7 +8,6 @@ const asyncHandler = require('express-async-handler')//instead of using try catc
 
 const mongoose = require('mongoose')
 
-
 // @desc Get all employeeDocuments
 // @route GET 'desk/employeeDocuments             
 // @access Private // later we will establish authorisations
@@ -49,6 +48,8 @@ const {userId,year} = req.query
                     ...item,
                     documentUploaded: !!matchingDocument, // true if matchingDocument is found, false otherwise
                     employeeDocumentId: matchingDocument ? matchingDocument._id : null, // Add employeeDocumentId if found, otherwise null
+                    documentCreatedAt: matchingDocument ? matchingDocument.createdAt : null, // Add  if found, otherwise null
+                    documentUpdatedAt: matchingDocument ? matchingDocument.updatedAt : null, // Add  if found, otherwise null
                 };
             });
             //console.log('responseData',responseData)

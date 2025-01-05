@@ -534,15 +534,16 @@ const deleteEmployee = asyncHandler(async (req, res) => {
   // }
 
   // Does the parent exist to delete?
-  const employee = await Employee.findById(id).exec();
+  // const user = await User.findOne({ isEmployee: id });
+
+  const user = await User.findById(id).exec();
+  if (!user) {
+    return res.status(400).json({ message: "corresponding User not found" });
+  }
+  const employee = await Employee.findById(user?.employeeId).exec();
 
   if (!employee) {
     return res.status(400).json({ message: "Employeee not found" });
-  }
-  const user = await User.findOne({ isEmployee: id });
-
-  if (!user) {
-    return res.status(400).json({ message: "corresponding User not found" });
   }
   //if user is also an parent, delete only the employee collection and keep user
   if (user.isParent) {

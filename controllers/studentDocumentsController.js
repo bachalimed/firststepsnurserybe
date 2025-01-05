@@ -52,6 +52,8 @@ const {studentId,year, familyId,criteria} = req.query
                     ...item,
                     documentUploaded: !!matchingDocument, // true if matchingDocument is found, false otherwise
                     studentDocumentId: matchingDocument ? matchingDocument._id : null, // Add studentDocumentId if found, otherwise null
+                    documentCreatedAt: matchingDocument ? matchingDocument.createdAt : null, // Add studentDocumentId if found, otherwise null
+                    documentUpdatedAt: matchingDocument ? matchingDocument.updatedAt : null, // Add studentDocumentId if found, otherwise null
                 };
             });
             //console.log('responseData',responseData)

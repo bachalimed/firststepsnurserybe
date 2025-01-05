@@ -32,7 +32,11 @@ const employeeDocumentSchema = new mongoose.Schema({
     type: String,
     set: capitalizeFirstLetter,
   },
-});
+},
+{
+  timestamps: true, // Automatically create `createdAt` and `updatedAt` fields
+}
+);
 module.exports = mongoose.model(
   "EmployeeDocument",
   employeeDocumentSchema,
