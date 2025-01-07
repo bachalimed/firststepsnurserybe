@@ -30,6 +30,7 @@ const formatUsers = (users) => {
         userAddress,
         userContact,
         userDob,
+        cin,
         userPhoto,
         userRoles,
         userSex,
@@ -88,6 +89,7 @@ const getAllEmployees = asyncHandler(async (req, res) => {
             userFullName: 1,
             userDob: 1,
             userSex: 1,
+            cin: 1,
             userPhoto: 1,
             userAddress: 1,
             userRoles: 1,
@@ -153,6 +155,7 @@ const getAllEmployees = asyncHandler(async (req, res) => {
             userFullName: { $first: "$userFullName" },
             userDob: { $first: "$userDob" },
             userSex: { $first: "$userSex" },
+            cin: { $first: "$cin" },
             userPhoto: { $first: "$userPhoto" },
             userRoles: { $first: "$userRoles" },
             userAddress: { $first: "$userAddress" },
@@ -185,6 +188,7 @@ const getAllEmployees = asyncHandler(async (req, res) => {
             userFullName: 1,
             userDob: 1,
             userSex: 1,
+            cin: 1,
             userPhoto: 1,
             userAddress: 1,
             userRoles: 1,
@@ -247,6 +251,7 @@ const createNewEmployee = asyncHandler(async (req, res) => {
     username,
     password,
     userSex,
+    cin,
     userDob,
     userAllowedActions,
     userRoles,
@@ -267,6 +272,7 @@ const createNewEmployee = asyncHandler(async (req, res) => {
     !username ||
     !password ||
     !userSex ||
+    !cin ||
     !userDob ||
     !userRoles.length > 0 ||
     !userAddress.house ||
@@ -293,6 +299,13 @@ const createNewEmployee = asyncHandler(async (req, res) => {
   if (duplicateUsername) {
     //we will later check if the duplicate has isEmployee and then call the update Employee method
     return res.status(409).json({ message: "Duplicate username found" });
+  }
+  // Check for duplicate CIN
+  const duplicateCin = await User.findOne({ cin }).lean().exec(); //because we re receiving only one response from mongoose
+
+  if (duplicateCin) {
+    
+    return res.status(409).json({ message: "Duplicate CIN found" });
   }
 
   // Check for duplicate userFullName
@@ -337,6 +350,7 @@ const createNewEmployee = asyncHandler(async (req, res) => {
       username,
       password: hashedPwd,
       userSex,
+      cin,
       userDob,
       userAllowedActions,
       userIsActive,
@@ -417,6 +431,7 @@ const updateEmployee = asyncHandler(async (req, res) => {
     employeeId,
     userFullName,
     userSex,
+    cin,
     userDob,
     userRoles,
     userAddress,
@@ -428,27 +443,29 @@ const updateEmployee = asyncHandler(async (req, res) => {
     employeeAssessment,
   } = req?.body; //this will come from front end we put all the fields ofthe collection here
 
-  console.log(
-    userId,
-    employeeId,
-    userFullName,
-    userSex,
-    userDob,
-    userRoles,
-    userAddress,
-    userContact,
-    employeeCurrentEmployment,
-    employeeIsActive,
-    employeeYears,
-    employeeWorkHistory,
-    employeeAssessment
-  );
+  // console.log(
+  //   userId,
+  //   employeeId,
+  //   userFullName,
+  //   userSex,
+  //   cin,
+  //   userDob,
+  //   userRoles,
+  //   userAddress,
+  //   userContact,
+  //   employeeCurrentEmployment,
+  //   employeeIsActive,
+  //   employeeYears,
+  //   employeeWorkHistory,
+  //   employeeAssessment
+  // );
   //Confirm data for employee is present in the request with all required fields, data for user will be checked by the user controller
   if (
     !userId ||
     !userFullName.userFirstName ||
     !userFullName.userLastName ||
     !userSex ||
+    !cin ||
     !userDob ||
     !userRoles.length > 0 ||
     !employeeId ||
@@ -482,6 +499,7 @@ const updateEmployee = asyncHandler(async (req, res) => {
   user.userRoles = userRoles;
   user.employeeId = employeeId;
   user.userSex = userSex;
+  user.cin = cin;
   user.userDob = userDob;
   user.userRoles = userRoles;
   //user.userPhoto = userPhoto;

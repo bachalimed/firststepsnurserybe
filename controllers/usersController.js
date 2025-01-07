@@ -85,6 +85,7 @@ const getAllUsers = asyncHandler(async (req, res) => {
 const createNewUser = asyncHandler(async (req, res) => {
   const { formData } = req?.body;
   const {
+    cin,
     userFullName,
     username,
     password,
@@ -101,7 +102,7 @@ const createNewUser = asyncHandler(async (req, res) => {
 
   //console.log(userFullName, username, password, isParent, isEmployee,  userDob, userIsActive, userRoles,  userAddress, userContact )
   //Confirm data is present in the request with all required fields
-  if (
+  if (!cin||
     !userFullName ||
     !username ||
     !userDob ||
@@ -121,10 +122,10 @@ const createNewUser = asyncHandler(async (req, res) => {
   }
 
   // Check for duplicate userFullName
-  const duplicateName = await User.findOne({ userFullName }).lean().exec(); //because we re receiving only one response from mongoose
+  const duplicateCin = await User.findOne({ cin }).lean().exec(); //because we re receiving only one response from mongoose
 
-  if (duplicateName) {
-    return res.status(409).json({ message: "Duplicate Full name found" });
+  if (duplicateCin) {
+    return res.status(409).json({ message: "Duplicate cin found" });
   }
 
   //check the related parent or employee id from the DB
@@ -137,6 +138,7 @@ const createNewUser = asyncHandler(async (req, res) => {
   const hashedPwd = await bcrypt.hash(password, 10); // salt roundsm we will implement it laterm normally password is without''
 
   const userObject = {
+    cin,
     userFullName,
     username,
     password: hashedPwd,
@@ -170,6 +172,7 @@ const updateUser = asyncHandler(async (req, res) => {
   const { formData } = req?.body;
   const {
     id,
+    cin,
     //isForgotPassword,
     oldPassword,
     newPassword1,
@@ -245,7 +248,7 @@ const updateUser = asyncHandler(async (req, res) => {
     return res.json({ message: `User updated successfully` });
   }
   // normal user update
-  if (
+  if (!cin||
     !id ||
     !username ||
     !Array.isArray(userRoles) ||
@@ -263,7 +266,14 @@ const updateUser = asyncHandler(async (req, res) => {
   }
 
   // Check for duplicate
-  const duplicate = await User.findOne({ username }).lean().exec();
+  const duplicate = await User.findOne({ cin }).lean().exec();
+
+  // Allow updates to the original user
+  if (duplicate && duplicate?._id.toString() !== id) {
+    return res.status(409).json({ message: "Duplicate username found" });
+  }
+  // Check for duplicate
+  const duplicateUsername = await User.findOne({ username }).lean().exec();
 
   // Allow updates to the original user
   if (duplicate && duplicate?._id.toString() !== id) {
@@ -274,7 +284,7 @@ const updateUser = asyncHandler(async (req, res) => {
   user.username = username;
   user.userRoles = userRoles;
   user.userAllowedActions = userAllowedActions;
-  
+  user.cin=cin
 
   user.familyId = familyId?.length === 24 ? familyId : undefined;
   user.employeeId = employeeId?.length === 24 ? employeeId : undefined;

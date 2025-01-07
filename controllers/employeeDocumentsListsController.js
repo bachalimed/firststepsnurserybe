@@ -31,7 +31,7 @@ const getAllEmployeeDocumentsLists = asyncHandler(async (req, res) => {
       .status(400)
       .json({
         message:
-          "No employeeDocumentsLists found from employeeDocumentsList controller with love",
+          "No employeeDocumentsLists found from employeeDocumentsList controller",
       });
   }
   res.json(employeeDocumentsLists);

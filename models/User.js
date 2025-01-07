@@ -25,6 +25,8 @@ const userSchema = new mongoose.Schema({
       set: capitalizeFirstLetter,
     },
   },
+  
+  cin: { type: String, required: true, index: true, unique: true },
   username: { type: String, required: true, index: true, unique: true },
   password: { type: String, required: true, index: true },
   refreshToken: [{ type: String, index: true }],
