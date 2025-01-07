@@ -8,7 +8,7 @@ const studentEducationSchema = new mongoose.Schema({
     schoolYear: { type: String, index: true, required:true, },
 
     attendedSchool: { type: mongoose.Schema.Types.ObjectId, index: true, ref: 'AttendedSchool' },
-    note: { type: String, index: true }
+    note: { type: String, index: true,set:capitalizeFirstLetter }
 }, { _id: false }) // Disable the creation of _id for this subdocument
 
 // const studentAdmissionsSchema = new mongoose.Schema({

@@ -1,11 +1,8 @@
 const Family = require("../models/Family");
-const User = require("../models/User"); 
+const User = require("../models/User");
 const asyncHandler = require("express-async-handler"); //instead of using try catch
 const bcrypt = require("bcrypt"); //to hash passwords before saving them
 const mongoose = require("mongoose");
-
-
-
 
 const getFamilyStatisticsByYear = async (selectedYear) => {
   try {
@@ -16,16 +13,16 @@ const getFamilyStatisticsByYear = async (selectedYear) => {
           from: "students", // Assume the collection is named "students"
           localField: "children.child", // Assuming the "children.child" field in Family references Student _id
           foreignField: "_id",
-          as: "children"
-        }
+          as: "children",
+        },
       },
       {
         $project: {
           _id: 1,
           familyName: 1, // Optional field to help identify families, adjust as needed
           familySituation: 1, // Include familySituation for counting
-          children: 1,    // See what children look like after $lookup
-        }
+          children: 1, // See what children look like after $lookup
+        },
       },
       {
         $addFields: {
@@ -35,12 +32,12 @@ const getFamilyStatisticsByYear = async (selectedYear) => {
               input: "$children",
               as: "childWrapper",
               cond: {
-                $in: [selectedYear, "$$childWrapper.studentYears.academicYear"]
-              }
-            }
-          }
-        }
-      }
+                $in: [selectedYear, "$$childWrapper.studentYears.academicYear"],
+              },
+            },
+          },
+        },
+      },
     ]);
 
     // Step 2: Count the number of families with each number of children
@@ -70,22 +67,21 @@ const getFamilyStatisticsByYear = async (selectedYear) => {
     }, {});
 
     // Step 4: Count the total number of families that have at least one student in the selected year
-    const familiesWithStudentsInYear = families.filter(family => family.children.length > 0).length;
+    const familiesWithStudentsInYear = families.filter(
+      (family) => family.children.length > 0
+    ).length;
 
     // Step 5: Return the result with all statistics
     return {
-      familiesChildren,                // Number of families with each number of children for the selected year
-      familySituationCount,            // Number of families for each situation
-      familiesWithStudentsInYear       // Total number of families with at least one student in the selected year
+      familiesChildren, // Number of families with each number of children for the selected year
+      familySituationCount, // Number of families for each situation
+      familiesWithStudentsInYear, // Total number of families with at least one student in the selected year
     };
-
   } catch (error) {
     console.error("Error retrieving family statistics:", error);
     throw error;
   }
 };
-
-
 
 // @desc Get all parents
 // @route GET /students/studentsParents/parents
@@ -96,29 +92,27 @@ const getAllFamilies = asyncHandler(async (req, res) => {
   const { selectedYear, id, criteria } = req.query;
   let filteredFamilies;
   if (selectedYear !== "1000" && criteria === "familiesTotalStats") {
-
-    console.log('here')
+    //console.log("here");
     try {
       // Wait for the `countStudents` function to resolve
-      const { familiesChildren,                // Number of families with each number of children for the selected year
-        familySituationCount,            // Number of families for each situation
-        familiesWithStudentsInYear } = await getFamilyStatisticsByYear(selectedYear);
-     
-      // Check if all counts are missing or zero
-      if (!familiesChildren||!familiesWithStudentsInYear) {
-        return res
-          .status(400)
-          .json({
-            message: "No family Stats found for the Year provided",
-          });
-      }
+      const {
+        familiesChildren, // Number of families with each number of children for the selected year
+        familySituationCount, // Number of families for each situation
+        familiesWithStudentsInYear,
+      } = await getFamilyStatisticsByYear(selectedYear);
 
+      // Check if all counts are missing or zero
+      if (!familiesChildren || !familiesWithStudentsInYear) {
+        return res.status(400).json({
+          message: "No family Stats found for the Year provided",
+        });
+      }
 
       // If counts are valid, return them in the response
       return res.json({
-        familiesChildren,                // Number of families with each number of children for the selected year
-        familySituationCount,            // Number of families for each situation
-        familiesWithStudentsInYear
+        familiesChildren, // Number of families with each number of children for the selected year
+        familySituationCount, // Number of families for each situation
+        familiesWithStudentsInYear,
       });
     } catch (error) {
       console.error("Error fetching monthly Stats :", error);
@@ -173,8 +167,7 @@ const getAllFamilies = asyncHandler(async (req, res) => {
     //console.log(updatedParentsArray,'updatedParentsArray')
     if (!filteredFamilies?.length) {
       return res.status(400).json({
-        message:
-          "No families with students found for the selected Year !",
+        message: "No families with students found for the selected Year !",
       });
     } else {
       res.json(filteredFamilies);
@@ -193,11 +186,11 @@ const getAllFamilies = asyncHandler(async (req, res) => {
           )
           .populate(
             "father",
-            "-password -userSex -username -userRoles -userAllowedActions"
+            "-password -userSex  -username -userRoles -userAllowedActions"
           )
           .populate(
             "mother",
-            "-password -userSex -username -userRoles -userAllowedActions"
+            "-password -userSex  -username -userRoles -userAllowedActions"
           )
           .lean();
         if (!family) {
@@ -213,11 +206,11 @@ const getAllFamilies = asyncHandler(async (req, res) => {
         .populate("children.child")
         .populate(
           "father",
-          "-password -userSex -username -userRoles -userAllowedActions"
+          "-password -userSex  -username -userRoles -userAllowedActions"
         )
         .populate(
           "mother",
-          "-password -userSex -username -userRoles -userAllowedActions"
+          "-password -userSex  -username -userRoles -userAllowedActions"
         );
       //   .lean();
       if (!families?.length) {
@@ -257,9 +250,7 @@ const getFamilyById = asyncHandler(async (req, res) => {
 
     //console.log("now in the controller to get family id", id);
     if (!id) {
-      return res
-        .status(400)
-        .json({ message: "Required data is missing" });
+      return res.status(400).json({ message: "Required data is missing" });
     }
     let family;
     if (criteria === "Dry") {
@@ -270,6 +261,7 @@ const getFamilyById = asyncHandler(async (req, res) => {
           "father",
           "-password",
           "-userSex",
+          "-cin",
           "-username",
           "-userRoles",
           "-userAllowedActions"
@@ -278,6 +270,7 @@ const getFamilyById = asyncHandler(async (req, res) => {
           "mother",
           "-password",
           "-userSex",
+          "-cin",
           "-username",
           "-userRoles",
           "-userAllowedActions"
@@ -290,6 +283,7 @@ const getFamilyById = asyncHandler(async (req, res) => {
           "father",
           "-password",
           "-userSex",
+          "-cin",
           "-username",
           "-userRoles",
           "-userAllowedActions"
@@ -298,6 +292,7 @@ const getFamilyById = asyncHandler(async (req, res) => {
           "mother",
           "-password",
           "-userSex",
+          "-cin",
           "-username",
           "-userRoles",
           "-userAllowedActions"
@@ -334,6 +329,7 @@ const createNewFamily = asyncHandler(async (req, res) => {
     password: fatherPassword,
     userDob: fatherDob,
     userSex: fatherSex,
+    cin: fatherCin,
     userIsActive: fatherIsActive,
     userRoles: fatherRoles,
     userAddress: fatherAddress,
@@ -346,21 +342,22 @@ const createNewFamily = asyncHandler(async (req, res) => {
     !fatherUsername ||
     !fatherDob ||
     !fatherSex ||
+    !fatherCin ||
     !fatherPassword ||
     !fatherContact.primaryPhone ||
     !Array.isArray(fatherRoles) ||
     !fatherRoles.length
   ) {
-    return res
-      .status(400)
-      .json({ message: "Required data is missing" }); //400 : bad request
+    return res.status(400).json({ message: "Required data is missing" }); //400 : bad request
   }
 
   // Check for duplicate username/ if the user has no isParent we will update only the parent isParent and create it
   const duplicateFather = await User.findOne({ fatherUsername }).lean().exec(); //because we re receiving only one response from mongoose
 
   if (duplicateFather) {
-    return res.status(409).json({ message: "Duplicate username for Father found" });
+    return res
+      .status(409)
+      .json({ message: "Duplicate username for Father found" });
   }
 
   // Hash password
@@ -378,6 +375,7 @@ const createNewFamily = asyncHandler(async (req, res) => {
     username: motherUsername,
     password: motherPassword,
     userDob: motherDob,
+    cin: motherCin,
     userSex: motherSex,
     userIsActive: motherIsActive,
     userRoles: motherRoles,
@@ -389,21 +387,22 @@ const createNewFamily = asyncHandler(async (req, res) => {
     !motherFullName ||
     !motherUsername ||
     !motherDob ||
+    !motherCin ||
     !motherSex ||
     !motherPassword ||
     !motherContact.primaryPhone ||
     !Array.isArray(motherRoles) ||
     !motherRoles.length
   ) {
-    return res
-      .status(400)
-      .json({ message: "Required data is missing" }); //400 : bad request
+    return res.status(400).json({ message: "Required data is missing" }); //400 : bad request
   }
   // Check for duplicate username/ if the user has no isParent we will update only the parent isParent and create it
   const duplicateMother = await User.findOne({ motherUsername }).lean().exec(); //because we re receiving only one response from mongoose
 
   if (duplicateMother) {
-    return res.status(409).json({ message: "Duplicate username for Mother found" });
+    return res
+      .status(409)
+      .json({ message: "Duplicate username for Mother found" });
   }
   // Hash password
   const hashedMotherPwd = await bcrypt.hash(motherPassword, 10); // salt roundsm we will implement it laterm normally password is without''
@@ -450,7 +449,6 @@ const createNewFamily = asyncHandler(async (req, res) => {
 }); //we need to delete the user if the parent is not saved
 
 const updateFamily = asyncHandler(async (req, res) => {
-  
   const { _id, father, mother, children, familySituation } = req.body; //this will come from front end we put all the fields ofthe collection here
 
   //saving teh father
@@ -458,15 +456,19 @@ const updateFamily = asyncHandler(async (req, res) => {
     _id: fatherId,
     userFullName: fatherFullName,
     userDob: fatherDob,
+    cin: fatherCin,
     userAddress: fatherAddress,
     userContact: fatherContact,
   } = father;
 
   //Confirm data for user will be checked by the user controller
-  if (!fatherFullName || !fatherDob || !fatherContact.primaryPhone) {
-    return res
-      .status(400)
-      .json({ message: "Required data is missing" }); //400 : bad request
+  if (
+    !fatherFullName ||
+    !fatherDob ||
+    !fatherCin ||
+    !fatherContact.primaryPhone
+  ) {
+    return res.status(400).json({ message: "Required data is missing" }); //400 : bad request
   }
 
   // Check for duplicate username/ if the user has no isParent we will update only the parent isParent and create it
@@ -480,6 +482,7 @@ const updateFamily = asyncHandler(async (req, res) => {
 
   duplicateFather.userFullName = fatherFullName; //it will only allow updating properties that are already existant in the model
   duplicateFather.userDob = fatherDob;
+  duplicateFather.cin = fatherCin;
   duplicateFather.userAddress = fatherAddress;
   duplicateFather.userContact = fatherContact;
 
@@ -490,14 +493,18 @@ const updateFamily = asyncHandler(async (req, res) => {
     _id: motherId,
     userFullName: motherFullName,
     userDob: motherDob,
+    cin: motherCin,
     userAddress: motherAddress,
     userContact: motherContact,
   } = mother;
   //Confirm data for user will be checked by the user controller
-  if (!motherFullName || !motherDob || !motherContact.primaryPhone) {
-    return res
-      .status(400)
-      .json({ message: "Required data is missing" }); //400 : bad request
+  if (
+    !motherFullName ||
+    !motherDob ||
+    !motherCin ||
+    !motherContact.primaryPhone
+  ) {
+    return res.status(400).json({ message: "Required data is missing" }); //400 : bad request
   }
   // Check for duplicate username/ if the user has no isParent we will update only the parent isParent and create it
   const duplicateMother = await User.findById(motherId).exec();
@@ -510,6 +517,7 @@ const updateFamily = asyncHandler(async (req, res) => {
 
   duplicateMother.userFullName = motherFullName; //it will only allow updating properties that are already existant in the model
   duplicateMother.userDob = motherDob;
+  duplicateMother.cin = motherCin;
   duplicateMother.userAddress = motherAddress;
   duplicateMother.userContact = motherContact;
 
@@ -555,9 +563,7 @@ const deleteFamily = asyncHandler(async (req, res) => {
   const family = await Family.findById(id).exec();
 
   if (!family) {
-    return res
-      .status(400)
-      .json({ message: "Family not found" });
+    return res.status(400).json({ message: "Family not found" });
   }
   const { father, mother, children } = family;
   const fatherToDelete = await User.findById(father);
@@ -571,7 +577,6 @@ const deleteFamily = asyncHandler(async (req, res) => {
   if (!fatherToDelete.isEmployee) {
     deletedFather = await fatherToDelete.deleteOne();
     replyFather = `Deleted ${deletedFather?.deletedCount} father, `;
-   
   }
   const motherToDelete = await User.findById(mother);
   let deletedMother;
@@ -579,7 +584,6 @@ const deleteFamily = asyncHandler(async (req, res) => {
   if (!motherToDelete.isEmployee) {
     deletedMother = await motherToDelete.deleteOne();
     replyMother = `${deletedMother?.deletedCount} mother, `;
-    
   }
   const familyToDelete = await Family.findById(id);
   let deletedFamily;
@@ -587,11 +591,10 @@ const deleteFamily = asyncHandler(async (req, res) => {
 
   deletedFamily = await familyToDelete.deleteOne();
   replyFamily = `and ${deletedFamily?.deletedCount} family`;
-  
 
   const reply = `${replyFather}, ${replyMother} ${replyFamily}`;
 
- return  res.json({message:reply});
+  return res.json({ message: reply });
 });
 
 module.exports = {

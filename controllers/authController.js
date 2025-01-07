@@ -17,7 +17,7 @@ const login = async (req, res) => {
   }
   //forgot password request will set flag isforgotpassword in user collection so that the admin updated the password
   if (criteria === "forgotPassword") {
-    console.log("forgot password detected");
+   // console.log("forgot password detected");
     if (!username) {
       return res.status(400).json({ message: "Required data is missing" });
     }
@@ -246,9 +246,9 @@ const login = async (req, res) => {
 
 const refresh = async (req, res) => {
   const { cookies } = req;
-  console.log(cookies, "cookies avaialble at refresh");
+  //console.log(cookies, "cookies avaialble at refresh");
   if (!cookies?.jwt) {
-    console.log("No cookies at refresh");
+    //console.log("No cookies at refresh");
     return res.status(401).json({ message: "Unauthorized, no cookie found" });
   }
   const refreshToken = cookies.jwt;
@@ -269,13 +269,13 @@ const refresh = async (req, res) => {
       process.env.REFRESH_TOKEN_SECRET,
       async (err, decoded) => {
         if (err) return res.sendStatus(403); //Forbidden
-        console.log("attempted refresh token reuse!");
+        //console.log("attempted refresh token reuse!");
         const hackedUser = await User.findOne({
           username: decoded.username,
         }).exec();
         hackedUser.refreshToken = [];
         const result = await hackedUser.save();
-        console.log(result.username, "saved hacked user empty array");
+        //console.log(result.username, "saved hacked user empty array");
       }
     );
     return res.sendStatus(403); //Forbidden
@@ -290,7 +290,7 @@ const refresh = async (req, res) => {
     process.env.REFRESH_TOKEN_SECRET,
     async (err, decoded) => {
       if (err) {
-        console.log("expired refresh token");
+        //console.log("expired refresh token");
         foundUser.refreshToken = [...newRefreshTokenArray];
         const result = await foundUser.save();
         console.log(result);

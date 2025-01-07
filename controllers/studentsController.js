@@ -187,10 +187,10 @@ const getAllStudents = asyncHandler(async (req, res) => {
 
   //  we check if the criteria : 'No Family ' for any year to add student to family
   if (selectedYear==="1000" && criteria === "No Family") {
-    console.log('no familyyyyyyyyyyyyyyyyyyyyyyyyyyyy')
+   // console.log('no familyyyyyyyyyyyyyyyyyyyyyyyyyyyy')
     getStudentsNotInFamily()
       .then((students) => {
-        console.log(students,'students')
+        //console.log(students,'students')
         return res.json(students);
       })
       // .catch((error) => {
@@ -661,6 +661,12 @@ const deleteStudent = asyncHandler(async (req, res) => {
 
   // Does the user exist to delete?
   const studentToDelete = await Student.findById(id).exec();
+  const isStudentInFamily = await Family.findOne({
+    children: { $elemMatch: { child: id } }
+  });
+if (isStudentInFamily) {
+  return res.status(400).json({ message: "Student still in existing family, remove student from family first" });
+}
 
   if (!studentToDelete) {
     return res.status(400).json({ message: "Student not found" });
