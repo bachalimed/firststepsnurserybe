@@ -210,234 +210,148 @@ const getAllSections = asyncHandler(async (req, res) => {
       return res.status(500).json({ message: "An error occurred" });
     }
   }
+  /////////////////////////////////////////////////////////
 
-  if (selectedYear) {
-    if (selectedYear !== "1000") {
-      try {
-        // Use aggregate to perform the query
-        const sections = await Section.aggregate([
-          {
-            $match: { sectionYear: selectedYear }, // Match sections by sectionYear
+  if (selectedYear && selectedYear !== "1000") {
+    try {
+      // Use aggregate to perform the query
+      const sections = await Section.aggregate([
+        {
+          $match: { sectionYear: selectedYear }, // Match sections by sectionYear
+        },
+        {
+          $lookup: {
+            from: "classrooms", // Classroom collection
+            localField: "sectionLocation", // Field from Section schema
+            foreignField: "_id", // Field from Classroom schema
+            as: "classroomDetails", // Populated field
           },
-          {
-            $lookup: {
-              from: "classrooms", // Classroom collection
-              localField: "sectionLocation", // Field from Section schema
-              foreignField: "_id", // Field from Classroom schema
-              as: "classroomDetails", // Populated field
-            },
+        },
+        {
+          $unwind: {
+            path: "$classroomDetails",
+            preserveNullAndEmptyArrays: true,
           },
-          {
-            $unwind: {
-              path: "$classroomDetails",
-              preserveNullAndEmptyArrays: true,
-            },
+        },
+        {
+          $unwind: "$students", // Unwind the students array
+        },
+        {
+          $lookup: {
+            from: "students", // Students collection
+            localField: "students",
+            foreignField: "_id",
+            as: "studentDetails",
           },
-          {
-            $unwind: "$students", // Unwind the students array
+        },
+        {
+          $unwind: {
+            path: "$studentDetails",
+            preserveNullAndEmptyArrays: true,
           },
-          {
-            $lookup: {
-              from: "students", // Students collection
-              localField: "students",
-              foreignField: "_id",
-              as: "studentDetails",
-            },
-          },
-          {
-            $unwind: {
-              path: "$studentDetails",
-              preserveNullAndEmptyArrays: true,
-            },
-          },
-          // Filter studentEducation to only include the selectedYear
-          {
-            $addFields: {
-              "studentDetails.studentEducation": {
-                $filter: {
-                  input: "$studentDetails.studentEducation",
-                  as: "education",
-                  cond: { $eq: ["$$education.schoolYear", selectedYear] },
-                },
+        },
+        // Filter studentEducation to only include the selectedYear
+        {
+          $addFields: {
+            "studentDetails.studentEducation": {
+              $filter: {
+                input: "$studentDetails.studentEducation",
+                as: "education",
+                cond: { $eq: ["$$education.schoolYear", selectedYear] },
               },
             },
           },
-          // Only unwind studentEducation if it has elements (i.e., non-empty)
-          {
-            $unwind: {
-              path: "$studentDetails.studentEducation",
-              preserveNullAndEmptyArrays: true,
-            },
+        },
+        // Only unwind studentEducation if it has elements (i.e., non-empty)
+        {
+          $unwind: {
+            path: "$studentDetails.studentEducation",
+            preserveNullAndEmptyArrays: true,
           },
-          {
-            $lookup: {
-              from: "attendedSchools", // AttendedSchool collection
-              localField: "studentDetails.studentEducation.attendedSchool", // Match attendedSchool
-              foreignField: "_id",
-              as: "attendedSchoolDetails", // Populated attendedSchool details
-            },
+        },
+        {
+          $lookup: {
+            from: "attendedSchools", // AttendedSchool collection
+            localField: "studentDetails.studentEducation.attendedSchool", // Match attendedSchool
+            foreignField: "_id",
+            as: "attendedSchoolDetails", // Populated attendedSchool details
           },
-          {
-            $unwind: {
-              path: "$attendedSchoolDetails",
-              preserveNullAndEmptyArrays: true,
-            },
+        },
+        {
+          $unwind: {
+            path: "$attendedSchoolDetails",
+            preserveNullAndEmptyArrays: true,
           },
-          {
-            $project: {
-              _id: 1,
-              sectionType: 1,
-              sectionLabel: 1,
-              sectionFrom: 1,
-              sectionTo: 1,
-              sectionYear: 1,
-              sectionLocation: "$classroomDetails", // Include populated Classroom details
-              studentDetails: {
-                studentName: "$studentDetails.studentName",
-                
-                studentIsActive: "$studentDetails.studentIsActive",
-                studentSex: "$studentDetails.studentSex",
-                _id: "$studentDetails._id",
-                studentYears: {
-                  $arrayElemAt: ["$studentDetails.studentYears", 0], // Directly include studentYears
-                },
-                studentEducation: {
-                  $cond: {
-                    if: { $ne: ["$studentDetails.studentEducation", []] }, // Only include if non-empty
-                    then: {
-                      schoolYear: "$studentDetails.studentEducation.schoolYear",
-                      note: "$studentDetails.studentEducation.note",
-                      attendedSchool: {
-                        schoolName: "$attendedSchoolDetails.schoolName",
-                        schoolCity: "$attendedSchoolDetails.schoolCity",
-                        schoolType: "$attendedSchoolDetails.schoolType",
-                      },
+        },
+        {
+          $project: {
+            _id: 1,
+            sectionType: 1,
+            sectionLabel: 1,
+            sectionFrom: 1,
+            sectionTo: 1,
+            sectionYear: 1,
+            sectionLocation: "$classroomDetails", // Include populated Classroom details
+            studentDetails: {
+              studentName: "$studentDetails.studentName",
+
+              studentIsActive: "$studentDetails.studentIsActive",
+              studentSex: "$studentDetails.studentSex",
+              _id: "$studentDetails._id",
+              studentYears: {
+                $arrayElemAt: ["$studentDetails.studentYears", 0], // Directly include studentYears
+              },
+              studentEducation: {
+                $cond: {
+                  if: { $ne: ["$studentDetails.studentEducation", []] }, // Only include if non-empty
+                  then: {
+                    schoolYear: "$studentDetails.studentEducation.schoolYear",
+                    note: "$studentDetails.studentEducation.note",
+                    attendedSchool: {
+                      schoolName: "$attendedSchoolDetails.schoolName",
+                      schoolCity: "$attendedSchoolDetails.schoolCity",
+                      schoolType: "$attendedSchoolDetails.schoolType",
                     },
-                    else: null, // Set to null if no education
                   },
+                  else: null, // Set to null if no education
                 },
               },
             },
           },
-          {
-            $group: {
-              _id: "$_id",
-              sectionType: { $first: "$sectionType" },
-              sectionLabel: { $first: "$sectionLabel" },
-              sectionFrom: { $first: "$sectionFrom" },
-              sectionTo: { $first: "$sectionTo" },
-              sectionYear: { $first: "$sectionYear" },
-              sectionLocation: { $first: "$sectionLocation" },
-              students: { $push: "$studentDetails" }, // Group back the students into an array
-            },
+        },
+        {
+          $group: {
+            _id: "$_id",
+            sectionType: { $first: "$sectionType" },
+            sectionLabel: { $first: "$sectionLabel" },
+            sectionFrom: { $first: "$sectionFrom" },
+            sectionTo: { $first: "$sectionTo" },
+            sectionYear: { $first: "$sectionYear" },
+            sectionLocation: { $first: "$sectionLocation" },
+            students: { $push: "$studentDetails" }, // Group back the students into an array
           },
-        ]);
+        },
+      ]);
 
-        // Check if sections were found
-        if (!sections.length) {
-          return res
-            .status(404)
-            .json({ message: "No sections found for the selected year" });
-        }
-        // we already imported the sections and now we will restructure
-        //rearrange for the schoolsections
-        if (criteria === "forSchoolSections") {
-          //rearrange data structure for schoolsectionslist
-          // Transform data into the desired structure
-          //console.log(sections, "sections");
-          let schoolIdCounter = 1; // Initialize a global counter for unique school IDs
-
-          const groupedData = sections.reduce((acc, section) => {
-            section.students.forEach((student) => {
-              const schoolName =
-                student.studentEducation.attendedSchool.schoolName;
-
-              const studentDetails = {
-                studentName: student.studentName,
-                studentSex: student.studentSex,
-                sectionLabel: section.sectionLabel,
-                sectionFrom: section.sectionFrom,
-                sectionTo: section.sectionTo,
-                classroomLabel: section.sectionLocation.classroomLabel,
-                classroomNumber: section.sectionLocation.classroomNumber,
-              };
-
-              // Check if school already exists in the accumulator
-              let schoolEntry = acc.find(
-                (school) => school.schoolName === schoolName
-              );
-
-              if (!schoolEntry) {
-                // If school doesn't exist, create a new entry with a unique _id
-                schoolEntry = {
-                  schoolName,
-                  _id: schoolIdCounter.toString(), // Assign _id based on the global counter
-                  students: [],
-                };
-                acc.push(schoolEntry);
-                schoolIdCounter++; // Increment the counter for the next unique school
-              }
-
-              // Add student details to the school's students array
-              schoolEntry.students.push(studentDetails);
-            });
-
-            return acc;
-          }, []);
-
-          //console.log(groupedData);
-          return res.json(groupedData);
-        }
-
-        // if selected Year but no criteria ,Return sections
-        return res.json(sections);
-      } catch (error) {
-        console.error("Error fetching sections:", error);
-        return res
-          .status(500)
-          .json({ message: "Server error while fetching sections" });
-      }
-    } else {
-      //standard retreive
-      const sections = await Section.find()
-        .populate(
-          "students",
-          "-operator -studetnDob -studentGardien -updatedAt"
-        )
-        .lean();
-
+      // Check if sections were found
       if (!sections.length) {
-        return res.status(404).json({ message: "No sections found" });
+        return res
+          .status(404)
+          .json({ message: "No sections found for the selected year" });
       }
-
-      // Map through sections to filter studentYears and studentEducation based on the selectedYear
-      const filteredSections = sections.map((section) => {
-        // For each section, map through students
-        section.students = section.students.map((student) => {
-          // Filter studentYears and studentEducation arrays based on the selectedYear
-          const filteredStudent = {
-            ...student, // Keep all student fields
-            studentYears: student.studentYears.filter(
-              (year) => year.academicYear === selectedYear
-            ),
-            studentEducation: student.studentEducation.filter(
-              (education) => education.schoolYear === selectedYear
-            ),
-          };
-          return filteredStudent;
-        });
-
-        return section;
-      });
-      //console.log(sections, "sections");
-
-      if (criteria === "forSchoolSections") {
+      // we already imported the sections and now we will restructure
+      //rearrange for the schoolsections
+      if (selectedYear && criteria === "forSchoolSections") {
         //rearrange data structure for schoolsectionslist
         // Transform data into the desired structure
-        const groupedData = filteredSections.reduce((acc, section) => {
+        //console.log(sections, "sections");
+        let schoolIdCounter = 1; // Initialize a global counter for unique school IDs
+
+        const groupedData = sections.reduce((acc, section) => {
           section.students.forEach((student) => {
             const schoolName =
               student.studentEducation.attendedSchool.schoolName;
+
             const studentDetails = {
               studentName: student.studentName,
               studentSex: student.studentSex,
@@ -454,9 +368,14 @@ const getAllSections = asyncHandler(async (req, res) => {
             );
 
             if (!schoolEntry) {
-              // If school doesn't exist, create a new entry
-              schoolEntry = { schoolName, students: [] };
+              // If school doesn't exist, create a new entry with a unique _id
+              schoolEntry = {
+                schoolName,
+                _id: schoolIdCounter.toString(), // Assign _id based on the global counter
+                students: [],
+              };
               acc.push(schoolEntry);
+              schoolIdCounter++; // Increment the counter for the next unique school
             }
 
             // Add student details to the school's students array
@@ -470,9 +389,91 @@ const getAllSections = asyncHandler(async (req, res) => {
         return res.json(groupedData);
       }
 
-      return res.json(filteredSections);
+      // if selected Year but no criteria ,Return sections
+      return res.json(sections);
+    } catch (error) {
+      console.error("Error fetching sections:", error);
+      return res
+        .status(500)
+        .json({ message: "Server error while fetching sections" });
     }
   }
+  if (selectedYear && selectedYear === "1000") {
+    //standard retreive
+    const sections = await Section.find()
+      .populate("students", "-operator -studetnDob -studentGardien -updatedAt")
+      .lean();
+
+    if (!sections.length) {
+      return res.status(404).json({ message: "No sections found" });
+    }
+
+    // Map through sections to filter studentYears and studentEducation based on the selectedYear
+    const filteredSections = sections.map((section) => {
+      // For each section, map through students
+      section.students = section.students.map((student) => {
+        // Filter studentYears and studentEducation arrays based on the selectedYear
+        const filteredStudent = {
+          ...student, // Keep all student fields
+          studentYears: student.studentYears.filter(
+            (year) => year.academicYear === selectedYear
+          ),
+          studentEducation: student.studentEducation.filter(
+            (education) => education.schoolYear === selectedYear
+          ),
+        };
+        return filteredStudent;
+      });
+
+      return section;
+    });
+    //console.log(sections, "sections");
+
+    if (
+      selectedYear &&
+      selectedYear === "1000" &&
+      criteria === "forSchoolSections"
+    ) {
+      //rearrange data structure for schoolsectionslist
+      // Transform data into the desired structure
+      const groupedData = filteredSections.reduce((acc, section) => {
+        section.students.forEach((student) => {
+          const schoolName = student.studentEducation.attendedSchool.schoolName;
+          const studentDetails = {
+            studentName: student.studentName,
+            studentSex: student.studentSex,
+            sectionLabel: section.sectionLabel,
+            sectionFrom: section.sectionFrom,
+            sectionTo: section.sectionTo,
+            classroomLabel: section.sectionLocation.classroomLabel,
+            classroomNumber: section.sectionLocation.classroomNumber,
+          };
+
+          // Check if school already exists in the accumulator
+          let schoolEntry = acc.find(
+            (school) => school.schoolName === schoolName
+          );
+
+          if (!schoolEntry) {
+            // If school doesn't exist, create a new entry
+            schoolEntry = { schoolName, students: [] };
+            acc.push(schoolEntry);
+          }
+
+          // Add student details to the school's students array
+          schoolEntry.students.push(studentDetails);
+        });
+
+        return acc;
+      }, []);
+
+      //console.log(groupedData);
+      return res.json(groupedData);
+    }
+
+    return res.json(filteredSections);
+  }
+
   // If no ID is provided, fetch all sections
 });
 
@@ -482,9 +483,9 @@ const getAllSections = asyncHandler(async (req, res) => {
 // @access Private
 const createNewSection = asyncHandler(async (req, res) => {
   /////////////////new will be with no ending date
-  console.log(req?.body);
+  //console.log(req?.body);
   const {
-   sectionLabel,
+    sectionLabel,
     sectionYear,
     students,
     sectionColor,
@@ -512,9 +513,7 @@ const createNewSection = asyncHandler(async (req, res) => {
     !operator ||
     !creator
   ) {
-    return res
-      .status(400)
-      .json({ message: "Required data is missing" }); //400 : bad request
+    return res.status(400).json({ message: "Required data is missing" }); //400 : bad request
   }
 
   // Check for duplicate username
@@ -545,6 +544,53 @@ const createNewSection = asyncHandler(async (req, res) => {
     operator,
     creator,
   }; //construct new section to be stored
+  //we need to make sure no studetn is in two sections at a time. so sections will not reflect historical state, but only actual state,
+  //we also making that the sectin inthe queries session is the one with no sectionTO variable meaning current
+  /////////////////
+  const foundSections = await Section.find({ sectionYear }); // Resolve the query to get the array
+  const isMatchingSection = foundSections.some((section) =>
+    sectionObject.students.some(
+      (student) =>
+        (section.students.includes(student.toString()) && // Check if the student exists in both arrays
+          new Date(sectionObject?.sectionFrom) <
+            new Date(section.sectionFrom)) ||
+        (section.students.includes(student.toString()) &&
+          new Date(sectionObject?.sectionFrom) >
+            new Date(section.sectionFrom) &&
+          (section.sectionTo !== "" ||section.sectionTo !== null||
+            new Date(sectionObject?.sectionFrom) < new Date(section.sectionTo))) // Date condition
+    )
+  );
+
+  if (isMatchingSection) {
+    return res.status(409).json({
+      message: `student(s) found in another section for the dates chosen`,
+    });
+  }
+  /////////////////check if the animator is already in other sections
+  const foundAnimSections = await Section.find({
+    sectionYear,
+    sectionAnimator,
+  }); // Resolve the query to get the array
+
+  console.log(foundAnimSections);
+  const isMatchingAnimSection = foundAnimSections.some(
+    (section) =>
+      (sectionObject?.sectionAnimator.toString() ===
+        section?.sectionAnimator.toString() && // Check if the student exists in both arrays
+        new Date(sectionObject?.sectionFrom) < new Date(section.sectionFrom)) ||
+      (sectionObject?.sectionAnimator.toString() ===
+        section?.sectionAnimator.toString() &&
+        new Date(sectionObject?.sectionFrom) > new Date(section.sectionFrom) &&
+        (section.sectionTo !== "" ||section.sectionTo !== null||
+          new Date(sectionObject?.sectionFrom) < new Date(section.sectionTo))) // Date condition
+  );
+
+  if (isMatchingAnimSection) {
+    return res.status(409).json({
+      message: `animator found in another section for the chosen dates`,
+    });
+  }
 
   // Create and store new section
   const section = await Section.create(sectionObject);
@@ -558,7 +604,6 @@ const createNewSection = asyncHandler(async (req, res) => {
       { _id: { $in: section.students } }, // Filter: only students in section.students array
       { $set: { studentSection: newSectionId } } // Update: set studentSection to newSectionId
     );
-
     // If created and students updated
     res.status(201).json({
       message: `Section created and students updated successfully`,
@@ -569,7 +614,7 @@ const createNewSection = asyncHandler(async (req, res) => {
 });
 
 // @desc Update a section
-// @route PATCH 'desk/section
+// @route PATCH '/section
 // @access Private
 const updateSection = asyncHandler(async (req, res) => {
   ////////////update teh students while updating and creating and deleting.
@@ -583,7 +628,6 @@ const updateSection = asyncHandler(async (req, res) => {
     sectionColor,
     sectionType,
     sectionFrom,
-    // sectionTo,
     sectionAnimator,
     sectionLocation,
     operator,
@@ -591,6 +635,7 @@ const updateSection = asyncHandler(async (req, res) => {
 
   // Confirm data
   if (
+    !id ||
     !sectionLabel ||
     isChangeFlag === undefined || // Checks if isChangeFlag is undefined
     !sectionYear ||
@@ -598,7 +643,6 @@ const updateSection = asyncHandler(async (req, res) => {
     students.length === 0 ||
     !sectionColor ||
     !sectionType ||
-    //!sectionTo ||
     !sectionFrom ||
     !sectionAnimator ||
     !sectionLocation ||
@@ -606,14 +650,6 @@ const updateSection = asyncHandler(async (req, res) => {
   ) {
     return res.status(400).json({ message: "Required data is missing" });
   }
-  //check for duplcate
-  // Check for duplicate, no need because we can have same attributes but different students
-  //  const duplicateSection = await Section.findOne({ sectionLabel,}).lean().exec();
-
-  //  // Allow updates to the original service
-  //  if (duplicateSection?._id.toString() !== id) {
-  //    return res.status(409).json({ message: "Duplicate section found with the same Label" });
-  //  }
 
   // Does the section exist to update?
   const sectionToUpdate = await Section.findById(id).exec(); //we did not lean becausse we need the save method attached to the response
@@ -622,24 +658,87 @@ const updateSection = asyncHandler(async (req, res) => {
     return res.status(400).json({ message: "Section to update not found" });
   }
   if (isChangeFlag) {
+    //studetns, composition was changed, or animator changed
+
+    //check no student  or animator of the new section is already present in other current sections
+    const oldSections = await Section.find({ sectionYear }); // Resolve the query to get the array
+
+    const isMatchingSection = oldSections.some((section) =>
+      sectionToUpdate.students.some(
+        (student) =>
+          (section.students.includes(student.toString()) && // Check if the student exists in both arrays
+            new Date(sectionToUpdate?.sectionFrom) <
+              new Date(section.sectionFrom)) ||
+          (section.students.includes(student.toString()) &&
+            new Date(sectionToUpdate?.sectionFrom) >
+              new Date(section.sectionFrom) &&
+            (section.sectionTo !== "" ||section.sectionTo !== null||
+              new Date(sectionToUpdate?.sectionFrom) <
+                new Date(section.sectionTo))) // Date condition
+      )
+    );
+
+    if (isMatchingSection) {
+      return res.status(409).json({
+        message: `student(s) found in another section for the dates chosen`,
+      });
+    }
+    /////////////////check if the animator is already in other sections
+    const foundAnimSections = await Section.find({
+      sectionYear,
+      sectionAnimator,
+    }); // Resolve the query to get the array
+
+    const isMatchingAnimSection = foundAnimSections.some(
+      (section) =>
+        (sectionToUpdate?.sectionAnimator.toString() ===
+          section?.sectionAnimator.toString() && // Check if the student exists in both arrays
+          new Date(sectionToUpdate?.sectionFrom) <
+            new Date(section.sectionFrom)) ||
+        (sectionToUpdate?.sectionAnimator.toString() ===
+          section?.sectionAnimator.toString() &&
+          new Date(sectionToUpdate?.sectionFrom) >
+            new Date(section.sectionFrom) &&
+          (section.sectionTo !== "" ||section.sectionTo !== null||
+            new Date(sectionToUpdate?.sectionFrom) <
+              new Date(section.sectionTo))) // Date condition
+    );
+
+    if (isMatchingAnimSection) {
+      return res.status(409).json({
+        message: `animator found in another section for the chosen dates`,
+      });
+    }
+
     //if there was a change we set sectionTo and create a new section with new data
-    sectionToUpdate.sectionTo = sectionFrom; //the starting dat aof new section is ending date of old section
+    sectionToUpdate.sectionTo = sectionFrom;
+   
+    const updatedSection = await sectionToUpdate.save(); //save old section
+    
+    const newSectionFrom = new Date(sectionFrom);
+    newSectionFrom.setSeconds(newSectionFrom.getSeconds() + 1); // Increment by one second
 
     //console.log(sectionToUpdate,'sectionToUpdate')
-    const updatedSection = await sectionToUpdate.save(); //save old section
     const newSectionObject = {
       sectionLabel,
       sectionYear,
       students,
       sectionColor,
       sectionType,
-      sectionFrom,
-      //sectionTo,
+      sectionFrom: newSectionFrom, //the starting dat aof new section is ending date of old section plus a second toavoid concurrnce
+      sectionTo: null,
       sectionAnimator,
       sectionLocation,
       operator,
       creator: operator,
     }; //construct new section to be stored
+/// we need to remove the setudetnSection from studetn that are no more in that old section:
+await Student.updateMany(
+  { studentSection: id },
+  { $unset: { studentSection: "" } }
+);
+
+
 
     // Create and store new section
     const newSection = await Section.create(newSectionObject);
@@ -651,7 +750,7 @@ const updateSection = asyncHandler(async (req, res) => {
         { $set: { studentSection: newSection._id } }
       );
 
-      res.status(201).json({
+      return res.status(201).json({
         message: `Section updated and another created successfully`,
       });
     } else {
@@ -668,7 +767,7 @@ const updateSection = asyncHandler(async (req, res) => {
     sectionToUpdate.sectionColor = sectionColor;
     sectionToUpdate.sectionType = sectionType;
     sectionToUpdate.sectionFrom = sectionFrom;
-    //sectionTo,
+
     sectionToUpdate.sectionAnimator = sectionAnimator;
     sectionToUpdate.sectionLocation = sectionLocation;
     sectionToUpdate.operator = operator;
@@ -722,7 +821,7 @@ const deleteSection = asyncHandler(async (req, res) => {
 
   const reply = `Deleted ${result?.deletedCount} section`;
 
- return res.json({message:reply});
+  return res.json({ message: reply });
 });
 
 module.exports = {

@@ -44,10 +44,11 @@ const SectionSchema = new mongoose.Schema(
       type: Date,
       required: true,
     },
+
     sectionTo: {
       //the current section will not have an ending date
       type: Date,
-      default: null,
+      default: null,//we will ensure the curretn is empty string
     },
 
     sectionLocation: {

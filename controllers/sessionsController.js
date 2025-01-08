@@ -53,80 +53,108 @@ const getAllSessions = asyncHandler(async (req, res) => {
   // }
 
   if (criteria === "schools" && selectedYear) {
-   // console.log(selectedYear, 'selected year we re here at schools');
-  
+    // console.log(selectedYear, 'selected year we re here at schools');
+
     // Step 1: Retrieve sessions with school and student populated
     const sessions = await Session.find({ sessionYear: selectedYear })
       .populate("school")
-      .populate("student", "-studentDob -studentSex  -studentYears -studentGardien -operator -updatedAt")
+      .populate(
+        "student",
+        "-studentDob -studentSex  -studentYears -studentGardien -operator -updatedAt"
+      )
       .lean();
-  
+
     if (!sessions.length) {
       return res.status(404).json({ message: "No sessions found" });
     }
-  
+
     // Step 2: Retrieve sections for the selected year without an end date
     const sections = await Section.find({
       sectionYear: selectedYear,
       $or: [{ endDate: { $exists: false } }, { endDate: null }],
     })
-      .select("students sectionAnimator sectionLocation name ")
-      .populate("sectionAnimator", "-employeeAssessment -employeeCurrentEmployment -employeeIsActive -employeeWorkHistory -employeeYears")
+      .select("students sectionAnimator sectionLocation  sectionTo ") //removed name
+      .populate(
+        "sectionAnimator",
+        "-employeeAssessment -employeeCurrentEmployment -employeeIsActive -employeeWorkHistory -employeeYears"
+      )
       .populate("sectionLocation", "-sectionType -operator -sectionYear")
       .lean();
-  
+
     if (!sections.length) {
       return res.status(404).json({ message: "No sections found" });
     }
-  
+
     // Step 3: Gather all attendedSchool IDs for selectedYear
     const attendedSchoolIds = [];
-    sessions.forEach(session => {
+    sessions.forEach((session) => {
       const studentEducation = session.student?.studentEducation || [];
-      const educationForYear = studentEducation.find(edu => edu.schoolYear === selectedYear);
+      const educationForYear = studentEducation.find(
+        (edu) => edu.schoolYear === selectedYear
+      );
       if (educationForYear && educationForYear.attendedSchool) {
         attendedSchoolIds.push(educationForYear.attendedSchool);
       }
     });
-  
+
     // Fetch attended schools by these IDs
-    const attendedSchools = await AttendedSchool.find({ _id: { $in: attendedSchoolIds } }).lean();
-    
+    const attendedSchools = await AttendedSchool.find({
+      _id: { $in: attendedSchoolIds },
+    }).lean();
+
     // Step 4: Map attendedSchools by ID for easy access
     const attendedSchoolMap = attendedSchools.reduce((acc, school) => {
       acc[school._id.toString()] = school;
       return acc;
     }, {});
-  //console.log(attendedSchoolMap,'attendedSchoolMap')
+    //console.log(attendedSchoolMap,'attendedSchoolMap')
     // Step 5: Build final data structure with `attendedSchool` and other details
+    //console.log(sections);
     const formattedSessions = sessions.map((session) => {
-      const matchingSection = sections.find((section) =>
-        section.students.some((student) => student.toString() === session.student?._id.toString())
+      const matchingSection = sections.find(
+        (section) =>
+          ////// section.sectionTo === "" && // Ensure sectionTo is an empty string no working
+          section.students.some(
+            (student) => student.toString() === session.student?._id.toString()
+            // ) && section?.sectionTo === ""///this will only keep the current sections and not the elapsed/modifed ones with sectionTo date
+          ) &&
+          (section?.sectionTo === "" ||section?.sectionTo === null|| new Date(section.sectionTo).toString() === "Invalid Date")
       );
-  
+
       if (matchingSection) {
         session.section = matchingSection;
         session.animator = matchingSection.sectionAnimator?._id;
         session.classroom = matchingSection.sectionLocation?._id;
-        session.classroomLabel = matchingSection.sectionLocation?.classroomLabel;
-        session.classroomColor = matchingSection.sectionLocation?.classroomColor;
-        session.classroomNumber = matchingSection.sectionLocation?.classroomNumber;
+        session.classroomLabel =
+          matchingSection.sectionLocation?.classroomLabel;
+        session.classroomColor =
+          matchingSection.sectionLocation?.classroomColor;
+        session.classroomNumber =
+          matchingSection.sectionLocation?.classroomNumber;
         session.employeeColor = matchingSection.sectionAnimator?.employeeColor;
       }
-  
+
       // Set location and color based on session type
-      session.Location = session.sessionType === "Nursery" ? session?.classroomLabel : session.school.schoolName;
-      session.color = session.sessionType === "Nursery" ? session?.classroomColor : session.school.schoolColor;
+      session.Location =
+        session.sessionType === "Nursery"
+          ? session?.classroomLabel
+          : session.school.schoolName;
+      session.color =
+        session.sessionType === "Nursery"
+          ? session?.classroomColor
+          : session.school.schoolColor;
       session.site = session?.school;
-  
+
       // Add attendedSchool based on student's education information for the selected year
       const studentEducation = session.student?.studentEducation || [];
-      const educationForYear = studentEducation.find(edu => edu.schoolYear === selectedYear);
+      const educationForYear = studentEducation.find(
+        (edu) => edu.schoolYear === selectedYear
+      );
       if (educationForYear && educationForYear.attendedSchool) {
-        session.attendedSchool = attendedSchoolMap[educationForYear.attendedSchool.toString()] || null;
-        
+        session.attendedSchool =
+          attendedSchoolMap[educationForYear.attendedSchool.toString()] || null;
       }
-  
+
       return session;
     });
     // Step 6: Flatten the structure for scheduler
@@ -140,23 +168,26 @@ const getAllSessions = asyncHandler(async (req, res) => {
       classroom: session.classroom,
       attendedSchool: session.attendedSchool, // Included in final flattened structure
     }));
-  
+
     // Step 7: Add employee names for each session
     const updatedSessions = await addEmployeeNamesToSessions(flattenedSessions);
-  
+
     // If querying by animator ID
     if (id) {
-      const sessionsForAnimator = updatedSessions.filter((session) => session.animator?.toString() === id);
+      const sessionsForAnimator = updatedSessions.filter(
+        (session) => session.animator?.toString() === id
+      );
       if (!sessionsForAnimator.length) {
-        return res.status(404).json({ message: "No sessions found for that animator" });
+        return res
+          .status(404)
+          .json({ message: "No sessions found for that animator" });
       }
       return res.json(sessionsForAnimator);
     }
-  
+
     return res.json(updatedSessions);
   }
-  
-  
+
   // if (criteria === "schools" && selectedYear) {
   //   console.log(selectedYear, "selected year we re here at schools");
   //   //we nneed the scheduler grouoed by schools
@@ -353,9 +384,7 @@ const createNewSession = asyncHandler(async (req, res) => {
     // (school === "6714e7abe2df335eecd87750" && !classroom)// removed because the animator and classroom will come from section itself
   ) {
     //if nursery and no animator or no classroom
-    return res
-      .status(400)
-      .json({ message: "Required data is missing" }); //400 : bad request
+    return res.status(400).json({ message: "Required data is missing" }); //400 : bad request
   }
 
   // Check for duplicate username
@@ -543,8 +572,7 @@ const updateSession = asyncHandler(async (req, res) => {
         });
       } else {
         return res.status(400).json({
-          message:
-            "Invalid data received",
+          message: "Invalid data received",
         });
       }
 
@@ -612,20 +640,19 @@ const deleteSession = asyncHandler(async (req, res) => {
   if (!session) {
     return res.status(400).json({ message: "Session not found" });
   }
-  
+
   switch (operationType) {
     case "deleteSession": //delete single separate event
-    const ressul = await session.deleteOne();
-    return res.json({
-      message: `Deleted ${ressul.deletedCount} session`,
-    });
-    break;
-    
+      const ressul = await session.deleteOne();
+      return res.json({
+        message: `Deleted ${ressul.deletedCount} session`,
+      });
+      break;
+
     case "deleteOccurence": // deletion of single event in series
-    //console.log(extraException, id);
-    //console.log('weerer heerererekjrhehr')
+      //console.log(extraException, id);
+      //console.log('weerer heerererekjrhehr')
       if (!session.RecurrenceException) {
-       
         session.RecurrenceException = extraException; // If empty, start with the new exception
       } else {
         const exceptionsArray = session.RecurrenceException.split(",");
