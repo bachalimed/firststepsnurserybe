@@ -14,202 +14,190 @@ const getAllAdmissions = asyncHandler(async (req, res) => {
   // Check if the request has selectedYear or id query parameters
   //console.log('getting the query', req.query)
   const { selectedYear, criteria, id } = req.query;
-  if (selectedYear) {
-    if (selectedYear === "1000") {
-      // Fetch all admissions if selectedYear is '1000'
-      const admissions = await Admission.find().lean();
-      if (!admissions?.length) {
-        return res.status(400).json({ message: "No admissions found!" });
-      }
-      return res.json(admissions);
-    } else {
-      if (criteria === "noEnrolments") {
-        const admissions = await Admission.aggregate([
-          { 
-            $match: { admissionYear: selectedYear } // Match admissions for the selected year
-          },
-          {
-            $lookup: {
-              from: "enrolments",
-              let: { admissionId: "$_id" },
-              pipeline: [
-                {
-                  $match: {
-                    $expr: {
-                      $and: [
-                        { $eq: ["$enrolmentYear", selectedYear] },
-                        { $eq: ["$admission", "$$admissionId"] }
-                      ]
-                    }
-                  }
-                },
-                {
-                  $project: { serviceType: 1, enrolmentMonth: 1 }
-                }
-              ],
-              as: "enrolments"
-            }
-          },
-          {
-            $lookup: {
-              from: "services",
-              localField: "agreedServices.service",
-              foreignField: "_id",
-              as: "serviceDetails"
-            }
-          },
-          {
-            $addFields: {
-              agreedServices: {
-                $map: {
-                  input: "$agreedServices",
-                  as: "service",
-                  in: {
-                    $mergeObjects: [
-                      "$$service",
-                      {
-                        service: {
-                          $arrayElemAt: [
-                            {
-                              $filter: {
-                                input: "$serviceDetails",
-                                as: "serviceDetail",
-                                cond: { $eq: ["$$service.service", "$$serviceDetail._id"] }
-                              }
-                            },
-                            0
-                          ]
-                        }
-                      }
-                    ]
-                  }
-                }
-              }
-            }
-          },
-          {
-            $addFields: {
-              agreedServices: {
-                $map: {
-                  input: "$agreedServices",
-                  as: "service",
-                  in: {
-                    $mergeObjects: [
-                      "$$service",
-                      {
-                        feeMonths: {
-                          $filter: {
-                            input: "$$service.feeMonths",
-                            as: "month",
-                            cond: {
-                              $not: {
-                                $in: [
-                                  "$$month",
-                                  {
-                                    $map: {
-                                      input: {
-                                        $filter: {
-                                          input: "$enrolments",
-                                          as: "enrol",
-                                          cond: { $eq: ["$$enrol.serviceType", "$$service.service.serviceType"] }
-                                        }
-                                      },
-                                      as: "enrol",
-                                      in: "$$enrol.enrolmentMonth"
-                                    }
-                                  }
-                                ]
-                              }
-                            }
-                          }
-                        }
-                      }
-                    ]
-                  }
-                }
-              }
-            }
-          },
-          {
-            $addFields: {
-              agreedServices: {
-                $filter: {
-                  input: "$agreedServices",
-                  as: "service",
-                  cond: { $gt: [{ $size: "$$service.feeMonths" }, 0] }
-                }
-              }
-            }
-          },
-          {
-            $match: {
-              "agreedServices.0": { $exists: true }
-            }
-          },
-          {
-            $lookup: {
-              from: "students",
-              localField: "student",
-              foreignField: "_id",
-              as: "student"
-            }
-          },
-          {
-            $unwind: "$student"
-          },
-          {
-            $project: {
-              "student._id": 1,
-              "student.studentName": 1,
-              "student.studentIsActive": 1,
-              admissionYear: 1, // Retain admissionYear
-              agreedServices: {
-                service: 1,
-                feeMonths: 1,
-                feeValue: 1,
-                feePeriod: 1,
-                feeStartDate: 1,
-                isFlagged: 1,
-                isAuthorised: 1,
-                authorisedBy: 1,
-                comment: 1
-              }
-            }
-          }
-        ]);
-         // Sort students by studentName.firstName in ascending order
-         const sortedAdmissions = admissions.sort((a, b) => {
-          const firstNameA = a.student.studentName.firstName.toLowerCase();
-          const firstNameB = b.student.studentName.firstName.toLowerCase();
 
-          if (firstNameA < firstNameB) return -1; // a comes first
-          if (firstNameA > firstNameB) return 1; // b comes first
-          return 0; // they are equal
-        });
-        
-        return res.json(sortedAdmissions);
-        
-        
-        
-        
-      }
-
-      // Fetch admissions for the selected year
-      //console.log('with yearrrrrrrrrrrrrrrrrrr select', selectedYear);
-      const admissions = await Admission.find({ admissionYear: selectedYear })
-        .populate("agreedServices.service", "-serviceCreator -serviceOperator") // Exclude these fields
-        .populate("student", "studentName") // Populate student name
-        .lean();
-
-      //console.log('with yeaaaaaaaaaaaaaaaaaar select', selectedYear, admissions);
-      if (!admissions?.length) {
-        return res.status(400).json({
-          message: "No admissions found for the selected academic year",
-        });
-      }
-      return res.json(admissions);
+  if (selectedYear && selectedYear === "1000") {
+    // Fetch all admissions if selectedYear is '1000'
+    const admissions = await Admission.find().lean();
+    if (!admissions?.length) {
+      return res.status(400).json({ message: "No admissions found!" });
     }
-  } else if (id) {
+    return res.json(admissions);
+  }
+  if (selectedYear && criteria === "noEnrolments") {
+    const admissions = await Admission.aggregate([
+      {
+        $match: { admissionYear: selectedYear }, // Match admissions for the selected year
+      },
+      {
+        $lookup: {
+          from: "enrolments",
+          let: { admissionId: "$_id" },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ["$enrolmentYear", selectedYear] },
+                    { $eq: ["$admission", "$$admissionId"] },
+                  ],
+                },
+              },
+            },
+            {
+              $project: { serviceType: 1, enrolmentMonth: 1 },
+            },
+          ],
+          as: "enrolments",
+        },
+      },
+      {
+        $lookup: {
+          from: "services",
+          localField: "agreedServices.service",
+          foreignField: "_id",
+          as: "serviceDetails",
+        },
+      },
+      {
+        $addFields: {
+          agreedServices: {
+            $map: {
+              input: "$agreedServices",
+              as: "service",
+              in: {
+                $mergeObjects: [
+                  "$$service",
+                  {
+                    service: {
+                      $arrayElemAt: [
+                        {
+                          $filter: {
+                            input: "$serviceDetails",
+                            as: "serviceDetail",
+                            cond: {
+                              $eq: ["$$service.service", "$$serviceDetail._id"],
+                            },
+                          },
+                        },
+                        0,
+                      ],
+                    },
+                  },
+                ],
+              },
+            },
+          },
+        },
+      },
+      {
+        $addFields: {
+          agreedServices: {
+            $map: {
+              input: "$agreedServices",
+              as: "service",
+              in: {
+                $mergeObjects: [
+                  "$$service",
+                  {
+                    feeMonths: {
+                      $filter: {
+                        input: "$$service.feeMonths",
+                        as: "month",
+                        cond: {
+                          $not: {
+                            $in: [
+                              "$$month",
+                              {
+                                $map: {
+                                  input: {
+                                    $filter: {
+                                      input: "$enrolments",
+                                      as: "enrol",
+                                      cond: {
+                                        $eq: [
+                                          "$$enrol.serviceType",
+                                          "$$service.service.serviceType",
+                                        ],
+                                      },
+                                    },
+                                  },
+                                  as: "enrol",
+                                  in: "$$enrol.enrolmentMonth",
+                                },
+                              },
+                            ],
+                          },
+                        },
+                      },
+                    },
+                  },
+                ],
+              },
+            },
+          },
+        },
+      },
+      {
+        $addFields: {
+          agreedServices: {
+            $filter: {
+              input: "$agreedServices",
+              as: "service",
+              cond: { $gt: [{ $size: "$$service.feeMonths" }, 0] },
+            },
+          },
+        },
+      },
+      {
+        $match: {
+          "agreedServices.0": { $exists: true },
+        },
+      },
+      {
+        $lookup: {
+          from: "students",
+          localField: "student",
+          foreignField: "_id",
+          as: "student",
+        },
+      },
+      {
+        $unwind: "$student",
+      },
+      {
+        $project: {
+          "student._id": 1,
+          "student.studentName": 1,
+          "student.studentIsActive": 1,
+          admissionYear: 1, // Retain admissionYear
+          agreedServices: {
+            service: 1,
+            feeMonths: 1,
+            feeValue: 1,
+            feePeriod: 1,
+            feeStartDate: 1,
+            isFlagged: 1,
+            isAuthorised: 1,
+            authorisedBy: 1,
+            comment: 1,
+          },
+        },
+      },
+    ]);
+    // Sort students by studentName.firstName in ascending order
+    const sortedAdmissions = admissions.sort((a, b) => {
+      const firstNameA = a.student.studentName.firstName.toLowerCase();
+      const firstNameB = b.student.studentName.firstName.toLowerCase();
+
+      if (firstNameA < firstNameB) return -1; // a comes first
+      if (firstNameA > firstNameB) return 1; // b comes first
+      return 0; // they are equal
+    });
+
+    return res.json(sortedAdmissions);
+  }
+
+  if (id) {
     // Fetch admission by ID
     const { id } = req.query;
     const admission = await Admission.find({ _id: id })
@@ -223,6 +211,21 @@ const getAllAdmissions = asyncHandler(async (req, res) => {
     }
     return res.json(admission);
   }
+  //console.log(selectedYear)
+  // Fetch admissions for the selected year
+  //console.log('with yearrrrrrrrrrrrrrrrrrr select', selectedYear);
+  const admissions = await Admission.find({ admissionYear: selectedYear })
+    .populate("agreedServices.service", "-serviceCreator -serviceOperator") // Exclude these fields
+    .populate("student", "studentName") // Populate student name
+    .lean();
+
+  //console.log('with yeaaaaaaaaaaaaaaaaaar select', selectedYear, admissions);
+  if (!admissions?.length) {
+    return res.status(400).json({
+      message: "No admissions found for the selected academic year",
+    });
+  }
+  return res.json(admissions);
   // else {
   //   // Fetch all admissions if no query parameters
   //   const admissions = await Admission.find().lean();
@@ -297,7 +300,7 @@ const createNewAdmission = asyncHandler(async (req, res) => {
   }; //construct new admission to be stored
   //set is authjorised for everfy isFLagged:false
 
- // console.log(admissionObject.agreedServices, "modifiedAgreedServices");
+  // console.log(admissionObject.agreedServices, "modifiedAgreedServices");
 
   // Create and store new admission
   const admission = await Admission.create(admissionObject);
@@ -414,7 +417,7 @@ const deleteAdmission = asyncHandler(async (req, res) => {
 
     if (studentUpdateResult) {
       const reply = `Admission deleted and student updated successfully`;
-      return res.json({message:reply});
+      return res.json({ message: reply });
     } else {
       return res
         .status(400)
@@ -424,7 +427,7 @@ const deleteAdmission = asyncHandler(async (req, res) => {
 
   // If failed to delete admission
   const reply = `Deleted ${result?.deletedCount} admissions`;
-  return res.status(400).json({message:reply});
+  return res.status(400).json({ message: reply });
 });
 
 module.exports = {
