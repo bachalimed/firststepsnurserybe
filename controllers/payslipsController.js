@@ -123,6 +123,39 @@ const getAllPayslips = asyncHandler(async (req, res) => {
   // If no ID is provided, fetch all payslips
 });
 
+/////////////////////////////////checks for payslip dates
+const isValidPayslipDate = (payslipYear, payslipMonth, employeeJoinDate) => {
+  const currentDate = new Date();
+  const [startYear, endYear] = payslipYear.split("/").map(Number);
+
+  const payslipMonthIndex = new Date(
+    `${payslipMonth} 1, ${startYear}`
+  ).getMonth();
+
+  // Calculate if the payslip month falls in the correct range of the current date
+  const payslipDate = new Date(
+    payslipMonthIndex >= 8 ? `${startYear}` : `${endYear}`,
+    payslipMonthIndex
+  );
+
+  if (payslipDate > currentDate) {
+    return {
+      isValid: false,
+      message: "Payslip date cannot be in the future.",
+    };
+  }
+
+  // Ensure payslip date is not earlier than employee's join date
+  if (payslipDate < new Date(employeeJoinDate)) {
+    return {
+      isValid: false,
+      message: "Payslip date cannot be earlier than the employee's join date.",
+    };
+  }
+
+  return { isValid: true };
+};
+
 //----------------------------------------------------------------------------------
 // @desc Create new payslip
 // @route POST 'desk/payslip
@@ -141,7 +174,7 @@ const createNewPayslip = asyncHandler(async (req, res) => {
     payslipPaymentDate,
     payslipLeaveDays,
     payslipSalaryComponents,
-
+    employeeJoinDate,
     payslipCreator,
   } = req?.body; //this will come from front end we put all the fields o fthe collection here
   //console.log(payslipItems,'1')
@@ -151,12 +184,23 @@ const createNewPayslip = asyncHandler(async (req, res) => {
     !payslipYear ||
     !payslipMonth ||
     !payslipEmployeeName ||
+    !employeeJoinDate ||
     !payslipWorkdays ||
     !payslipEmployee ||
     !payslipSalaryComponents ||
     !payslipCreator
   ) {
     return res.status(400).json({ message: "Required data is missing" }); //400 : bad request
+  }
+  //check dates are valid  no early or late payslip is being generated
+  const { isValid, message } = isValidPayslipDate(
+    payslipYear,
+    payslipMonth,
+    employeeJoinDate
+  );
+
+  if (!isValid) {
+    return res.status(400).json({ message });
   }
 
   const payslipObject = {
@@ -173,9 +217,14 @@ const createNewPayslip = asyncHandler(async (req, res) => {
     payslipCreator: payslipCreator,
   }; //construct new payslip to be stored
 
-
-  const duplicate = await Payslip.findOne({payslipMonth:payslipMonth, payslipYear:payslipYear,payslipEmployee:payslipEmployee})
-  if(duplicate){ return res.status(400).json({ message: "Duplicate payslip found" });}
+  const duplicate = await Payslip.findOne({
+    payslipMonth: payslipMonth,
+    payslipYear: payslipYear,
+    payslipEmployee: payslipEmployee,
+  });
+  if (duplicate) {
+    return res.status(400).json({ message: "Duplicate payslip found" });
+  }
   // Create and store new payslip
   const payslip = await Payslip.create(payslipObject);
   if (!payslip) {
@@ -209,35 +258,35 @@ const updatePayslip = asyncHandler(async (req, res) => {
 
     payslipOperator,
   } = req?.body;
-console.log(_id,
-  payslipYear,
-  payslipMonth,
-  payslipWorkdays,
-  payslipNote,
-  payslipEmployee,
-  payslipEmployeeName,
-  payslipIsApproved,
-  payslipPaymentDate,
-  payslipLeaveDays,
-  payslipSalaryComponents,
+  console.log(
+    _id,
+    payslipYear,
+    payslipMonth,
+    payslipWorkdays,
+    payslipNote,
+    payslipEmployee,
+    payslipEmployeeName,
+    payslipIsApproved,
+    payslipPaymentDate,
+    payslipLeaveDays,
+    payslipSalaryComponents,
 
-  payslipOperator)
+    payslipOperator
+  );
   // Confirm data
   if (
     !_id ||
     !payslipYear ||
     !payslipMonth ||
     !payslipEmployee ||
-    !payslipEmployeeName||
+    !payslipEmployeeName ||
     !payslipLeaveDays ||
-   ! payslipWorkdays||
-    
+    !payslipWorkdays ||
     !payslipSalaryComponents
-   
   ) {
     return res.status(400).json({ message: "Required data is missing" });
   }
-
+///no need to check the dates becasue they are not changed in the edit
   // Does the payslip exist to update?
   const payslipToUpdate = await Payslip.findById(_id).exec(); //we did not lean becausse we need the save method attached to the response
 
