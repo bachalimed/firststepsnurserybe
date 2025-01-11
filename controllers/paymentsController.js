@@ -1,6 +1,7 @@
 // const User = require('../models/User')
 const Payment = require("../models/Payment");
 const Invoice = require("../models/Invoice");
+const Family = require("../models/Family");
 
 const asyncHandler = require("express-async-handler"); //instead of using try catch
 
@@ -79,7 +80,7 @@ const getAllPayments = asyncHandler(async (req, res) => {
   //console.log("helloooooooo");
 
   // Check if an ID is passed as a query parameter
-  const { id, criteria, selectedYear } = req.query;
+  const { id, criteria, selectedYear,selectedMonth  } = req.query;
   if (id) {
     //console.log("nowwwwwwwwwwwwwwwwwwwwwww here");
 
@@ -111,7 +112,7 @@ const getAllPayments = asyncHandler(async (req, res) => {
     }
   }
 
-  if (selectedYear !== "1000") {
+  if (selectedYear !== "1000" ) {
     // Find a single payment by its ID
     const payments = await Payment.find()
       .populate({
@@ -119,15 +120,58 @@ const getAllPayments = asyncHandler(async (req, res) => {
         select: "student_id studentName", // Selects only the fields you want from the student
       })
       .populate({
-        path: "paymentInvoices", // This will populate the paymentInvoices array
+        path: "paymentInvoices", // Populate the paymentInvoices array
         select:
-          "_id invoiceYear invoiceMonth invoiceDueDate invoiceIsFullyPaid invoiceAuthorisedAmount invoiceDiscountAmount invoiceAmount", // Include everything from Invoice (_id will be automatically included)
+          "_id invoiceYear invoiceMonth invoiceDueDate invoiceIsFullyPaid invoiceAuthorisedAmount invoiceDiscountAmount invoiceAmount", // Include these fields in the Invoice
+        populate: {
+          path: "invoiceEnrolment", // Populate the invoiceEnrolment field within each Invoice
+          select: "serviceType servicePeriod", // Include serviceType and servicePeriod from Enrolment
+        },
       })
       .lean();
 
     if (!payments) {
-      return res.status(400).json({ message: "Payment not found" });
+      return res.status(400).json({ message: "No payments found" });
     }
+ // we will add teh father and mother names tohte payments
+
+
+// Retrieve all paymentStudent IDs to batch query families
+const studentIds = payments.map(payment => payment.paymentStudent?._id).filter(Boolean);
+
+// Find families where children.child matches any of the student IDs
+const families = await Family.find({ "children.child": { $in: studentIds } })
+  .populate({
+    path: "father",
+    select: "userFullName", // Retrieve only userFullName for father
+  })
+  .populate({
+    path: "mother",
+    select: "userFullName", // Retrieve only userFullName for mother
+  })
+  .lean(); // Converts Mongoose documents to plain JavaScript objects
+  
+// Map families by child ID for quick access
+const familyMap = {};
+families.forEach(family => {
+  family.children.forEach(child => {
+    familyMap[child.child] = {
+      father: family.father?.userFullName || "Unknown Father",
+      mother: family.mother?.userFullName || "Unknown Mother",
+      id:family._id||"Unknown family Id"
+    };
+  });
+});
+
+// Add family info to each payment
+payments.forEach(payment => {
+  const studentId = payment.paymentStudent?._id;
+  payment.familyInfo = familyMap[studentId] || {
+    father: "No Family Found",
+    mother: "No Family Found",
+    id:"Unknown family Id"
+  };
+});
 
     // Return the payment inside an array
     return res.json(payments); //we need it inside  an array to avoid response data error
