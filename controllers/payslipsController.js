@@ -174,6 +174,7 @@ const createNewPayslip = asyncHandler(async (req, res) => {
     payslipPaymentDate,
     payslipLeaveDays,
     payslipSalaryComponents,
+    payslipTotalAmount,
     employeeJoinDate,
     payslipCreator,
   } = req?.body; //this will come from front end we put all the fields o fthe collection here
@@ -188,6 +189,7 @@ const createNewPayslip = asyncHandler(async (req, res) => {
     !payslipWorkdays ||
     !payslipEmployee ||
     !payslipSalaryComponents ||
+    !payslipTotalAmount ||
     !payslipCreator
   ) {
     return res.status(400).json({ message: "Required data is missing" }); //400 : bad request
@@ -214,6 +216,7 @@ const createNewPayslip = asyncHandler(async (req, res) => {
     payslipPaymentDate: payslipPaymentDate,
     payslipLeaveDays: payslipLeaveDays,
     payslipSalaryComponents: payslipSalaryComponents,
+    payslipTotalAmount: payslipTotalAmount,
     payslipCreator: payslipCreator,
   }; //construct new payslip to be stored
 
@@ -255,24 +258,24 @@ const updatePayslip = asyncHandler(async (req, res) => {
     payslipPaymentDate,
     payslipLeaveDays,
     payslipSalaryComponents,
-
+    payslipTotalAmount,
     payslipOperator,
   } = req?.body;
-  console.log(
-    _id,
-    payslipYear,
-    payslipMonth,
-    payslipWorkdays,
-    payslipNote,
-    payslipEmployee,
-    payslipEmployeeName,
-    payslipIsApproved,
-    payslipPaymentDate,
-    payslipLeaveDays,
-    payslipSalaryComponents,
-
-    payslipOperator
-  );
+  // console.log(
+  //   _id,
+  //   payslipYear,
+  //   payslipMonth,
+  //   payslipWorkdays,
+  //   payslipNote,
+  //   payslipEmployee,
+  //   payslipEmployeeName,
+  //   payslipIsApproved,
+  //   payslipPaymentDate,
+  //   payslipLeaveDays,
+  //   payslipSalaryComponents,
+  //   payslipTotalAmount,
+  //   payslipOperator
+  // );
   // Confirm data
   if (
     !_id ||
@@ -282,7 +285,8 @@ const updatePayslip = asyncHandler(async (req, res) => {
     !payslipEmployeeName ||
     !payslipLeaveDays ||
     !payslipWorkdays ||
-    !payslipSalaryComponents
+    !payslipSalaryComponents||
+    !payslipTotalAmount
   ) {
     return res.status(400).json({ message: "Required data is missing" });
   }
@@ -302,6 +306,7 @@ const updatePayslip = asyncHandler(async (req, res) => {
   payslipToUpdate.payslipWorkdays = payslipWorkdays;
   payslipToUpdate.payslipIsApproved = payslipIsApproved;
   payslipToUpdate.payslipSalaryComponents = payslipSalaryComponents;
+  payslipToUpdate.payslipTotalAmount = payslipTotalAmount;
   payslipToUpdate.payslipOperator = payslipOperator;
   payslipToUpdate.payslipPaymentDate = payslipPaymentDate;
   payslipToUpdate.payslipNote = payslipNote;

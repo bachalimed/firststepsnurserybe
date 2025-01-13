@@ -97,6 +97,7 @@ const getAllEmployees = asyncHandler(async (req, res) => {
             employeeId: 1, // User's original employeeId reference
             "employeeData.employeeId": 1, // New employeeId from Employee data
             "employeeData.employeeCurrentEmployment": 1,
+            "employeeData.salaryPackage": 1,
             "employeeData.employeeIsActive": 1,
             "employeeData.employeeColor": 1,
             "employeeData.employeeAssessment": 1,
@@ -165,6 +166,7 @@ const getAllEmployees = asyncHandler(async (req, res) => {
               $first: {
                 employeeCurrentEmployment:
                   "$employeeData.employeeCurrentEmployment",
+                salaryPackage: "$employeeData.salaryPackage",
                 employeeIsActive: "$employeeData.employeeIsActive",
                 employeeColor: "$employeeData.employeeColor",
                 employeeAssessment: "$employeeData.employeeAssessment",
@@ -195,6 +197,7 @@ const getAllEmployees = asyncHandler(async (req, res) => {
             userContact: 1,
             employeeId: 1,
             "employeeData.employeeCurrentEmployment": 1,
+            "employeeData.salaryPackage": 1,
             "employeeData.employeeIsActive": 1,
             "employeeData.employeeColor": 1,
             "employeeData.employeeAssessment": 1,
@@ -259,12 +262,13 @@ const createNewEmployee = asyncHandler(async (req, res) => {
     userAddress,
     userContact,
     employeeCurrentEmployment,
+    salaryPackage,
     employeeIsActive,
     employeeYears,
     employeeWorkHistory,
     employeeAssessment,
   } = req?.body; //this will come from front end we put all the fields ofthe collection here
-  console.log(employeeCurrentEmployment, "employeeCurrentEmployment");
+  //console.log(employeeCurrentEmployment, "employeeCurrentEmployment");
   //Confirm data for employee is present in the request with all required fields, data for user will be checked by the user controller
   if (
     !userFullName.userFirstName ||
@@ -282,7 +286,8 @@ const createNewEmployee = asyncHandler(async (req, res) => {
     !employeeCurrentEmployment.contractType ||
     !employeeCurrentEmployment.position ||
     !employeeCurrentEmployment.joinDate ||
-    !employeeCurrentEmployment.salaryPackage.basic ||
+    !salaryPackage[0].basicSalary ||
+    !salaryPackage[0].salaryFrom ||
     !employeeYears.length > 0
   ) {
     return res.status(400).json({ message: "Required data is missing" }); //400 : bad request
@@ -324,6 +329,7 @@ const createNewEmployee = asyncHandler(async (req, res) => {
   ///const parentUserId= createdUserId._id/////////
   const employeeObject = {
     employeeCurrentEmployment,
+    salaryPackage,
     employeeIsActive,
     employeeYears,
     employeeWorkHistory,
@@ -437,6 +443,7 @@ const updateEmployee = asyncHandler(async (req, res) => {
     userAddress,
     userContact,
     employeeCurrentEmployment,
+    salaryPackage,
     employeeIsActive,
     employeeYears,
     employeeWorkHistory,
@@ -476,7 +483,7 @@ const updateEmployee = asyncHandler(async (req, res) => {
     !employeeCurrentEmployment.contractType ||
     !employeeCurrentEmployment.position ||
     !employeeCurrentEmployment.joinDate ||
-    !employeeCurrentEmployment.salaryPackage.basic ||
+    !salaryPackage?.length>0||
     !employeeYears.length > 0
   ) {
     return res.status(400).json({ message: "Required data is missing" }); //400 : bad request
@@ -506,6 +513,7 @@ const updateEmployee = asyncHandler(async (req, res) => {
   user.userAddress = userAddress;
   user.userContact = userContact;
   employee.employeeCurrentEmployment = employeeCurrentEmployment;
+  employee.salaryPackage=salaryPackage;
   employee.employeeAssessment = employeeAssessment;
   employee.employeeWorkHistory = employeeWorkHistory;
   employee.employeeIsActive = employeeIsActive;
