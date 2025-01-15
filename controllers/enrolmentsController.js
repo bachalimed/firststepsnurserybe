@@ -130,8 +130,10 @@ const getAllEnrolments = asyncHandler(async (req, res) => {
     return res.json(enrolments);
   }
 
+  
   if (selectedYear !== "1000" && selectedMonth) {
-    //newInvoiceform
+  
+
     const enrolments = await Enrolment.find({
       enrolmentYear: selectedYear,
       enrolmentMonth: selectedMonth,
@@ -156,6 +158,7 @@ const getAllEnrolments = asyncHandler(async (req, res) => {
         },
       })
       .lean();
+      //console.log(enrolments,'enrolements')
     // const enrolments = await Enrolment.find({
     //   enrolmentYear: selectedYear,
     //   enrolmentMonth: selectedMonth,
@@ -198,11 +201,7 @@ const getAllEnrolments = asyncHandler(async (req, res) => {
       };
     });
 
-    //  console.log(
-    //     "with yeaaaaaaaaaaaaaaaaaar select",
-
-    //     transformedEnrolments
-    //   );
+   
     if (!filteredEnrolments?.length) {
       return res.status(400).json({
         message: "No enrolments found for the selected academic year",
@@ -382,7 +381,7 @@ const createNewEnrolment = asyncHandler(async (req, res) => {
     enrolmentOperator,
     enrolmentYear,
     enrolmentMonth,
-    enrolmentNote,
+    
     enrolments,
   } = req?.body; //this will come from front end we put all the fields o fthe collection here
   //console.log(enrolmentName, enrolmentDob,  enrolmentSex, enrolmentIsActive, enrolmentYears, enrolmentGardien, enrolmentEducation, lastModified)
@@ -407,7 +406,8 @@ const createNewEnrolment = asyncHandler(async (req, res) => {
       serviceType,
       servicePeriod,
       serviceAuthorisedFee,
-      serviceFinalFee,
+      serviceFinalFee, 
+      enrolmentNote
     } = enrolment;
 
     // Check for duplicates: check if an enrolment already exists for the same student, admission, service, and servicePeriod
