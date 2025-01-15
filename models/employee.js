@@ -65,13 +65,6 @@ const employeeSchema = new mongoose.Schema({
     employeeColor: { type: String, default: "#597833" },
     joinDate: { type: Date, required: true },
     contractType: { type: String, required: true, set: capitalizeFirstLetter },
-    // 	salaryPackage: {
-    // 		payment: { type: String, required: true },
-    // 		basic:{type: String, required: true },
-
-    // 		other:{type: String },
-    // 		allowance:{type: String },
-    //  },
   },
   salaryPackage: [salaryPackageSchema],
   employeeIsActive: { type: Boolean },
