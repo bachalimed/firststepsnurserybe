@@ -40,42 +40,89 @@ const getFamilyStatisticsByYear = async (selectedYear) => {
       },
     ]);
 
-    // Step 2: Count the number of families with each number of children
+    // Step 2: Count the number of families with each number of active children
     const familiesChildren = families.reduce((acc, family) => {
-      const childrenCount = family.children.length;
-
-      // Increment the count for this number of children
-      if (!acc[childrenCount]) {
-        acc[childrenCount] = 0;
+      // Filter children to count only active ones
+      const activeChildren = family.children.filter(child => child.studentIsActive === true);
+    
+      // Skip families with no active children
+      if (activeChildren.length === 0) {
+        return acc;
       }
-      acc[childrenCount]++;
-
+    
+      // Count the number of active children
+      const activeChildrenCount = activeChildren.length;
+    
+      // Increment the count for this number of active children
+      if (!acc[activeChildrenCount]) {
+        acc[activeChildrenCount] = 0;
+      }
+      acc[activeChildrenCount]++;
+    
       return acc;
     }, {});
+    
+    
+
+    // const familiesChildren = families.reduce((acc, family) => {
+    //   const childrenCount = family.children.length;
+
+    //   // Increment the count for this number of children
+    //   if (!acc[childrenCount]) {
+    //     acc[childrenCount] = 0;
+    //   }
+    //   acc[childrenCount]++;
+
+    //   return acc;
+    // }, {});
 
     // Step 3: Count the number of families by familySituation
+
     const familySituationCount = families.reduce((acc, family) => {
       const situation = family.familySituation || "Unknown";
-
-      // Increment the count for each situation
-      if (!acc[situation]) {
-        acc[situation] = 0;
+      const hasActiveStudent = family.children.some(
+        (child) => child.studentIsActive === true
+      );
+    
+      if (hasActiveStudent) {
+        acc[situation] = (acc[situation] || 0) + 1;
       }
-      acc[situation]++;
-
+    
       return acc;
     }, {});
+    // const familySituationCount = families.reduce((acc, family) => {
+    //   const situation = family.familySituation || "Unknown";
 
-    // Step 4: Count the total number of families that have at least one student in the selected year
+
+
+      // Increment the count for each situation
+    //   if (!acc[situation]) {
+    //     acc[situation] = 0;
+    //   }
+    //   acc[situation]++;
+
+    //   return acc;
+    // }, {});
+
+    // Step 4: Count the total number of families that have at least one student and families tah t have at least one that is active in the selected year
+    //console.log(families[0].children,'families')
     const familiesWithStudentsInYear = families.filter(
       (family) => family.children.length > 0
     ).length;
+    const familiesWithActiveStudentsInYear = families.filter(
+      (family) =>
+        family.children.length > 0 && // Check if the family has children
+        family.children.some((child) => child.studentIsActive === true) // Check if at least one child is active
+    ).length;
+
+
 
     // Step 5: Return the result with all statistics
     return {
       familiesChildren, // Number of families with each number of children for the selected year
       familySituationCount, // Number of families for each situation
-      familiesWithStudentsInYear, // Total number of families with at least one student in the selected year
+      familiesWithStudentsInYear,
+      familiesWithActiveStudentsInYear // Total number of families with at least one student in the selected year
     };
   } catch (error) {
     console.error("Error retrieving family statistics:", error);
@@ -99,6 +146,7 @@ const getAllFamilies = asyncHandler(async (req, res) => {
         familiesChildren, // Number of families with each number of children for the selected year
         familySituationCount, // Number of families for each situation
         familiesWithStudentsInYear,
+        familiesWithActiveStudentsInYear
       } = await getFamilyStatisticsByYear(selectedYear);
 
       // Check if all counts are missing or zero
@@ -112,7 +160,7 @@ const getAllFamilies = asyncHandler(async (req, res) => {
       return res.json({
         familiesChildren, // Number of families with each number of children for the selected year
         familySituationCount, // Number of families for each situation
-        familiesWithStudentsInYear,
+        familiesWithStudentsInYear,familiesWithActiveStudentsInYear
       });
     } catch (error) {
       console.error("Error fetching monthly Stats :", error);

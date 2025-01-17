@@ -22,6 +22,18 @@ const countStudents = async (selectedYear) => {
       studentIsActive: false,
     });
 
+    // Count active students with `admission` not empty and valid for the selected academic year
+    const activeStudentsWithAdmission = await Student.countDocuments({
+      studentYears: {
+        $elemMatch: {
+          academicYear: selectedYear,
+          // Ensure `admission` is a valid ObjectId and exists
+          admission: { $exists: true, $type: "objectId" },
+        },
+      },
+      studentIsActive: true, // Check if the student is active
+    });
+    
     // Count students with `admission` not empty and valid for the selected academic year
     const studentsWithAdmission = await Student.countDocuments({
       studentYears: {
@@ -54,7 +66,7 @@ const countStudents = async (selectedYear) => {
     
     
 
-    // Retrieve student grades for the specified academic year and count occurrences
+    // Retrieve active student grades for the specified academic year and count occurrences
     const studentGradesAggregation = await Student.aggregate([
       {
         $unwind: "$studentYears", // Unwind the `studentYears` array
@@ -65,6 +77,8 @@ const countStudents = async (selectedYear) => {
           "studentYears.academicYear": selectedYear,
           // Ensure `admission` is a valid ObjectId and not empty
           "studentYears.admission": { $exists: true, $ne: "", $type: "objectId" },
+          // Include only active students
+          studentIsActive: true,
         },
       },
       {
@@ -75,6 +89,27 @@ const countStudents = async (selectedYear) => {
         },
       },
     ]);
+    
+    // const studentGradesAggregation = await Student.aggregate([
+    //   {
+    //     $unwind: "$studentYears", // Unwind the `studentYears` array
+    //   },
+    //   {
+    //     $match: {
+    //       // Match documents with the specified academic year
+    //       "studentYears.academicYear": selectedYear,
+    //       // Ensure `admission` is a valid ObjectId and not empty
+    //       "studentYears.admission": { $exists: true, $ne: "", $type: "objectId" },
+    //     },
+    //   },
+    //   {
+    //     $group: {
+    //       // Group by the grade field
+    //       _id: "$studentYears.grade",
+    //       count: { $sum: 1 }, // Count the occurrences
+    //     },
+    //   },
+    // ]);
 
     // Convert aggregation result to an object: { grade: count }
     const studentGrades = {};
@@ -84,7 +119,7 @@ const countStudents = async (selectedYear) => {
       }
     });
 
-    // Retrieve student schools for the selected academic year and count occurrences
+    // Retrieve active student schools for the selected academic year and count occurrences
     const studentSchoolsAggregation = await Student.aggregate([
       {
         $unwind: "$studentEducation", // Unwind the `studentEducation` array
@@ -93,11 +128,13 @@ const countStudents = async (selectedYear) => {
         $match: {
           // Match documents with the specified academic year
           "studentEducation.schoolYear": selectedYear,
+          // Include only active students
+          studentIsActive: true,
         },
       },
       {
         $lookup: {
-          from: "attendedSchools", // school collection 
+          from: "attendedSchools", // school collection
           localField: "studentEducation.attendedSchool",
           foreignField: "_id",
           as: "attendedSchoolDetails",
@@ -114,6 +151,38 @@ const countStudents = async (selectedYear) => {
         },
       },
     ]);
+    
+
+
+    // const studentSchoolsAggregation = await Student.aggregate([
+    //   {
+    //     $unwind: "$studentEducation", // Unwind the `studentEducation` array
+    //   },
+    //   {
+    //     $match: {
+    //       // Match documents with the specified academic year
+    //       "studentEducation.schoolYear": selectedYear,
+    //     },
+    //   },
+    //   {
+    //     $lookup: {
+    //       from: "attendedSchools", // school collection 
+    //       localField: "studentEducation.attendedSchool",
+    //       foreignField: "_id",
+    //       as: "attendedSchoolDetails",
+    //     },
+    //   },
+    //   {
+    //     $unwind: "$attendedSchoolDetails", // Unwind the attendedSchoolDetails to get the school name
+    //   },
+    //   {
+    //     $group: {
+    //       // Group by the school name
+    //       _id: "$attendedSchoolDetails.schoolName",
+    //       count: { $sum: 1 }, // Count the number of students per school
+    //     },
+    //   },
+    // ]);
 
     // Convert aggregation result to an object: { schoolName: count }
     const studentSchools = {};
@@ -126,6 +195,7 @@ const countStudents = async (selectedYear) => {
     return {
       studentsMatchingAcademicYear,
       inactiveStudentsCount,
+      activeStudentsWithAdmission,
       studentsWithAdmission,
       registeredStudents, // Include registeredStudents count
       studentGrades,
@@ -420,7 +490,7 @@ const getAllStudents = asyncHandler(async (req, res) => {
     return res.json(student);
   }
   if (selectedYear !== "1000" && criteria === "DashStudentsTotalNumberStats") {
-    console.log("eeeeeeeeeeeeeeeeeeerere");
+    //console.log("eeeeeeeeeeeeeeeeeeerere");
     try {
       // Wait for the `countStudents` function to resolve
     const counts = await countStudents(selectedYear);
@@ -430,6 +500,7 @@ const getAllStudents = asyncHandler(async (req, res) => {
       studentsMatchingAcademicYear,
       inactiveStudentsCount,
       studentsWithAdmission,
+      activeStudentsWithAdmission,
       registeredStudents, // Include registeredStudents count
       studentGrades,
       studentSchools,
@@ -451,6 +522,7 @@ const getAllStudents = asyncHandler(async (req, res) => {
       studentsMatchingAcademicYear,
       inactiveStudentsCount,
       studentsWithAdmission,
+      activeStudentsWithAdmission,
       registeredStudents,
       studentGrades,
       studentSchools,

@@ -211,7 +211,7 @@ const getAllEnrolments = asyncHandler(async (req, res) => {
   }
   if (selectedYear !== "1000" && criteria === "UnpaidInvoices") {
 
-    console.log("weeeeeeeeeeeeeeeeeeeeeeeeeeee")
+    //console.log("weeeeeeeeeeeeeeeeeeeeeeeeeeee")
     //for newpaymentform to retrieve the studetn with unpaid invoices and their enrolments
 
     try {
