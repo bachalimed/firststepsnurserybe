@@ -123,7 +123,7 @@ const getAllFamilies = asyncHandler(async (req, res) => {
   }
 
   if (selectedYear) {
-    const { selectedYear } = req.query;
+   
     //console.log("selectedYear in getallfamilies", selectedYear);
     //retrive all families
     const families = await Family.find()
@@ -145,7 +145,6 @@ const getAllFamilies = asyncHandler(async (req, res) => {
     //         console.log(`Child ${index + 1}:`, child);
     //     });
     // });
-
     if (!families?.length) {
       return res.status(400).json({ message: "No families found !" });
     } else if (selectedYear === "1000") {
@@ -154,6 +153,7 @@ const getAllFamilies = asyncHandler(async (req, res) => {
       //console.log(filteredParents,'filteredParents')
     } else {
       //keep only the parent with students having the selectedyear value
+     
 
       filteredFamilies = families.filter((family) =>
         family?.children?.some((child) =>

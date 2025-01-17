@@ -12,9 +12,24 @@ const getAllPayees = asyncHandler(async (req, res) => {
 
   // Check if an ID is passed as a query parameter
   const { id, criteria, selectedYear } = req.query;
+  if (id) {
+    //console.log("nowwwwwwwwwwwwwwwwwwwwwww here");
 
+    // Find a single payee by its ID
+    const payee = await Payee.findOne({ _id: id })
+     
+      .lean();
+
+    if (!payee) {
+      return res.status(400).json({ message: "Payee not found" });
+    }
+
+    // Return the payee inside an array
+    return res.json([payee]); //we need it inside  an array to avoid response data error
+  }
   if (selectedYear !== "1000") {
     // Find a single payee by its ID
+    //console.log('here')
     const payees = await Payee.find().lean();
 
     if (!payees) {
@@ -25,21 +40,7 @@ const getAllPayees = asyncHandler(async (req, res) => {
     return res.json(payees); //we need it inside  an array to avoid response data error
   }
 
-  if (id) {
-    //console.log("nowwwwwwwwwwwwwwwwwwwwwww here");
-
-    // Find a single payee by its ID
-    const payee = await Payee.findOne({ _id: id })
-      .populate("students", "-operator -studentDob -studentGardien -updatedAt")
-      .lean();
-
-    if (!payee) {
-      return res.status(400).json({ message: "Payee not found" });
-    }
-
-    // Return the payee inside an array
-    return res.json([payee]); //we need it inside  an array to avoid response data error
-  }
+  
   // If no ID is provided, fetch all payees
 });
 

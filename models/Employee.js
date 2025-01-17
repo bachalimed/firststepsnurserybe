@@ -71,5 +71,7 @@ const employeeSchema = new mongoose.Schema({
   employeeYears: [employeeYearsSchema],
   employeeAssessment: [employeeAssessmentSchema],
   employeeWorkHistory: [employeeWorkHistorySchema],
+  employeeCreator:  {type: mongoose.Schema.Types.ObjectId, ref:'User'},
+  employeeOperator: {type: mongoose.Schema.Types.ObjectId, required:true,ref:'User'}, 
 });
 module.exports = mongoose.model("Employee", employeeSchema, "employees");

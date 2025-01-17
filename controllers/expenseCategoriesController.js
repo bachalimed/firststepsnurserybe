@@ -100,11 +100,13 @@ const createNewExpenseCategory = asyncHandler(async (req, res) => {
       message: `Duplicate expenseCategory   ${duplicate.expenseCategoryLabel}}`,
     });
   }
-
+  const sortedExpenseCategoryItems = [...expenseCategoryItems].sort((a, b) =>
+    a.toLowerCase().localeCompare(b.toLowerCase())
+  );
   const expenseCategoryObject = {
     expenseCategoryLabel: expenseCategoryLabel,
     expenseCategoryYears: expenseCategoryYears,
-    expenseCategoryItems: expenseCategoryItems,
+    expenseCategoryItems: sortedExpenseCategoryItems,
     //expenseCategoryService: expenseCategoryService,
     expenseCategoryIsActive: expenseCategoryIsActive,
     expenseCategoryOperator: expenseCategoryOperator,
@@ -161,10 +163,12 @@ const updateExpenseCategory = asyncHandler(async (req, res) => {
   if (!expenseCategoryToUpdate) {
     return res.status(400).json({ message: "ExpenseCategory to update not found" });
   }
- 
+  const sortedExpenseCategoryItems = [...expenseCategoryItems].sort((a, b) =>
+    a.toLowerCase().localeCompare(b.toLowerCase())
+  );
   expenseCategoryToUpdate.expenseCategoryLabel=expenseCategoryLabel
   expenseCategoryToUpdate.expenseCategoryYears=expenseCategoryYears
-  expenseCategoryToUpdate.expenseCategoryItems=expenseCategoryItems
+  expenseCategoryToUpdate.expenseCategoryItems=sortedExpenseCategoryItems
  // expenseCategoryToUpdate.expenseCategoryService=expenseCategoryService
   expenseCategoryToUpdate.expenseCategoryIsActive=expenseCategoryIsActive
   expenseCategoryToUpdate.expenseCategoryOperator=expenseCategoryOperator

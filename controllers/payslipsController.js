@@ -1,5 +1,9 @@
 const Payslip = require("../models/Payslip");
 const User = require("../models/User");
+const ExpenseCategory = require("../models/ExpenseCategory");
+const Service = require("../models/Service");
+const Payee = require("../models/Payee");
+const Expense = require("../models/Expense");
 const asyncHandler = require("express-async-handler"); //instead of using try catch
 
 const mongoose = require("mongoose");
@@ -67,6 +71,34 @@ const getPayslipsStats = async (selectedYear) => {
     console.error("Error computing invoices sum:", error);
     throw error;
   }
+};
+
+///used by update payslip
+const generateSalaryExpenseItems = (payslipSalaryComponents) => {
+  const salaryExpenseItems = [];
+
+  // Add allowances if allowanceNumber !== 0
+  if (Array.isArray(payslipSalaryComponents.allowances)) {
+    payslipSalaryComponents.allowances.forEach((allowance) => {
+      if (
+        allowance.allowanceNumber !== "0" &&
+        allowance.allowanceTotalValue !== 0
+      ) {
+        salaryExpenseItems.push(allowance.allowanceLabel);
+      }
+    });
+  }
+
+  // Add deduction if deductionAmount !== 0
+  const deduction = payslipSalaryComponents.deduction;
+  if (deduction && deduction.deductionAmount !== 0) {
+    salaryExpenseItems.push(deduction.deductionLabel);
+  }
+
+  // Add "Payable Basic"
+  salaryExpenseItems.push("Paid Basic");
+
+  return salaryExpenseItems;
 };
 
 // @desc Get all payslip
@@ -236,7 +268,7 @@ const createNewPayslip = asyncHandler(async (req, res) => {
   // If created
   //console.log(payslip?.payslipItems,'2')
   return res.status(201).json({
-    message: `Payslip for created successfully`,
+    message: `Payslip created successfully`,
   });
 });
 
@@ -285,17 +317,76 @@ const updatePayslip = asyncHandler(async (req, res) => {
     !payslipEmployeeName ||
     !payslipLeaveDays ||
     !payslipWorkdays ||
-    !payslipSalaryComponents||
+    !payslipSalaryComponents ||
     !payslipTotalAmount
   ) {
     return res.status(400).json({ message: "Required data is missing" });
   }
-///no need to check the dates becasue they are not changed in the edit
+  ///no need to check the dates becasue they are not changed in the edit
   // Does the payslip exist to update?
   const payslipToUpdate = await Payslip.findById(_id).exec(); //we did not lean becausse we need the save method attached to the response
 
   if (!payslipToUpdate) {
     return res.status(400).json({ message: "Payslip to update not found" });
+  }
+
+  //a check is performed here to check if a payslip is paid so we generate an expense,
+  //check if payslippaymentdate is not empty and valid date, this means that payment of salary has been maid
+  const { isValid } = require("date-fns"); // To validate dates
+  let newExpenseObj = {};
+  if (
+    payslipPaymentDate &&
+    isValid(new Date(payslipPaymentDate))
+    //&& //new date is valid
+    // payslipToUpdate.payslipPaymentDate && //date isdeifferent than existing one
+    // new Date(payslipToUpdate.payslipPaymentDate).toISOString() ===
+    //   new Date(payslipPaymentDate).toISOString()
+  ) {
+    //console.log("new expense will be generated");
+    //build the expense object to be saved later
+
+    const salaryExpenseService = await Service.findOne({
+      serviceType: "Nursery",
+    }).lean();
+    // console.log(salaryExpenseService, "salaryExpenseService");
+
+    const salaryExpenseCategroy = await ExpenseCategory.findOne({
+      expenseCategoryLabel: "Salaries",
+    }).lean();
+    // console.log(salaryExpenseCategroy, "salaryExpenseCategroy");
+    //console.log(payslipEmployeeName, "payslipEmployeeName");
+
+    const salaryExpensePayee = await Payee.findOne({
+      _id: payslipEmployee, //find the Payee with the same id as the employee because it was saved withthe employee like this
+    }).lean();
+    // console.log(salaryExpensePayee, "salaryExpensePayee");
+    const salaryExpenseItems = generateSalaryExpenseItems(
+      payslipSalaryComponents
+    );
+    //console.log(salaryExpenseItems, "salaryExpenseItems");
+    const salaryExpenseAmount =
+      Number(payslipTotalAmount || 0) +
+      Number(payslipSalaryComponents?.deduction?.deductionAmount || 0);
+    console.log(salaryExpenseAmount, "salaryExpenseAmount");
+
+    newExpenseObj = {
+      expenseYear: payslipYear,
+      expenseMonth: payslipMonth,
+      expenseAmount: salaryExpenseAmount,
+      expenseNote: `payslip-${_id}`,
+      expenseCategory: salaryExpenseCategroy._id, //always have Salaries category
+      expenseItems: salaryExpenseItems,
+      expensePayee: salaryExpensePayee._id,
+      expenseService: salaryExpenseService._id, //always have the Nursery LAbel every year
+      expenseDate: payslipPaymentDate,
+      expensePaymentDate: payslipPaymentDate,
+      expenseMethod:
+        payslipSalaryComponents.deductionAmount === "0"
+          ? "bank Transfer"
+          : "Cash",
+      expenseOperator: payslipOperator,
+      expenseCreator: payslipOperator,
+    };
   }
 
   payslipToUpdate.payslipYear = payslipYear;
@@ -315,6 +406,19 @@ const updatePayslip = asyncHandler(async (req, res) => {
   const updatedPayslip = await payslipToUpdate.save(); //save old payslip
   if (!updatedPayslip) {
     return res.status(400).json({ message: "invalid data received" });
+  }
+  if (Object.keys(newExpenseObj).length !== 0) {
+    //create teh new expense
+    const createdsalaryExpense = await Expense.create(newExpenseObj);
+    if (!createdsalaryExpense) {
+      return res.status(400).json({
+        message:
+          "Payslip updated successfully but invalid data received for expense",
+      });
+    }
+    return res.status(201).json({
+      message: `Payslip updated and expense created successfully`,
+    });
   }
   return res.status(201).json({
     message: `Payslip updated successfully`,

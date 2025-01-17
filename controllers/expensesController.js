@@ -1,6 +1,5 @@
 const Expense = require("../models/Expense");
 
-
 const asyncHandler = require("express-async-handler"); //instead of using try catch
 
 const mongoose = require("mongoose");
@@ -30,7 +29,10 @@ const getExpensesStats = async (selectedYear) => {
       },
       {
         $group: {
-          _id: { month: "$expenseMonth", category: "$categoryDetails.expenseCategoryLabel" }, // Group by month and category label
+          _id: {
+            month: "$expenseMonth",
+            category: "$categoryDetails.expenseCategoryLabel",
+          }, // Group by month and category label
           totalCategoryAmount: { $sum: "$expenseAmountAsNumber" }, // Sum amounts for each category
         },
       },
@@ -50,22 +52,21 @@ const getExpensesStats = async (selectedYear) => {
         $sort: { _id: 1 }, // Sort by month (ascending)
       },
     ]);
-//console.log(result[0],'result')
-// Convert results to desired format
-const monthlyExpenses = result.map((item) => ({
-  expenseMonth: item._id, // Month
-  expensesMonthlyTotal: item.expenseMonthlyTotal, // Total for the month
-  categories: item.categories, // Categories with totals for the month
-}));
+    //console.log(result[0],'result')
+    // Convert results to desired format
+    const monthlyExpenses = result.map((item) => ({
+      expenseMonth: item._id, // Month
+      expensesMonthlyTotal: item.expenseMonthlyTotal, // Total for the month
+      categories: item.categories, // Categories with totals for the month
+    }));
 
-// Calculate total expenses for the year
-const totalExpensesAmount = monthlyExpenses.reduce(
-  (sum, month) => sum + month.expensesMonthlyTotal,
-  0
-);
+    // Calculate total expenses for the year
+    const totalExpensesAmount = monthlyExpenses.reduce(
+      (sum, month) => sum + month.expensesMonthlyTotal,
+      0
+    );
 
-
-//console.log(totalExpensesAmount,'totalExpensesAmount')
+    //console.log(totalExpensesAmount,'totalExpensesAmount')
     return {
       totalExpensesAmount,
       monthlyExpenses,
@@ -76,7 +77,6 @@ const totalExpensesAmount = monthlyExpenses.reduce(
   }
 };
 
-
 // @desc Get all expense
 // @route GET 'desk/expense
 // @access Private // later we will establish authorisations
@@ -84,13 +84,12 @@ const getAllExpenses = asyncHandler(async (req, res) => {
   //console.log("helloooooooo");
 
   // Check if an ID is passed as a query parameter
-  const { id, criteria, selectedYear } = req?.query;
+  const { id, criteria, selectedYear, selectedMonth } = req?.query;
   if (id) {
     //console.log("nowwwwwwwwwwwwwwwwwwwwwww here");
 
     // Find a single expense by its ID
-    const expense = await Expense.findOne({ _id: id })
-    .lean();
+    const expense = await Expense.findOne({ _id: id }).lean();
 
     if (!expense) {
       return res.status(400).json({ message: "Expense not found" });
@@ -102,9 +101,10 @@ const getAllExpenses = asyncHandler(async (req, res) => {
 
   if (selectedYear !== "1000" && criteria === "expensesTotalStats") {
     try {
-      const {totalExpensesAmount,
-        monthlyExpenses}= await getExpensesStats(selectedYear);
-// console.log(monthlyExpenses,'monthlyExpenses')
+      const { totalExpensesAmount, monthlyExpenses } = await getExpensesStats(
+        selectedYear
+      );
+      // console.log(monthlyExpenses,'monthlyExpenses')
       return res.status(200).json({
         selectedYear,
         totalExpensesAmount,
@@ -116,6 +116,25 @@ const getAllExpenses = asyncHandler(async (req, res) => {
         error: error.message,
       });
     }
+  }
+
+  if (selectedYear !== "1000" && selectedMonth) {
+    // Find a single expense by its ID
+    const expenses = await Expense.find({
+      expenseYear: selectedYear,
+      expenseMonth: selectedMonth,
+    })
+      .populate({ path: "expensePayee", select: "payeeLabel" })
+      .populate({ path: "expenseService", select: "serviceType" })
+      .populate({ path: "expenseCategory", select: "expenseCategoryLabel" })
+      .lean();
+
+    if (!expenses) {
+      return res.status(400).json({ message: "Expenses not found" });
+    }
+
+    // Return the expense inside an array
+    return res.json(expenses); //we need it inside  an array to avoid response data error
   }
   if (selectedYear !== "1000") {
     // Find a single expense by its ID

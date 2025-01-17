@@ -1,10 +1,9 @@
 const User = require("../models/User");
 const Employee = require("../models/Employee");
-
+const Payee = require("../models/Payee");
 const asyncHandler = require("express-async-handler"); //instead of using try catch
 const bcrypt = require("bcrypt"); //to hash passwords before saving them
 const mongoose = require("mongoose");
-
 
 // @desc Get all employees, for the given year, if year is 1000 retreive all employees
 // @route GET /hr/employees
@@ -227,7 +226,7 @@ const getAllEmployees = asyncHandler(async (req, res) => {
   }
   if (id) {
     // Aggregation pipeline to retrieve a specific user by employeeId and matching selected academic year
-    console.log(id);
+    // console.log(id);
     const user = await User.findOne({ _id: id }).populate("employeeId").lean(); //chnaged to user instead of employee
 
     if (!user) {
@@ -267,6 +266,8 @@ const createNewEmployee = asyncHandler(async (req, res) => {
     employeeYears,
     employeeWorkHistory,
     employeeAssessment,
+    employeeCreator,
+    employeeOperator,
   } = req?.body; //this will come from front end we put all the fields ofthe collection here
   //console.log(employeeCurrentEmployment, "employeeCurrentEmployment");
   //Confirm data for employee is present in the request with all required fields, data for user will be checked by the user controller
@@ -288,7 +289,8 @@ const createNewEmployee = asyncHandler(async (req, res) => {
     !employeeCurrentEmployment.joinDate ||
     !salaryPackage[0].basicSalary ||
     !salaryPackage[0].salaryFrom ||
-    !employeeYears.length > 0
+    !employeeYears.length > 0 ||
+    !employeeCreator
   ) {
     return res.status(400).json({ message: "Required data is missing" }); //400 : bad request
   }
@@ -309,7 +311,6 @@ const createNewEmployee = asyncHandler(async (req, res) => {
   const duplicateCin = await User.findOne({ cin }).lean().exec(); //because we re receiving only one response from mongoose
 
   if (duplicateCin) {
-    
     return res.status(409).json({ message: "Duplicate CIN found" });
   }
 
@@ -334,6 +335,8 @@ const createNewEmployee = asyncHandler(async (req, res) => {
     employeeYears,
     employeeWorkHistory,
     employeeAssessment,
+    employeeCreator,
+    employeeOperator: employeeCreator,
   }; //construct new employee to be stored
 
   //  store new employee
@@ -349,7 +352,7 @@ const createNewEmployee = asyncHandler(async (req, res) => {
     // Create and store new user
     //const createdEmployee = await Employee.findOne({_id:id }).lean()
     const employeeId = savedEmployee._id;
-    console.log(employeeId, "saved  employeeId");
+    //console.log(employeeId, "saved  employeeId");
 
     const userObject = {
       userFullName,
@@ -369,19 +372,26 @@ const createNewEmployee = asyncHandler(async (req, res) => {
     const savedUser = await User.create(userObject);
 
     if (savedUser) {
-      //if created
+      //if created we will create a payee with the employee id
+      const PayeeObj = {
+        _id: employeeId,
+        payeeLabel: `${userFullName.userFirstName} ${userFullName.userMiddleName} ${userFullName.userLastName}`,
+        payeeOperator: employeeCreator,
+        payeeCreator: employeeCreator,
+      };
+      const payeeCreated = await Payee.create(PayeeObj);
 
-      //the following line res is not being executed and was causing the error [ERR_HTTP_HEADERS_SENT, now we send both res for user and parent  together in ne line
-      return res.status(201).json({
-        message: `User ${username + ","} and employee ${
-          userFullName.userFirstName +
-          " " +
-          userFullName.userMiddleName +
-          " " +
-          userFullName.userLastName +
-          ","
-        } created successfully`,
-      });
+      if (payeeCreated)
+        return res.status(201).json({
+          message: `User ${username + ","} payee, and employee ${
+            userFullName.userFirstName +
+            " " +
+            userFullName.userMiddleName +
+            " " +
+            userFullName.userLastName +
+            ","
+          } created successfully`,
+        });
     } else {
       //delete the user already craeted to be done
 
@@ -448,6 +458,7 @@ const updateEmployee = asyncHandler(async (req, res) => {
     employeeYears,
     employeeWorkHistory,
     employeeAssessment,
+    employeeOperator,
   } = req?.body; //this will come from front end we put all the fields ofthe collection here
 
   // console.log(
@@ -483,8 +494,9 @@ const updateEmployee = asyncHandler(async (req, res) => {
     !employeeCurrentEmployment.contractType ||
     !employeeCurrentEmployment.position ||
     !employeeCurrentEmployment.joinDate ||
-    !salaryPackage?.length>0||
-    !employeeYears.length > 0
+    !salaryPackage?.length > 0 ||
+    !employeeYears.length > 0 ||
+    !employeeOperator
   ) {
     return res.status(400).json({ message: "Required data is missing" }); //400 : bad request
   }
@@ -501,6 +513,32 @@ const updateEmployee = asyncHandler(async (req, res) => {
   if (!employee) {
     return res.status(400).json({ message: "Employee not found" });
   }
+  //find teh payee to update the name if it was changed
+
+  const areUserFullNamesEqual = (oldUserFullName, newUserFullName) => {
+    return (
+      oldUserFullName.userFirstName === newUserFullName.userFirstName &&
+      (oldUserFullName.userMiddleName || "") ===
+        (newUserFullName.userMiddleName || "") &&
+      oldUserFullName.userLastName === newUserFullName.userLastName
+    );
+  };
+
+  //console.log(user.userFullName, "user.userFullName olddd");
+  //console.log(userFullName, "userFullName   new");
+
+  if (!areUserFullNamesEqual(user.userFullName, userFullName)) {
+    //console.log("updating payee");
+    const payeeToUpdate = await Payee.findOne({ _id: employeeId }); //the payees are saved with same Id as employee
+    //console.log(payeeToUpdate, "payeeToUpdate");
+    if (payeeToUpdate) {
+      payeeToUpdate.payeeLabel = `${userFullName.userFirstName} ${userFullName.userMiddleName} ${userFullName.userLastName}`;
+      const updatedPayee = await payeeToUpdate.save();
+     // console.log(updatedPayee, "updatedPayee");
+      if (!updatedPayee)
+        return res.status(400).json({ message: "Invalid data received" });
+    }
+  }
 
   user.userFullName = userFullName; //it will only allow updating properties that are already existant in the model
   user.userRoles = userRoles;
@@ -513,11 +551,12 @@ const updateEmployee = asyncHandler(async (req, res) => {
   user.userAddress = userAddress;
   user.userContact = userContact;
   employee.employeeCurrentEmployment = employeeCurrentEmployment;
-  employee.salaryPackage=salaryPackage;
+  employee.salaryPackage = salaryPackage;
   employee.employeeAssessment = employeeAssessment;
   employee.employeeWorkHistory = employeeWorkHistory;
   employee.employeeIsActive = employeeIsActive;
   employee.employeeYears = employeeYears;
+  employee.employeeOperator = employeeOperator;
 
   const updatedUser = await user.save(); //save method received when we did not include lean
 
