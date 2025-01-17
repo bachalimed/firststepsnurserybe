@@ -75,14 +75,15 @@ const getPayslipsStats = async (selectedYear) => {
 
 ///used by update payslip
 const generateSalaryExpenseItems = (payslipSalaryComponents) => {
-  const salaryExpenseItems = [];
-
+  const salaryExpenseItems = ["Paid Basic"];
+console.log(payslipSalaryComponents,'payslipSalaryComponents')
   // Add allowances if allowanceNumber !== 0
   if (Array.isArray(payslipSalaryComponents.allowances)) {
     payslipSalaryComponents.allowances.forEach((allowance) => {
       if (
         allowance.allowanceNumber !== "0" &&
-        allowance.allowanceTotalValue !== 0
+        allowance.allowanceTotalValue !== 0&&
+        allowance.allowanceTotalValue !== ""
       ) {
         salaryExpenseItems.push(allowance.allowanceLabel);
       }
@@ -91,12 +92,11 @@ const generateSalaryExpenseItems = (payslipSalaryComponents) => {
 
   // Add deduction if deductionAmount !== 0
   const deduction = payslipSalaryComponents.deduction;
-  if (deduction && deduction.deductionAmount !== 0) {
+  if (deduction && deduction.deductionAmount !== 0&& deduction.deductionAmount !== "") {
     salaryExpenseItems.push(deduction.deductionLabel);
   }
 
-  // Add "Payable Basic"
-  salaryExpenseItems.push("Paid Basic");
+  console.log(salaryExpenseItems,'salaryExpenseItems')
 
   return salaryExpenseItems;
 };
@@ -373,7 +373,7 @@ const updatePayslip = asyncHandler(async (req, res) => {
       expenseYear: payslipYear,
       expenseMonth: payslipMonth,
       expenseAmount: salaryExpenseAmount,
-      expenseNote: `payslip-${_id}`,
+      expenseNote: `payslip ${_id}`,
       expenseCategory: salaryExpenseCategroy._id, //always have Salaries category
       expenseItems: salaryExpenseItems,
       expensePayee: salaryExpensePayee._id,

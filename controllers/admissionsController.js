@@ -216,7 +216,7 @@ const getAllAdmissions = asyncHandler(async (req, res) => {
   //console.log('with yearrrrrrrrrrrrrrrrrrr select', selectedYear);
   const admissions = await Admission.find({ admissionYear: selectedYear })
     .populate("agreedServices.service", "-serviceCreator -serviceOperator") // Exclude these fields
-    .populate("student", "studentName") // Populate student name
+    .populate("student", "studentName studentIsActive") // Populate student name
     .lean();
 
   //console.log('with yeaaaaaaaaaaaaaaaaaar select', selectedYear, admissions);

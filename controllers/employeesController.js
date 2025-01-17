@@ -355,6 +355,7 @@ const createNewEmployee = asyncHandler(async (req, res) => {
     //console.log(employeeId, "saved  employeeId");
 
     const userObject = {
+      _id:employeeId,//we will use the samne id for employee and user for the same person
       userFullName,
       username,
       password: hashedPwd,
