@@ -9,30 +9,76 @@ const mongoose = require("mongoose");
 
 const getPaymentsStats = async (selectedYear) => {
   try {
-    const result = await Payment.aggregate([
-      {
-        $match: {
-          paymentYear: selectedYear, // Filter payments by the selected year
-        },
-      },
-      {
-        $addFields: {
-          paymentAmountAsNumber: { $toDouble: "$paymentAmount" }, // Convert paymentAmount to number
-          paymentMonth: {
-            $month: "$paymentDate", // Extract the month from paymentDate
-          },
-        },
-      },
-      {
-        $group: {
-          _id: "$paymentMonth", // Group by extracted month
-          monthlyTotal: { $sum: "$paymentAmountAsNumber" }, // Sum payment amounts per month
-        },
-      },
-      {
-        $sort: { _id: 1 }, // Sort by month number (ascending)
-      },
-    ]);
+    // const result = await Payment.aggregate([
+    //   {
+    //     $match: {
+    //       paymentYear: selectedYear, // Filter payments by the selected year
+    //     },
+    //   },
+    //   {
+    //     $addFields: {
+    //       paymentAmountAsNumber: { $toDouble: "$paymentAmount" }, // Convert paymentAmount to number
+    //       paymentMonth: {
+    //         $month: "$paymentDate", // Extract the month from paymentDate
+    //       },
+    //     },
+    //   },
+    //   {
+    //     $group: {
+    //       _id: "$paymentMonth", // Group by extracted month
+    //       monthlyTotal: { $sum: "$paymentAmountAsNumber" }, // Sum payment amounts per month
+    //     },
+    //   },
+    //   {
+    //     $sort: { _id: 1 }, // Sort by month number (ascending)
+    //   },
+    // ]);
+// we needed to use the invoice to get ehmonth, so that the payment is linked to themonth and not when it was paid, the invoiceamount is used instead of payment becasue one payment can provide many invoices
+const result = await Payment.aggregate([
+  {
+    $match: {
+      paymentYear: selectedYear, // Filter payments by the selected year
+    },
+  },
+  {
+    $unwind: "$paymentInvoices", // Deconstruct the paymentInvoices array
+  },
+  {
+    $lookup: {
+      from: "invoices", 
+      localField: "paymentInvoices",
+      foreignField: "_id",
+      as: "invoiceDetails", // Join invoice details
+    },
+  },
+  {
+    $unwind: "$invoiceDetails", // Deconstruct the joined invoiceDetails array
+  },
+  {
+    $addFields: {
+      paymentMonth: "$invoiceDetails.invoiceMonth", // Get invoiceMonth from invoiceDetails
+      paymentAmountAsNumber: { $toDouble: "$invoiceDetails.invoiceAmount" }, // Convert invoiceAmount to number
+    },
+  },
+  {
+    $group: {
+      _id: "$paymentMonth", // Group by invoiceMonth
+      monthlyTotal: { $sum: "$paymentAmountAsNumber" }, // Sum the invoice amounts for each month
+    },
+  },
+  {
+    $sort: { _id: 1 }, // Sort by month number (ascending)
+  },
+]);
+
+console.log(result,'result');
+
+
+
+
+
+
+
 
     // Convert month numbers to month names
     const monthNames = [
@@ -57,10 +103,10 @@ const getPaymentsStats = async (selectedYear) => {
     );
 
     const monthlyPayments = result.map((item) => ({
-      paymentMonth: monthNames[item._id - 1], // Convert month number to name
+      paymentMonth: item._id, // Convert month number to name
       paymentsMonthlyTotal: item.monthlyTotal,
     }));
-
+console.log(monthlyPayments,'monthlyPayments')
     return {
       totalPaymentsAmount: totalAmount,
       monthlyPayments,
@@ -117,7 +163,7 @@ const getAllPayments = asyncHandler(async (req, res) => {
     const payments = await Payment.find()
       .populate({
         path: "paymentStudent",
-        select: "student_id studentName", // Selects only the fields you want from the student
+        select: "student_id studentName studentIsActive", // Selects only the fields you want from the student
       })
       .populate({
         path: "paymentInvoices", // Populate the paymentInvoices array
@@ -246,7 +292,7 @@ const createNewPayment = asyncHandler(async (req, res) => {
     return res.status(400).json({ message: "Invalid data received" });
   }
   if (payment) {
-    console.log(payment, "payment");
+    //console.log(payment, "payment");
     // Update each Invoice in Payment.paymentInvoices with newPaymentId and set fully paid to true
     // Get the new payment ID
     const newPaymentId = payment._id;
@@ -266,7 +312,7 @@ const createNewPayment = asyncHandler(async (req, res) => {
 
     // If created and students updated
     return res.status(201).json({
-      message: `Payment created and Invoices updated successfully`,
+      message: `Payment created and Invoice(s) updated successfully`,
     });
   }
 });

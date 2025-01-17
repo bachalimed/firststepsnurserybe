@@ -408,7 +408,7 @@ const getAllStudents = asyncHandler(async (req, res) => {
           },
         },
       },
-      // Replace the root document with the student object
+      // Replacing the root document with the student object
       {
         $project: {
           _id: 1,

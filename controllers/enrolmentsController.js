@@ -235,11 +235,10 @@ const getAllEnrolments = asyncHandler(async (req, res) => {
   
       // Restructure data by grouping enrolments by student
       const groupedByStudent = {};
-  
       filteredEnrolments.forEach((enrolment) => {
         const _id = enrolment.student._id.toString();
         const studentName = enrolment.student.studentName;
-  
+      
         // Initialize the student group if it doesn't exist
         if (!groupedByStudent[_id]) {
           groupedByStudent[_id] = {
@@ -248,22 +247,30 @@ const getAllEnrolments = asyncHandler(async (req, res) => {
             enrolments: [],
           };
         }
-  
+      
         // Add the enrolment to the student's enrolments array without the `enrolmentInvoice` field
         const { enrolmentInvoice, ...enrolmentDataWithoutInvoice } = enrolment;
-  
+      
         // Include only the necessary invoice data under `invoice`
         groupedByStudent[_id].enrolments.push({
           ...enrolmentDataWithoutInvoice,
           invoice: enrolmentInvoice, // Attach the invoice data
         });
       });
-  
+      
       // Convert the grouped object to an array format
       const result = Object.values(groupedByStudent);
-  
+      
+      // Sort the result array by studentName.firstName
+      result.sort((a, b) => {
+        const nameA = a.studentName.firstName.toLowerCase();
+        const nameB = b.studentName.firstName.toLowerCase();
+        return nameA.localeCompare(nameB);
+      });
+      
       // Return the result
       return res.json(result);
+      
     } catch (error) {
       console.error("Error retrieving enrolments:", error);
       return res.status(500).json({ message: "Error retrieving enrolments" });

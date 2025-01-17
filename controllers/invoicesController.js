@@ -147,7 +147,7 @@ const getAllInvoices = asyncHandler(async (req, res) => {
       const { totalInvoicesAmount, monthlyInvoices } = await getInvoicesStats(
         selectedYear
       );
-console.log(monthlyInvoices)
+//console.log(monthlyInvoices)
       return res.status(200).json({
         selectedYear,
         totalInvoicesAmount,
@@ -249,7 +249,7 @@ console.log(monthlyInvoices)
 // @access Private
 const createNewInvoice = asyncHandler(async (req, res) => {
   const { formData, operator } = req?.body; //this will come from front end we put all the fields o fthe collection here
-  console.log(req?.body);
+  //console.log(req?.body);
   //Confirm data is present in the request with all required fields
 
   if (!formData || formData.length < 1) {
