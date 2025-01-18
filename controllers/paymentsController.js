@@ -33,52 +33,45 @@ const getPaymentsStats = async (selectedYear) => {
     //     $sort: { _id: 1 }, // Sort by month number (ascending)
     //   },
     // ]);
-// we needed to use the invoice to get ehmonth, so that the payment is linked to themonth and not when it was paid, the invoiceamount is used instead of payment becasue one payment can provide many invoices
-const result = await Payment.aggregate([
-  {
-    $match: {
-      paymentYear: selectedYear, // Filter payments by the selected year
-    },
-  },
-  {
-    $unwind: "$paymentInvoices", // Deconstruct the paymentInvoices array
-  },
-  {
-    $lookup: {
-      from: "invoices", 
-      localField: "paymentInvoices",
-      foreignField: "_id",
-      as: "invoiceDetails", // Join invoice details
-    },
-  },
-  {
-    $unwind: "$invoiceDetails", // Deconstruct the joined invoiceDetails array
-  },
-  {
-    $addFields: {
-      paymentMonth: "$invoiceDetails.invoiceMonth", // Get invoiceMonth from invoiceDetails
-      paymentAmountAsNumber: { $toDouble: "$invoiceDetails.invoiceAmount" }, // Convert invoiceAmount to number
-    },
-  },
-  {
-    $group: {
-      _id: "$paymentMonth", // Group by invoiceMonth
-      monthlyTotal: { $sum: "$paymentAmountAsNumber" }, // Sum the invoice amounts for each month
-    },
-  },
-  {
-    $sort: { _id: 1 }, // Sort by month number (ascending)
-  },
-]);
+    // we needed to use the invoice to get ehmonth, so that the payment is linked to themonth and not when it was paid, the invoiceamount is used instead of payment becasue one payment can provide many invoices
+    const result = await Payment.aggregate([
+      {
+        $match: {
+          paymentYear: selectedYear, // Filter payments by the selected year
+        },
+      },
+      {
+        $unwind: "$paymentInvoices", // Deconstruct the paymentInvoices array
+      },
+      {
+        $lookup: {
+          from: "invoices",
+          localField: "paymentInvoices",
+          foreignField: "_id",
+          as: "invoiceDetails", // Join invoice details
+        },
+      },
+      {
+        $unwind: "$invoiceDetails", // Deconstruct the joined invoiceDetails array
+      },
+      {
+        $addFields: {
+          paymentMonth: "$invoiceDetails.invoiceMonth", // Get invoiceMonth from invoiceDetails
+          paymentAmountAsNumber: { $toDouble: "$invoiceDetails.invoiceAmount" }, // Convert invoiceAmount to number
+        },
+      },
+      {
+        $group: {
+          _id: "$paymentMonth", // Group by invoiceMonth
+          monthlyTotal: { $sum: "$paymentAmountAsNumber" }, // Sum the invoice amounts for each month
+        },
+      },
+      {
+        $sort: { _id: 1 }, // Sort by month number (ascending)
+      },
+    ]);
 
-console.log(result,'result');
-
-
-
-
-
-
-
+    //console.log(result,'result');
 
     // Convert month numbers to month names
     const monthNames = [
@@ -106,7 +99,7 @@ console.log(result,'result');
       paymentMonth: item._id, // Convert month number to name
       paymentsMonthlyTotal: item.monthlyTotal,
     }));
-console.log(monthlyPayments,'monthlyPayments')
+    //console.log(monthlyPayments,'monthlyPayments')
     return {
       totalPaymentsAmount: totalAmount,
       monthlyPayments,
@@ -117,8 +110,6 @@ console.log(monthlyPayments,'monthlyPayments')
   }
 };
 
-
-
 // @desc Get all payment
 // @route GET 'desk/payment
 // @access Private // later we will establish authorisations
@@ -126,7 +117,7 @@ const getAllPayments = asyncHandler(async (req, res) => {
   //console.log("helloooooooo");
 
   // Check if an ID is passed as a query parameter
-  const { id, criteria, selectedYear,selectedMonth  } = req.query;
+  const { id, criteria, selectedYear, selectedMonth } = req.query;
   if (id) {
     //console.log("nowwwwwwwwwwwwwwwwwwwwwww here");
 
@@ -148,9 +139,11 @@ const getAllPayments = asyncHandler(async (req, res) => {
   ) {
     // Find a single payment by its ID
     try {
-      const {totalPaymentsAmount,monthlyPayments} = await getPaymentsStats(selectedYear);
-      
-      return res.status(200).json({ totalPaymentsAmount, monthlyPayments});
+      const { totalPaymentsAmount, monthlyPayments } = await getPaymentsStats(
+        selectedYear
+      );
+
+      return res.status(200).json({ totalPaymentsAmount, monthlyPayments });
     } catch (error) {
       return res
         .status(500)
@@ -158,7 +151,7 @@ const getAllPayments = asyncHandler(async (req, res) => {
     }
   }
 
-  if (selectedYear !== "1000" ) {
+  if (selectedYear !== "1000") {
     // Find a single payment by its ID
     const payments = await Payment.find()
       .populate({
@@ -179,45 +172,48 @@ const getAllPayments = asyncHandler(async (req, res) => {
     if (!payments) {
       return res.status(400).json({ message: "No payments found" });
     }
- // we will add teh father and mother names tohte payments
+    // we will add teh father and mother names tohte payments
 
+    // Retrieve all paymentStudent IDs to batch query families
+    const studentIds = payments
+      .map((payment) => payment.paymentStudent?._id)
+      .filter(Boolean);
 
-// Retrieve all paymentStudent IDs to batch query families
-const studentIds = payments.map(payment => payment.paymentStudent?._id).filter(Boolean);
+    // Find families where children.child matches any of the student IDs
+    const families = await Family.find({
+      "children.child": { $in: studentIds },
+    })
+      .populate({
+        path: "father",
+        select: "userFullName", // Retrieve only userFullName for father
+      })
+      .populate({
+        path: "mother",
+        select: "userFullName", // Retrieve only userFullName for mother
+      })
+      .lean(); // Converts Mongoose documents to plain JavaScript objects
 
-// Find families where children.child matches any of the student IDs
-const families = await Family.find({ "children.child": { $in: studentIds } })
-  .populate({
-    path: "father",
-    select: "userFullName", // Retrieve only userFullName for father
-  })
-  .populate({
-    path: "mother",
-    select: "userFullName", // Retrieve only userFullName for mother
-  })
-  .lean(); // Converts Mongoose documents to plain JavaScript objects
-  
-// Map families by child ID for quick access
-const familyMap = {};
-families.forEach(family => {
-  family.children.forEach(child => {
-    familyMap[child.child] = {
-      father: family.father?.userFullName || "Unknown Father",
-      mother: family.mother?.userFullName || "Unknown Mother",
-      id:family._id||"Unknown family Id"
-    };
-  });
-});
+    // Map families by child ID for quick access
+    const familyMap = {};
+    families.forEach((family) => {
+      family.children.forEach((child) => {
+        familyMap[child.child] = {
+          father: family.father?.userFullName || "Unknown Father",
+          mother: family.mother?.userFullName || "Unknown Mother",
+          id: family._id || "Unknown family Id",
+        };
+      });
+    });
 
-// Add family info to each payment
-payments.forEach(payment => {
-  const studentId = payment.paymentStudent?._id;
-  payment.familyInfo = familyMap[studentId] || {
-    father: "No Family Found",
-    mother: "No Family Found",
-    id:"Unknown family Id"
-  };
-});
+    // Add family info to each payment
+    payments.forEach((payment) => {
+      const studentId = payment.paymentStudent?._id;
+      payment.familyInfo = familyMap[studentId] || {
+        father: "No Family Found",
+        mother: "No Family Found",
+        id: "Unknown family Id",
+      };
+    });
 
     // Return the payment inside an array
     return res.json(payments); //we need it inside  an array to avoid response data error
@@ -477,7 +473,7 @@ const deletePayment = asyncHandler(async (req, res) => {
 
   const reply = `Deleted ${result?.deletedCount} payment and invoices updated successfully`;
 
-  return res.json({message:reply});
+  return res.json({ message: reply });
 });
 
 module.exports = {
