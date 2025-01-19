@@ -475,6 +475,7 @@ const updateEmployee = asyncHandler(async (req, res) => {
   //   employeeCurrentEmployment,
   //   employeeIsActive,
   //   employeeYears,
+  //   salaryPackage,
   //   employeeWorkHistory,
   //   employeeAssessment
   // );
@@ -510,7 +511,7 @@ const updateEmployee = asyncHandler(async (req, res) => {
   if (!user) {
     return res.status(400).json({ message: "User not found" });
   }
-  const employee = await Employee.findById(employeeId).exec(); //find the parent with the id from the user
+  const employee = await Employee.findById(employeeId).exec(); //find the employee with the id from the user
   if (!employee) {
     return res.status(400).json({ message: "Employee not found" });
   }

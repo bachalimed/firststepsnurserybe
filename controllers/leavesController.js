@@ -1,6 +1,7 @@
 const Leave = require("../models/Leave");
 const User = require("../models/User");
 
+
 const asyncHandler = require("express-async-handler"); //instead of using try catch
 
 const mongoose = require("mongoose");
@@ -74,22 +75,28 @@ const getAllLeaves = asyncHandler(async (req, res) => {
   // Check if an ID is passed as a query parameter
   const { id, criteria, selectedYear } = req.query;
   if (id) {
-    //console.log("nowwwwwwwwwwwwwwwwwwwwwww here");
-    const leave = await Leave.find({ _id: id }).lean();
-
-    const user = await User.findOne(
-      { employeeId: leave[0]?.leaveEmployee }, // Match the employee ID
-      "userFullName" // Select only the userFullName field
-    ).lean();
-
-    // Attach user information to the leave
-    leave[0].leaveEmployeeName = user ? user?.userFullName : null;
-    if (!leave) {
-      return res.status(400).json({ message: "Leave not found" });
+    try {
+      // Fetch the leave by ID
+      const leave = await Leave.findById(id).lean();
+  
+      if (!leave) {
+        return res.status(404).json({ message: "Leave not found" });
+      }
+  
+      // Fetch the user details for the leaveEmployee
+      const user = await User.findById(leave.leaveEmployee, "userFullName").lean();
+  
+      // Attach the employee's name to the leave object
+      leave.leaveEmployeeName = user?.userFullName || null;
+  
+      // Return the leave as an array to maintain consistency with client-side handling
+      return res.json([leave]);
+    } catch (error) {
+      console.error("Error fetching leave details:", error);
+      return res.status(500).json({ message: "An error occurred while fetching leave details" });
     }
-    // Return the leave inside an array
-    return res.json(leave); //we need it inside  an array to avoid response data error
   }
+  
 
   if (selectedYear !== "1000" && criteria === "leavesTotalStats") {
     try {
@@ -120,7 +127,66 @@ const getAllLeaves = asyncHandler(async (req, res) => {
 
   // If no ID is provided, fetch all leaves
 });
+// Function to determine if dates fall into different months and generate leave objects
+const generateLeaveObjects = (leaveStartDate, leaveEndDate, leaveDetails) => {
+  const startDate = new Date(leaveStartDate);
+  const endDate = new Date(leaveEndDate);
 
+  if (
+    startDate.getMonth() === endDate.getMonth() &&
+    startDate.getFullYear() === endDate.getFullYear()
+  ) {
+    return [
+      {
+        ...leaveDetails,
+        leaveMonth: startDate.toLocaleString("default", { month: "long" }),
+        leaveStartDate: startDate,
+        leaveEndDate: endDate,
+      },
+    ];
+  } else {
+    const endOfStartMonth = new Date(
+      startDate.getFullYear(),
+      startDate.getMonth() + 1,
+      0
+    );
+    const startOfEndMonth = new Date(
+      endDate.getFullYear(),
+      endDate.getMonth(),
+      1
+    );
+
+    return [
+      {
+        ...leaveDetails,
+        leaveMonth: startDate.toLocaleString("default", { month: "long" }),
+        leaveStartDate: startDate,
+        leaveEndDate: endOfStartMonth,
+      },
+      {
+        ...leaveDetails,
+        leaveMonth: endDate.toLocaleString("default", { month: "long" }),
+        leaveStartDate: startOfEndMonth,
+        leaveEndDate: endDate,
+      },
+    ];
+  }
+};
+
+// Function to check for overlapping leaves
+const hasOverlap = async (employeeId, startDate, endDate) => {
+  const overlappingLeaves = await Leave.find({
+    leaveEmployee: employeeId,
+    $or: [
+      {
+        leaveStartDate: { $lte: endDate },
+        leaveEndDate: { $gte: startDate },
+      },
+    ],
+  });
+
+  return overlappingLeaves.length > 0;
+};
 //----------------------------------------------------------------------------------
 // @desc Create new leave
 // @route POST 'desk/leave
@@ -130,7 +196,7 @@ const createNewLeave = asyncHandler(async (req, res) => {
   //console.log(req?.body);
   const {
     leaveYear,
-    leaveMonth,
+    //leaveMonth,
     leaveEmployee,
     leaveIsGiven,
     leaveIsPaidLeave,
@@ -138,6 +204,8 @@ const createNewLeave = asyncHandler(async (req, res) => {
     leaveIsPartDay,
     leaveStartDate,
     leaveEndDate,
+    leaveStartTime,
+    leaveEndTime,
 
     leaveComment,
     leaveOperator,
@@ -148,7 +216,7 @@ const createNewLeave = asyncHandler(async (req, res) => {
 
   if (
     !leaveYear ||
-    !leaveMonth ||
+    //!leaveMonth ||
     !leaveEmployee ||
     !leaveStartDate ||
     !leaveEndDate ||
@@ -157,33 +225,59 @@ const createNewLeave = asyncHandler(async (req, res) => {
   ) {
     return res.status(400).json({ message: "Required data is missing" }); //400 : bad request
   }
+  try {
+    // Common leave details
+    const leaveDetails = {
+      leaveYear,
+      leaveEmployee,
+      leaveIsGiven,
+      leaveIsPaidLeave,
+      leaveIsSickLeave,
+      leaveIsPartDay,
+      leaveComment,
+      leaveOperator,
+      leaveCreator,
+    };
 
-  const leaveObject = {
-    leaveYear: leaveYear,
-    leaveMonth: leaveMonth,
-    leaveEmployee: leaveEmployee,
-    leaveIsGiven: leaveIsGiven,
-    leaveIsPaidLeave: leaveIsPaidLeave,
-    leaveIsSickLeave: leaveIsSickLeave,
-    leaveIsPartDay: leaveIsPartDay,
-    leaveStartDate: leaveStartDate,
-    leaveEndDate: leaveEndDate,
+    // Check for overlap with existing leaves
+    const hasExistingOverlap = await hasOverlap(
+      leaveEmployee,
+      new Date(leaveStartDate),
+      new Date(leaveEndDate)
+    );
 
-    leaveComment: leaveComment,
-    leaveOperator: leaveOperator,
-    leaveCreator: leaveCreator,
-  }; //construct new leave to be stored
+    if (hasExistingOverlap) {
+      return res
+        .status(400)
+        .json({ message: "Leave dates overlap with existing leaves" });
+    }
 
-  // Create and store new leave
-  const leave = await Leave.create(leaveObject);
-  if (!leave) {
-    return res.status(400).json({ message: "Invalid data received" });
+    // Generate leave objects
+    const leaveObjects = generateLeaveObjects(
+      leaveStartDate,
+      leaveEndDate,
+      leaveDetails
+    );
+
+    // Create and store the leave(s)
+    const createdLeaves = await Promise.all(
+      leaveObjects.map((leaveObject) => Leave.create(leaveObject))
+    );
+
+    // Check if all leaves were created successfully
+    if (createdLeaves.some((leave) => !leave)) {
+      return res
+        .status(400)
+        .json({ message: "Invalid data received for leave creation" });
+    }
+
+    return res.status(201).json({ message: "Leave created successfully" });
+  } catch (error) {
+    console.error("Error creating leaves:", error);
+    return res
+      .status(500)
+      .json({ message: "An error occurred while creating leaves" });
   }
-  // If created
-  //console.log(leave?.leaveItems,'2')
-  return res.status(201).json({
-    message: `Leave created successfully`,
-  });
 });
 
 // @desc Update a leave
@@ -202,11 +296,12 @@ const updateLeave = asyncHandler(async (req, res) => {
     leaveIsPartDay,
     leaveStartDate,
     leaveEndDate,
-
+    leaveStartTime,
+    leaveEndTime,
     leaveComment,
     leaveOperator,
   } = req?.body;
- 
+
   // Confirm data
   if (
     !id ||
@@ -219,38 +314,148 @@ const updateLeave = asyncHandler(async (req, res) => {
     leaveIsPartDay === undefined ||
     !leaveStartDate ||
     !leaveEndDate ||
-    
     !leaveOperator
   ) {
     return res.status(400).json({ message: "Required data is missing" });
   }
+  try {
+    // Does the leave exist to update?
+    const leaveToUpdate = await Leave.findById(id).exec(); //we did not lean becausse we need the save method attached to the response
 
-  // Does the leave exist to update?
-  const leaveToUpdate = await Leave.findById(id).exec(); //we did not lean becausse we need the save method attached to the response
+    if (!leaveToUpdate) {
+      return res.status(400).json({ message: "Leave to update not found" });
+    }
 
-  if (!leaveToUpdate) {
-    return res.status(400).json({ message: "Leave to update not found" });
+    // Function to check for overlapping leaves
+    const hasOverlap = async (employeeId, startDate, endDate, excludeId) => {
+      const overlappingLeaves = await Leave.find({
+        leaveEmployee: employeeId,
+        _id: { $ne: excludeId }, // Exclude the current leave
+        $or: [
+          {
+            leaveStartDate: { $lte: endDate },
+            leaveEndDate: { $gte: startDate },
+          },
+        ],
+      });
+
+      return overlappingLeaves.length > 0;
+    };
+    // Check for overlapping leaves
+    const hasExistingOverlap = await hasOverlap(
+      leaveEmployee,
+      new Date(leaveStartDate),
+      new Date(leaveEndDate),
+      id
+    );
+
+    if (hasExistingOverlap) {
+      return res
+        .status(400)
+        .json({ message: "Leave dates overlap with existing leaves" });
+    }
+    // Function to generate leave objects
+    const generateLeaveObjects = (
+      leaveStartDate,
+      leaveEndDate,
+      leaveDetails
+    ) => {
+      const startDate = new Date(leaveStartDate);
+      const endDate = new Date(leaveEndDate);
+
+      if (
+        startDate.getMonth() === endDate.getMonth() &&
+        startDate.getFullYear() === endDate.getFullYear()
+      ) {
+        return [
+          {
+            ...leaveDetails,
+            leaveMonth: startDate.toLocaleString("default", { month: "long" }),
+            leaveStartDate: startDate,
+            leaveEndDate: endDate,
+          },
+        ];
+      } else {
+        const endOfStartMonth = new Date(
+          startDate.getFullYear(),
+          startDate.getMonth() + 1,
+          0
+        );
+        const startOfEndMonth = new Date(
+          endDate.getFullYear(),
+          endDate.getMonth(),
+          1
+        );
+
+        return [
+          {
+            ...leaveDetails,
+            leaveMonth: startDate.toLocaleString("default", { month: "long" }),
+            leaveStartDate: startDate,
+            leaveEndDate: endOfStartMonth,
+          },
+          {
+            ...leaveDetails,
+            leaveMonth: endDate.toLocaleString("default", { month: "long" }),
+            leaveStartDate: startOfEndMonth,
+            leaveEndDate: endDate,
+          },
+        ];
+      }
+    };
+    // Generate updated leave objects
+    const leaveDetails = {
+      leaveYear,
+      leaveEmployee,
+      leaveIsGiven,
+      leaveIsPaidLeave,
+      leaveIsSickLeave,
+      leaveIsPartDay,
+      leaveComment,
+      leaveOperator,
+    };
+
+    const leaveObjects = generateLeaveObjects(
+      leaveStartDate,
+      leaveEndDate,
+      leaveDetails
+    );
+
+    // Start a session to update leaves transactionally
+    const session = await Leave.startSession();
+    session.startTransaction();
+
+    try {
+      // Delete the existing leave
+      await Leave.deleteOne({ _id: id }, { session });
+
+      // Create updated leave objects
+      const createdLeaves = await Promise.all(
+        leaveObjects.map((leaveObject) =>
+          Leave.create([leaveObject], { session })
+        )
+      );
+
+      // Commit the transaction
+      await session.commitTransaction();
+      session.endSession();
+
+      return res
+        .status(200)
+        .json({ message: "Leave updated successfully", createdLeaves });
+    } catch (error) {
+      // Abort the transaction on error
+      await session.abortTransaction();
+      session.endSession();
+      console.error("Error updating leave:", error);
+      return res
+        .status(500)
+        .json({ message: "An error occurred while updating leave" });
+    }
+  } catch (error) {
+    console.error("Error in updateLeave controller:", error);
+    return res.status(500).json({ message: "Server error" });
   }
-  leaveToUpdate.leaveYear = leaveYear;
-  leaveToUpdate.leaveMonth = leaveMonth;
-  leaveToUpdate.leaveIsGiven = leaveIsGiven;
-  leaveToUpdate.leaveIsPaidLeave = leaveIsPaidLeave;
-  leaveToUpdate.leaveIsSickLeave = leaveIsSickLeave;
-  leaveToUpdate.leaveIsPartDay = leaveIsPartDay;
-  leaveToUpdate.leaveStartDate = leaveStartDate;
-  leaveToUpdate.leaveEndDate = leaveEndDate;
-  leaveToUpdate.leaveComment = leaveComment;
-  leaveToUpdate.leaveOperator = leaveOperator;
-  leaveToUpdate.leaveOperator = leaveOperator;
-
-  //console.log(leaveToUpdate,'leaveToUpdate')
-  const updatedLeave = await leaveToUpdate.save(); //save old leave
-  if (!updatedLeave) {
-    return res.status(400).json({ message: "invalid data received" });
-  }
-  return res.status(201).json({
-    message: `Leave updated successfully`,
-  });
 });
 
 //--------------------------------------------------------------------------------------1

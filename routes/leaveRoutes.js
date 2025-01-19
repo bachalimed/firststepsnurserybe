@@ -8,8 +8,8 @@ router.use(verifyJWT)
 
 router.route('/')//this '/' is now  'hr/leaves' t because in server.js the route is already 
     .get(leavesController.getAllLeaves)
-    .post(leavesController.createNewLeave)
+    .post( leavesController.createNewLeave)
     .patch(leavesController.updateLeave)
-    .delete(leavesController.deleteLeave)
+    .delete( leavesController.deleteLeave)
 
 module.exports = router
