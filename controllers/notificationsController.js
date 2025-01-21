@@ -39,7 +39,7 @@ const getAllNotifications = asyncHandler(async (req, res) => {
     try {
       const currentDate = new Date();
 
-      console.log("Fetching notifications before:", currentDate.toISOString());
+      //console.log("Fetching notifications before:", currentDate.toISOString());
 
       // Find notifications with a date and time less than the current date
       const notifications = await Notification.find({
@@ -47,7 +47,7 @@ const getAllNotifications = asyncHandler(async (req, res) => {
       })
         .sort({ notificationDate: -1 }) // Most recent notifications first
         .select(
-          "_id notificationType notificationTitle notificationExcerpt notificationDate notificationDestination notificationIsRead"
+          "_id notificationType notificationTitle notificationExcerpt notificationDate notificationTo notificationIsRead"
         ) // Select specific fields
         .lean();
       //console.log(notifications,'notifications')
@@ -55,7 +55,7 @@ const getAllNotifications = asyncHandler(async (req, res) => {
         return res.status(404).json({ message: "No notifications found" });
       }
 
-      // Filter notifications for non-admin/manager/director users
+      // Filter notifications for non-admin/manager/director users, if a parent is connected, he will get the notification
       if (
         !(
           roles.includes(isAdmin) ||
@@ -66,14 +66,14 @@ const getAllNotifications = asyncHandler(async (req, res) => {
         //console.log("nowwwwwwwwwwwwwwwwwwwwwww here");
 
         notifications = notifications.filter(
-          (notif) => String(notif.notificationDestination) === String(userId)
+          (notif) => notif.notificationTo.includes(String(userId))
         );
       }
 
-    
+    const lastnotifications = notifications.slice(0, 8)
 
       // Return the filtered and limited notifications
-      return res.json(notifications.slice(0, 8));
+      return res.json(lastnotifications);
     } catch (error) {
       console.error("Error fetching notifications:", error);
       return res
@@ -84,16 +84,26 @@ const getAllNotifications = asyncHandler(async (req, res) => {
   if (selectedDate) {
     // Find a single notification by its ID
     //console.log('here')
-    const notifications = await Notification.find({
-      notificationDate: selectedDate,
-    }).lean();
+    const currentDate = new Date();
+
+      //console.log("Fetching notifications before:", currentDate.toISOString());
+
+      // Find notifications with a date and time less than the current date
+      const notifications = await Notification.find({
+        notificationDate: { $lt: currentDate }, // Compare against the current date and time
+      })
+        .sort({ notificationDate: -1 }) // Most recent notifications first
+        // .select(
+        //   "_id notificationType notificationTitle notificationExcerpt notificationDate notificationTo notificationIsRead"
+        // ) // Select specific fields
+        .lean();
 
     if (!notifications) {
       return res.status(400).json({ message: "Notifications not found" });
     }
-
+const lastnotifications= notifications.slice(0, 50)
     // Return the notification inside an array
-    return res.json(notifications); //we need it inside  an array to avoid response data error
+    return res.json(lastnotifications);; /////we need it inside  an array to avoid response data error
   }
 
   // If no ID is provided, fetch all notifications
@@ -108,7 +118,7 @@ const createNewNotification = asyncHandler(async (req, res) => {
   //console.log(req?.body);
   const {
     notificationYear,
-    notificationDestination, //the user id who will receive
+    notificationTo, //the user id who will receive
     notificationType,
     notificationPayment,
     notificationLeave,
@@ -125,7 +135,7 @@ const createNewNotification = asyncHandler(async (req, res) => {
 
   if (
     !notificationYear ||
-    !notificationDestination ||
+    !notificationTo ||
     !notificationType ||
     !notificationTitle ||
     !notificationContent ||
@@ -139,7 +149,7 @@ const createNewNotification = asyncHandler(async (req, res) => {
   const duplicate = await Notification.findOne({
     notificationYear,
     notificationDate,
-    notificationDestination,
+    notificationTo,
     notificationTitle,
   });
 
@@ -151,7 +161,7 @@ const createNewNotification = asyncHandler(async (req, res) => {
 
   const notificationObject = {
     notificationYear: notificationYear,
-    notificationDestination: notificationDestination, //the user id who will receive
+    notificationTo: notificationTo, //the user id who will receive
     notificationType: notificationType,
     notificationPayment: notificationPayment,
     notificationLeave: notificationLeave,
@@ -184,7 +194,7 @@ const updateNotification = asyncHandler(async (req, res) => {
   const {
     id,
     notificationYear,
-    notificationDestination, //the user id who will receive
+    notificationTo, //the user id who will receive
     notificationType,
     notificationPayment,
     notificationLeave,
@@ -201,7 +211,7 @@ const updateNotification = asyncHandler(async (req, res) => {
   if (
     !id ||
     !notificationYear ||
-    !notificationDestination ||
+    !notificationTo ||
     !notificationType ||
     !notificationTitle ||
     !notificationContent ||
@@ -221,7 +231,7 @@ const updateNotification = asyncHandler(async (req, res) => {
   }
 
   notificationToUpdate.notificationYear = notificationYear;
-  notificationToUpdate.notificationDestination = notificationDestination;
+  notificationToUpdate.notificationTo = notificationTo;
   notificationToUpdate.notificationType = notificationType;
   notificationToUpdate.notificationPayment = notificationPayment;
   notificationToUpdate.notificationLeave = notificationLeave;

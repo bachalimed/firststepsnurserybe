@@ -63,12 +63,12 @@ const NotificationSchema = new mongoose.Schema(
       required: true,
     },
 
-    notificationDestination: {
+    notificationTo: [{
       type: mongoose.Schema.Types.ObjectId,
       required: true,
       index: true,
       ref: "User",
-    },
+    }],
     notificationIsRead: { type: Boolean, index: true },
   },
 

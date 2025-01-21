@@ -2,6 +2,7 @@
 const Payment = require("../models/Payment");
 const Invoice = require("../models/Invoice");
 const Family = require("../models/Family");
+const Notification = require("../models/Notification");
 
 const asyncHandler = require("express-async-handler"); //instead of using try catch
 
@@ -107,6 +108,43 @@ const getPaymentsStats = async (selectedYear) => {
   } catch (error) {
     console.error("Error computing payments stats:", error);
     throw error;
+  }
+};
+///
+const getInvoicesWithEnrolments = async (invoiceIDs) => {
+  try {
+    // Validate invoiceIDs input
+    if (!Array.isArray(invoiceIDs) || invoiceIDs.length === 0) {
+      throw new Error("Invalid or missing invoice IDs");
+    }
+
+    // Retrieve invoices and populate enrolments
+    const invoices = await Invoice.find({ _id: { $in: invoiceIDs } })
+      .select("_id invoiceMonth invoiceAmount") // Select required fields from invoices
+      .populate({
+        path: "invoiceEnrolment", // Populate enrolments
+        select: "_id serviceType servicePeriod", // Select required fields from enrolments
+      })
+      .lean();
+   // console.log(invoices, "invoicesin retrieval");
+    // Structure the invoices with their corresponding enrolments
+    // const structuredInvoices = invoices.map((invoice) => ({
+    //   _id: invoice._id,
+    //   invoiceMonth: invoice.invoiceMonth,
+    //   invoiceAmount: invoice.invoiceAmount,
+    //   enrolments: Array.isArray(invoice.invoiceEnrolment)
+    //     ? invoice.invoiceEnrolment.map((enrolment) => ({
+    //         _id: enrolment._id,
+    //         serviceType: enrolment.serviceType,
+    //         servicePeriod: enrolment.servicePeriod,
+    //       }))
+    //     : [],
+    // }));
+    //console.log(structuredInvoices,'structuredInvoices')
+    return invoices;
+  } catch (error) {
+    console.error("Error retrieving invoices with enrolments:", error);
+    throw new Error("Failed to retrieve invoices with enrolments");
   }
 };
 
@@ -305,11 +343,87 @@ const createNewPayment = asyncHandler(async (req, res) => {
         },
       }
     );
+    //we now create a notification and save it
 
-    // If created and students updated
-    return res.status(201).json({
-      message: `Payment created and Invoice(s) updated successfully`,
-    });
+    //retrive the parents ids
+
+    const family = await Family.findOne(
+      {
+        children: {
+          $elemMatch: { child: paymentStudent }, // Match a child in the children array
+        },
+      },
+      {
+        father: 1, // Include father in the result
+        mother: 1, // Include mother in the result
+        "children.$": 1, // Use positional operator to retrieve only the matching child
+      }
+    )
+      .populate({
+        path: "children.child", // Path to populate
+        select: "studentName", // Include only the studentName field
+      })
+      .lean();
+
+    if (family) {
+      const { father, mother, children } = family;
+      const student = children[0]?.child; // Populated child document
+
+      //retrive the services and amounts
+      const invoices = await Invoice.find({ _id: { $in: invoiceIDs } })
+        .select("_id invoiceMonth invoiceAmount") // Select required fields from invoices
+        .populate({
+          path: "invoiceEnrolment", // Populate enrolments
+          select: "_id serviceType servicePeriod", // Select required fields from enrolments
+        })
+        .lean();
+      //console.log(invoices, "invoices");
+      const notificationContent = `A new payment of ${paymentAmount} TND was made for ${
+        student?.studentName?.firstName
+      } ${student?.studentName?.middleName || ""} ${
+        student?.studentName?.lastName
+      } as follows:\n${invoices
+        .map(
+          (invoice) =>
+            `Service: ${invoice?.invoiceEnrolment?.serviceType} - ${invoice?.invoiceMonth} (${invoice?.invoiceEnrolment?.servicePeriod})
+      Amount: ${invoice?.invoiceAmount} TND`
+        )
+        .join("\n")}`;
+
+        const notificationExcerpt = `Payment of ${paymentAmount} TND for ${
+          student?.studentName?.firstName
+        } ${student?.studentName?.middleName || ""} ${
+          student?.studentName?.lastName
+        } on ${new Date().toLocaleString("en-GB", {
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: false,
+        })}`;
+
+      const newNotification = {
+        notificationYear: paymentYear,
+        notificationTo: [father, mother], //the user id who will receive father and mother id
+        notificationType: "Payment",
+        notificationPayment: newPaymentId,
+        //notificationLeave,
+        //notificationAdmission,
+        notificationTitle: "New Payment Made ",
+        notificationContent: notificationContent,
+        notificationExcerpt: notificationExcerpt,
+        notificationDate: new Date(),
+        notificationIsToBeSent: true,
+        notificationIsRead: false,
+      };
+      const savedNotification = await Notification.create(newNotification);
+
+      // If created and students updated
+      return res.status(201).json({
+        message: `Payment created and Invoice(s) updated successfully`,
+      });
+    }
   }
 });
 
