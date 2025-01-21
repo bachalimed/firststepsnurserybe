@@ -20,7 +20,7 @@ const leaveSchema = new mongoose.Schema({
   leaveIsPartDay: { type: Boolean, required: true },
   leaveStartDate: { type: Date, required: true },
   leaveEndDate: { type: Date, required: true },
-
+  //leaveIsNotified: { type: Boolean, default: false },
   leaveComment: { type: String, set: capitalizeFirstLetter },
   leaveOperator: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
   leaveCreator: { type: mongoose.Schema.Types.ObjectId, ref: "User" },

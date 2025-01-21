@@ -43,6 +43,11 @@ const paymentSchema = new mongoose.Schema(
       type: Date,
       default: Date.now,
     },
+    // paymentIsNotified: {
+     
+    //   type: Boolean,
+    //   default: false,
+    // },
 
     paymentCreator: {
       type: mongoose.Schema.Types.ObjectId, // Reference to the user who created the Payment

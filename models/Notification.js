@@ -1,80 +1,84 @@
-// const mongoose = require("mongoose");
+const mongoose = require("mongoose");
 
-// function capitalizeFirstLetter(str) {
-//   if (typeof str !== "string" || str.length === 0) return str;
-//   return str.charAt(0).toUpperCase() + str.slice(1);
-// }
+function capitalizeFirstLetter(str) {
+  if (typeof str !== "string" || str.length === 0) return str;
+  return str.charAt(0).toUpperCase() + str.slice(1);
+}
 
-// const NotificationSchema = new mongoose.Schema(
-//   {
-//     notificationType: {
-//       type: String,
+const notificationUsersSchema = new mongoose.Schema({}, { _id: false });
 
-//       set: capitalizeFirstLetter,
-//     },
-//     notificationLabel: {
-//       type: String,
-//       required: true,
-//       set: capitalizeFirstLetter,
-//     },
-//     notificationYear: {
-//       type: String,
-//       required: true,
-//     },
-//     notificationAnimator: {
-//       type: mongoose.Schema.Types.ObjectId, // Reference to the user who created the notification
-//       ref: "Employee",
-//       required: true,
-//     },
+const NotificationSchema = new mongoose.Schema(
+  {
+    notificationType: {
+      //Receipt, payment reminder, information
+      type: String,
+      set: capitalizeFirstLetter,
+    },
+    notificationPayment: {
+      //related to payment
+      type: mongoose.Schema.Types.ObjectId, 
+      ref: "Payment",
+    },
+    notificationIsToBeSent: { type: Boolean, index: true }, //if the system setitings sending option is avaialble or not will be recorded on the notification
 
-//     students: [
-//       {
-//         type: mongoose.Schema.Types.ObjectId, // Reference to the user who created the notification
-//         ref: "Student",
-//       },
-//     ],
-//     notificationColor: { type: String, index: true, default: "#5978ee" },
-//     notificationType: {
-//       type: String,
-//     },
+    notificationLeave: {
+      //related to Leave
+      type: mongoose.Schema.Types.ObjectId, 
+      ref: "Leave",
+    },
+    notificationAdmission: {
+      //related to admission
+      type: mongoose.Schema.Types.ObjectId, 
+      ref: "Admission",
+    },
+    notificationExpense: {
+      //related to admission
+      type: mongoose.Schema.Types.ObjectId, 
+      ref: "Expense",
+    },
+    notificationTitle: {
+      //the content of the notification
+      type: String,
+      required: true,
+      set: capitalizeFirstLetter,
+    },
+    notificationContent: {
+      //the content of the notification
+      type: String,
+      required: true,
+      set: capitalizeFirstLetter,
+    },
+    notificationExcerpt: {
+      //the short content of the notification to be shown in the notification
+      type: String,
+      required: true,
+      set: capitalizeFirstLetter,
+    },
+    notificationYear: {
+      type: String,
+      required: true,
+    },
+    notificationDate: {
+      type: Date,
+      required: true,
+    },
 
-//     notificationFrom: {
-//       type: Date,
-//       required: true,
-//     },
-//     notificationTo: {
-//       //the current notification will not have an ending date
-//       type: Date,
-//       default: null,
-//     },
+    notificationDestination: {
+      type: mongoose.Schema.Types.ObjectId,
+      required: true,
+      index: true,
+      ref: "User",
+    },
+    notificationIsRead: { type: Boolean, index: true },
+  },
 
-//     notificationLocation: {
-//       type: mongoose.Schema.Types.ObjectId,
-//       ref: "Classroom",
-//       required: true,
-//     },
-//     operator: {
-//       type: mongoose.Schema.Types.ObjectId, // Reference to the user who created the notification
-//       ref: "User",
-//       required: true,
-//     },
-//     creator: {
-//       type: mongoose.Schema.Types.ObjectId, // Reference to the user who created the notification
-//       ref: "User",
-//       required: true,
-//     },
-//   },
+  {
+    timestamps: true, // Automatically create `createdAt` and `updatedAt` fields
+  }
+);
 
-//   {
-//     timestamps: true, // Automatically create `createdAt` and `updatedAt` fields
-//   }
-// );
-
-// // Index for faster queries on recurring notifications
-// NotificationSchema.index({ startTime: 1, endTime: 1 });
-
-// module.exports = mongoose.model(
-//   "Notification",
-//   NotificationSchema,
-//   "notifications"
-// );
+module.exports = mongoose.model(
+  "Notification",
+  NotificationSchema,
+  "notifications"
+);

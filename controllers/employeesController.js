@@ -211,16 +211,34 @@ const getAllEmployees = asyncHandler(async (req, res) => {
           .status(404)
           .json({ message: "No users found with the selected year." });
       }
+      //now we have all teh employees, we will order them by first name
+      const sortEmployeesByFullName = (employees) => {
+        return employees.sort((a, b) => {
+          const nameA =
+            `${a.userFullName.userFirstName} ${a.userFullName.userMiddleName} ${a.userFullName.userLastName}`
+              .trim()
+              .toLowerCase();
+          const nameB =
+            `${b.userFullName.userFirstName} ${b.userFullName.userMiddleName} ${b.userFullName.userLastName}`
+              .trim()
+              .toLowerCase();
+
+          return nameA.localeCompare(nameB);
+        });
+      };
+
+      // Example usage
+      const sortedEmployees = sortEmployeesByFullName(users);
 
       if (criteria === "Animator") {
         // flatten the name , keep only Animators and arrange for scheduler
 
-        const formattedUsers = formatUsers(users);
+        const formattedUsers = formatUsers(sortedEmployees);
 
         return res.status(200).json(formattedUsers);
       } else {
         // Return the filtered users
-        res.status(200).json(users);
+        res.status(200).json(sortedEmployees);
       }
     }
   }
@@ -355,7 +373,7 @@ const createNewEmployee = asyncHandler(async (req, res) => {
     //console.log(employeeId, "saved  employeeId");
 
     const userObject = {
-      _id:employeeId,//we will use the samne id for employee and user for the same person
+      _id: employeeId, //we will use the samne id for employee and user for the same person
       userFullName,
       username,
       password: hashedPwd,
@@ -536,7 +554,7 @@ const updateEmployee = asyncHandler(async (req, res) => {
     if (payeeToUpdate) {
       payeeToUpdate.payeeLabel = `${userFullName.userFirstName} ${userFullName.userMiddleName} ${userFullName.userLastName}`;
       const updatedPayee = await payeeToUpdate.save();
-     // console.log(updatedPayee, "updatedPayee");
+      // console.log(updatedPayee, "updatedPayee");
       if (!updatedPayee)
         return res.status(400).json({ message: "Invalid data received" });
     }

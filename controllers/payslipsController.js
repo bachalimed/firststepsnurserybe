@@ -75,31 +75,42 @@ const getPayslipsStats = async (selectedYear) => {
 
 ///used by update payslip
 const generateSalaryExpenseItems = (payslipSalaryComponents) => {
-  const salaryExpenseItems = ["Paid Basic"];
-console.log(payslipSalaryComponents,'payslipSalaryComponents')
-  // Add allowances if allowanceNumber !== 0
+  let salaryExpenseItems = ["Paid Basic"]; // Always include "Paid Basic"
+
+  //console.log(payslipSalaryComponents, 'payslipSalaryComponents');
+
+  // Add allowances if valid
   if (Array.isArray(payslipSalaryComponents.allowances)) {
     payslipSalaryComponents.allowances.forEach((allowance) => {
       if (
         allowance.allowanceNumber !== "0" &&
-        allowance.allowanceTotalValue !== 0&&
-        allowance.allowanceTotalValue !== ""
+        allowance.allowanceTotalValue > 0 &&
+        allowance.allowanceLabel.trim() !== ""
       ) {
         salaryExpenseItems.push(allowance.allowanceLabel);
       }
     });
   }
 
-  // Add deduction if deductionAmount !== 0
+  // Add deduction if valid
   const deduction = payslipSalaryComponents.deduction;
-  if (deduction && deduction.deductionAmount !== 0&& deduction.deductionAmount !== "") {
+  if (
+    deduction &&
+    deduction.deductionAmount > 0 &&
+    deduction.deductionLabel.trim() !== ""
+  ) {
     salaryExpenseItems.push(deduction.deductionLabel);
   }
 
-  console.log(salaryExpenseItems,'salaryExpenseItems')
+  // Filter out any empty or invalid strings (if any made it through)
+  salaryExpenseItems = salaryExpenseItems.filter(
+    (item) => item && item.trim() !== ""
+  );
 
+  //console.log(salaryExpenseItems, 'salaryExpenseItems');
   return salaryExpenseItems;
 };
+
 
 // @desc Get all payslip
 // @route GET 'desk/payslip
@@ -177,13 +188,18 @@ const isValidPayslipDate = (payslipYear, payslipMonth, employeeJoinDate) => {
     };
   }
 
-  // Ensure payslip date is not earlier than employee's join date
-  if (payslipDate < new Date(employeeJoinDate)) {
-    return {
-      isValid: false,
-      message: "Payslip date cannot be earlier than the employee's join date.",
-    };
-  }
+ // Ensure payslip month is the same or later than the employee's join date
+const joinDate = new Date(employeeJoinDate);
+if (
+  payslipDate.getFullYear() < joinDate.getFullYear() || 
+  (payslipDate.getFullYear() === joinDate.getFullYear() && payslipDate.getMonth() < joinDate.getMonth())
+) {
+  return {
+    isValid: false,
+    message: "Payslip date cannot be earlier than the employee's join date.",
+  };
+}
+
 
   return { isValid: true };
 };

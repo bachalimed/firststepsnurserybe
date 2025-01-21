@@ -21,6 +21,7 @@ const admissionSchema = new mongoose.Schema({
 	admissionYear:{type: String, required:true, index:true},
 	admissionDate: {type: Date, required:true},
 	agreedServices:[agreedServicesSchema],
+	//admissionIsNotified: {type: Boolean, default:false},
 	
 	admissionCreator:{type: mongoose.Schema.Types.ObjectId, required:true, index:true, ref:'User'},
 	admissionOperator:{type: mongoose.Schema.Types.ObjectId, required:true, index:true, ref:'User'},
