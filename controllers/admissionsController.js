@@ -2,7 +2,8 @@
 const Enrolment = require("../models/Enrolment"); //we might need the parent module in this controller
 const Admission = require("../models/Admission"); //we might need the parent module in this controller
 const Student = require("../models/Student");
-const Service = require("../models/Service"); //we might need the employee module in this controller
+const User = require("../models/User"); //we might need the employee module in this controller
+const Notification = require("../models/Notification"); //we might need the employee module in this controller
 const asyncHandler = require("express-async-handler"); //instead of using try catch
 
 const mongoose = require("mongoose");
@@ -325,8 +326,74 @@ const createNewAdmission = asyncHandler(async (req, res) => {
 
       // Save the updated student document
       await studentToUpdateWithAdmission.save();
+      //create notification for a new admission
+      //no family is defined for the studetn inthis stage, so we only notify the management of new admission
+      //get teh studetn name
+     // console.log(studentToUpdateWithAdmission, "studentToUpdateWithAdmission");
 
-      res.status(201).json({
+      const notificationContent = `A new admission was made for ${
+        studentToUpdateWithAdmission?.studentName?.firstName
+      } ${studentToUpdateWithAdmission?.studentName?.middleName || ""} ${
+        studentToUpdateWithAdmission?.studentName?.lastName
+      } in ${agreedServices?.length} services on ${new Date().toLocaleString(
+        "en-GB",
+        {
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: false,
+        }
+      )}`;
+
+      const notificationExcerpt = `New admission(s) for ${
+        studentToUpdateWithAdmission?.studentName?.firstName
+      } ${studentToUpdateWithAdmission?.studentName?.middleName || ""} ${
+        studentToUpdateWithAdmission?.studentName?.lastName
+      } on ${new Date().toLocaleString("en-GB", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+      })}`;
+const targetRoles = ["Director", "Manager", "Admin"]; // Roles to filter by
+
+
+  // Find users with matching roles and populate employeeId
+  const usersWithRoles = await User.find({
+    userRoles: { $in: targetRoles }, 
+  })
+    .populate({
+      path: "employeeId",
+      select: "employeeIsActive", // Only include employeeIsActive in the populated field
+    })
+    .lean();
+
+  // Filter users where employeeIsActive is true
+  const targetUsers = usersWithRoles
+    .filter((user) => user?.employeeId?.employeeIsActive)
+    .map((user) => user._id); // Extract user._id for active employees
+
+  //console.log("Target Users:", targetUsers);
+      const newNotification = {
+        notificationYear: admissionYear,
+        notificationToUsers: targetUsers,
+        notificationType: "Admission",
+        notificationAdmission: admission._id,
+        notificationTitle: "New Admission",
+        notificationContent: notificationContent,
+        notificationExcerpt: notificationExcerpt,
+        notificationDate: new Date(),
+        notificationIsToBeSent: false,
+        notificationIsRead: false,
+      };
+      //console.log(newNotification,'newNotification')
+      const savedNotification = await Notification.create(newNotification);
+//console.log(savedNotification,'savedNotification')
+      return res.status(201).json({
         message: `Admission created Successfully`,
       });
     } else {

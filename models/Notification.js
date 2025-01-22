@@ -16,24 +16,24 @@ const NotificationSchema = new mongoose.Schema(
     },
     notificationPayment: {
       //related to payment
-      type: mongoose.Schema.Types.ObjectId, 
+      type: mongoose.Schema.Types.ObjectId,
       ref: "Payment",
     },
     notificationIsToBeSent: { type: Boolean, index: true }, //if the system setitings sending option is avaialble or not will be recorded on the notification
 
     notificationLeave: {
       //related to Leave
-      type: mongoose.Schema.Types.ObjectId, 
+      type: mongoose.Schema.Types.ObjectId,
       ref: "Leave",
     },
     notificationAdmission: {
       //related to admission
-      type: mongoose.Schema.Types.ObjectId, 
+      type: mongoose.Schema.Types.ObjectId,
       ref: "Admission",
     },
     notificationExpense: {
       //related to admission
-      type: mongoose.Schema.Types.ObjectId, 
+      type: mongoose.Schema.Types.ObjectId,
       ref: "Expense",
     },
     notificationTitle: {
@@ -63,12 +63,21 @@ const NotificationSchema = new mongoose.Schema(
       required: true,
     },
 
-    notificationTo: [{
-      type: mongoose.Schema.Types.ObjectId,
-      required: true,
-      index: true,
-      ref: "User",
-    }],
+    notificationToParents: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        index: true,
+        ref: "User",
+      },
+    ],
+    notificationToUsers: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        required: true,
+        index: true,
+        ref: "User",
+      },
+    ],
     notificationIsRead: { type: Boolean, index: true },
   },
 

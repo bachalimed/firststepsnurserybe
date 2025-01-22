@@ -1,4 +1,5 @@
 const Notification = require("../models/Notification");
+const User = require("../models/User");
 
 const asyncHandler = require("express-async-handler"); //instead of using try catch
 
@@ -21,7 +22,7 @@ const getAllNotifications = asyncHandler(async (req, res) => {
     isDirector,
     isManager,
   } = req.query;
-  const roles = [isAdmin, isDirector, isManager];
+
   if (id) {
     // Find a single notification by its ID
     const notification = await Notification.findOne({ _id: id }).lean();
@@ -47,7 +48,7 @@ const getAllNotifications = asyncHandler(async (req, res) => {
       })
         .sort({ notificationDate: -1 }) // Most recent notifications first
         .select(
-          "_id notificationType notificationTitle notificationExcerpt notificationDate notificationTo notificationIsRead"
+          "_id notificationType notificationTitle notificationExcerpt notificationDate notificationToUsers notificationIsRead"
         ) // Select specific fields
         .lean();
       //console.log(notifications,'notifications')
@@ -56,22 +57,20 @@ const getAllNotifications = asyncHandler(async (req, res) => {
       }
 
       // Filter notifications for non-admin/manager/director users, if a parent is connected, he will get the notification
-      if (
-        !(
-          roles.includes(isAdmin) ||
-          roles.includes(isManager) ||
-          roles.includes(isDirector)
-        )
-      ) {
-        //console.log("nowwwwwwwwwwwwwwwwwwwwwww here");
-
-        notifications = notifications.filter(
-          (notif) => notif.notificationTo.includes(String(userId))
-        );
+      if (isAdmin === "true") {
+        const lastnotifications = notifications?.slice(0, 8);
+        return res.json(lastnotifications);
       }
+      console.log("nowwwwwwwwwwwwwwwwwwwwwww here");
 
-    const lastnotifications = notifications.slice(0, 8)
+  
 
+      const dedicatedNotifications = notifications.filter((notif) =>
+        notif.notificationToUsers.some((id) =>
+          id.equals(new mongoose.Types.ObjectId(userId))
+        )
+      );
+      const lastnotifications = dedicatedNotifications?.slice(0, 8);
       // Return the filtered and limited notifications
       return res.json(lastnotifications);
     } catch (error) {
@@ -83,27 +82,40 @@ const getAllNotifications = asyncHandler(async (req, res) => {
   }
   if (selectedDate) {
     // Find a single notification by its ID
-    //console.log('here')
+    //console.log("here");
     const currentDate = new Date();
 
-      //console.log("Fetching notifications before:", currentDate.toISOString());
+    //console.log("Fetching notifications before:", currentDate.toISOString());
 
-      // Find notifications with a date and time less than the current date
-      const notifications = await Notification.find({
-        notificationDate: { $lt: currentDate }, // Compare against the current date and time
-      })
-        .sort({ notificationDate: -1 }) // Most recent notifications first
-        // .select(
-        //   "_id notificationType notificationTitle notificationExcerpt notificationDate notificationTo notificationIsRead"
-        // ) // Select specific fields
-        .lean();
+    // Find notifications with a date and time less than the current date
+    const notifications = await Notification.find({
+      notificationDate: { $lt: currentDate }, // Compare against the current date and time
+    })
+      .sort({ notificationDate: -1 }) // Most recent notifications first
+      // .select(
+      //   "_id notificationType notificationTitle notificationExcerpt notificationDate notificationTo notificationIsRead"
+      // ) // Select specific fields
+      .lean();
 
     if (!notifications) {
       return res.status(400).json({ message: "Notifications not found" });
     }
-const lastnotifications= notifications.slice(0, 50)
+    //console.log(isAdmin);
+    //filter notifications for concerned user
+    //console.log(typeof isAdmin, isAdmin);
+    if (isAdmin === "true") {
+      //console.log("nowwwwwwwwwwwwwwwwwwwwwww here");
+      return res.json(notifications);
+    }
+    //console.log("now heer afetr check");
+    const dedicatedNotifications = notifications.filter((notif) =>
+      notif.notificationToUsers.some((id) =>
+        id.equals(new mongoose.Types.ObjectId(userId))
+      )
+    );
+
     // Return the notification inside an array
-    return res.json(lastnotifications);; /////we need it inside  an array to avoid response data error
+    return res.json(dedicatedNotifications?.slice(0, 200)); /////we need it inside  an array to avoid response data error
   }
 
   // If no ID is provided, fetch all notifications
@@ -118,7 +130,8 @@ const createNewNotification = asyncHandler(async (req, res) => {
   //console.log(req?.body);
   const {
     notificationYear,
-    notificationTo, //the user id who will receive
+    notificationToParents,
+    notificationToUsers, //the user id who will receive
     notificationType,
     notificationPayment,
     notificationLeave,
@@ -135,7 +148,6 @@ const createNewNotification = asyncHandler(async (req, res) => {
 
   if (
     !notificationYear ||
-    !notificationTo ||
     !notificationType ||
     !notificationTitle ||
     !notificationContent ||
@@ -149,7 +161,7 @@ const createNewNotification = asyncHandler(async (req, res) => {
   const duplicate = await Notification.findOne({
     notificationYear,
     notificationDate,
-    notificationTo,
+
     notificationTitle,
   });
 
@@ -158,10 +170,26 @@ const createNewNotification = asyncHandler(async (req, res) => {
       message: `Duplicate notification   ${duplicate.notificationTitle}}`,
     });
   }
+  const targetRoles = ["Director", "Manager", "Admin"]; // Roles to filter by
+
+  // Find users with matching roles and populate employeeId
+  const usersWithRoles = await User.find({
+    userRoles: { $in: targetRoles },
+  })
+    .populate({
+      path: "employeeId",
+      select: "employeeIsActive", // Only include employeeIsActive in the populated field
+    })
+    .lean();
+
+  // Filter users where employeeIsActive is true
+  const targetUsers = usersWithRoles
+    .filter((user) => user?.employeeId?.employeeIsActive)
+    .map((user) => user._id); // Extract user._id for active employees
 
   const notificationObject = {
     notificationYear: notificationYear,
-    notificationTo: notificationTo, //the user id who will receive
+    notificationToUsers: targetUsers, //the users id who will receive
     notificationType: notificationType,
     notificationPayment: notificationPayment,
     notificationLeave: notificationLeave,
@@ -194,7 +222,7 @@ const updateNotification = asyncHandler(async (req, res) => {
   const {
     id,
     notificationYear,
-    notificationTo, //the user id who will receive
+
     notificationType,
     notificationPayment,
     notificationLeave,
@@ -211,7 +239,6 @@ const updateNotification = asyncHandler(async (req, res) => {
   if (
     !id ||
     !notificationYear ||
-    !notificationTo ||
     !notificationType ||
     !notificationTitle ||
     !notificationContent ||
@@ -229,9 +256,25 @@ const updateNotification = asyncHandler(async (req, res) => {
       .status(400)
       .json({ message: "Notification to update not found" });
   }
+  const targetRoles = ["Director", "Manager", "Admin"]; // Roles to filter by
+
+  // Find users with matching roles and populate employeeId
+  const usersWithRoles = await User.find({
+    userRoles: { $in: targetRoles },
+  })
+    .populate({
+      path: "employeeId",
+      select: "employeeIsActive", // Only include employeeIsActive in the populated field
+    })
+    .lean();
+
+  // Filter users where employeeIsActive is true
+  const targetUsers = usersWithRoles
+    .filter((user) => user?.employeeId?.employeeIsActive)
+    .map((user) => user._id); // Extract user._id for active employees
 
   notificationToUpdate.notificationYear = notificationYear;
-  notificationToUpdate.notificationTo = notificationTo;
+  notificationToUpdate.notificationToUsers = targetUsers;
   notificationToUpdate.notificationType = notificationType;
   notificationToUpdate.notificationPayment = notificationPayment;
   notificationToUpdate.notificationLeave = notificationLeave;
@@ -257,31 +300,87 @@ const updateNotification = asyncHandler(async (req, res) => {
 // @desc Delete a student
 // @route DELETE 'students/studentsParents/students
 // @access Private
-const deleteNotification = asyncHandler(async (req, res) => {
-  ///
-  const { id } = req.body;
+const deleteNotification = async (req, res) => {
+  const { ids, userId, isAdmin } = req.body; // Array of notification IDs and the user ID
 
   // Confirm data
-  if (!id) {
-    return res.status(400).json({ message: "Required data is missing" });
+  if (!ids || ids.length === 0) {
+    return res.status(400).json({ message: "No notification IDs provided" });
   }
 
-  // Does the user exist to delete?
-  const notification = await Notification.findById(id).exec();
+  try {
+    // Fetch all notifications matching the provided IDs
+    const notifications = await Notification.find({ _id: { $in: ids } }).lean();
 
-  if (!notification) {
-    return res
-      .status(400)
-      .json({ message: "Notification to delete not found" });
+    if (!notifications || notifications.length === 0) {
+      return res.status(404).json({ message: "Notifications not found" });
+    }
+
+    // Array to track deletion statuses
+    const deletionResults = [];
+    if (isAdmin === "true") {
+      // If the user is an admin, completely delete the notifications
+      const deleteResult = await Notification.deleteMany({ _id: { $in: ids } });
+      return res.status(200).json({
+        message: `Deleted ${deleteResult?.deletedCount} Notification(s) sucessfully`,
+        // results: deleteResult,
+      });
+    }
+    // Convert `userId` to ObjectId for proper comparison
+    const userObjectId = userId;
+    for (const notification of notifications) {
+      const { _id, notificationToUsers } = notification;
+
+      // Check if userId exists in the `notificationToUsers` array
+      const isUserAssociated = notificationToUsers.some((user) =>
+        user.equals(userObjectId)
+      );
+
+      if (!isUserAssociated) {
+        deletionResults.push({
+          id: _id,
+          status: "failed",
+          message: "User ID not associated with this notification",
+        });
+        continue;
+      }
+
+      // If the user is the only one in the array, delete the notification
+      if (notificationToUsers.length === 1) {
+        await Notification.findByIdAndDelete(_id);
+        deletionResults.push({
+          id: _id,
+          status: "deleted",
+          message: "Notification deleted successfully",
+        });
+        continue;
+      }
+
+      // Otherwise, remove the userId from the array
+      await Notification.findByIdAndUpdate(
+        _id,
+        { $pull: { notificationToUsers: userObjectId } }, // Remove the userId from the array
+        { new: true } // Return the updated document
+      );
+      deletionResults.push({
+        id: _id,
+        status: "updated",
+        message: "User removed from notification",
+      });
+    }
+
+    return res.status(200).json({
+      message: `Deleted Notification(s)`,
+      
+    });
+  } catch (error) {
+    console.error("Error deleting notifications:", error);
+    return res.status(500).json({
+      message: "An error occurred while deleting notifications",
+      error: error.message,
+    });
   }
-
-  // Delete the notification
-  const result = await notification.deleteOne();
-
-  const reply = `Deleted ${result?.deletedCount} notification`;
-
-  return res.json({ message: reply });
-});
+};
 
 module.exports = {
   getAllNotifications,

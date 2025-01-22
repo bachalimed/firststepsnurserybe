@@ -3,6 +3,7 @@ const Payment = require("../models/Payment");
 const Invoice = require("../models/Invoice");
 const Family = require("../models/Family");
 const Notification = require("../models/Notification");
+const User = require("../models/User");
 
 const asyncHandler = require("express-async-handler"); //instead of using try catch
 
@@ -126,7 +127,7 @@ const getInvoicesWithEnrolments = async (invoiceIDs) => {
         select: "_id serviceType servicePeriod", // Select required fields from enrolments
       })
       .lean();
-   // console.log(invoices, "invoicesin retrieval");
+    // console.log(invoices, "invoicesin retrieval");
     // Structure the invoices with their corresponding enrolments
     // const structuredInvoices = invoices.map((invoice) => ({
     //   _id: invoice._id,
@@ -390,27 +391,47 @@ const createNewPayment = asyncHandler(async (req, res) => {
         )
         .join("\n")}`;
 
-        const notificationExcerpt = `Payment of ${paymentAmount} TND for ${
-          student?.studentName?.firstName
-        } ${student?.studentName?.middleName || ""} ${
-          student?.studentName?.lastName
-        } on ${new Date().toLocaleString("en-GB", {
-          year: "numeric",
-          month: "2-digit",
-          day: "2-digit",
-          hour: "2-digit",
-          minute: "2-digit",
-          hour12: false,
-        })}`;
+      const notificationExcerpt = `Payment of ${paymentAmount} TND for ${
+        student?.studentName?.firstName
+      } ${student?.studentName?.middleName || ""} ${
+        student?.studentName?.lastName
+      } on ${new Date().toLocaleString("en-GB", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+      })}`;
+
+      const targetRoles = ["Director", "Manager", "Admin"]; // Roles to filter by
+
+      // Find users with matching roles and populate employeeId
+      const usersWithRoles = await User.find({
+        userRoles: { $in: targetRoles },
+      })
+        .populate({
+          path: "employeeId",
+          select: "employeeIsActive", // Only include employeeIsActive in the populated field
+        })
+        .lean();
+
+      // Filter users where employeeIsActive is true
+      const targetUsers = usersWithRoles
+        .filter((user) => user?.employeeId?.employeeIsActive)
+        .map((user) => user._id); // Extract user._id for active employees
+
+      //console.log("Target Users:", targetUsers);
 
       const newNotification = {
         notificationYear: paymentYear,
-        notificationTo: [father, mother], //the user id who will receive father and mother id
+        notificationToParents: [father, mother], //the user id who will receive father and mother id
+        notificationToUsers: targetUsers, //the user id who will receive father and mother id
         notificationType: "Payment",
         notificationPayment: newPaymentId,
         //notificationLeave,
         //notificationAdmission,
-        notificationTitle: "New Payment Made ",
+        notificationTitle: "New Payment",
         notificationContent: notificationContent,
         notificationExcerpt: notificationExcerpt,
         notificationDate: new Date(),

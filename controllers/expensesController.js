@@ -1,4 +1,7 @@
 const Expense = require("../models/Expense");
+const Notification = require("../models/Notification");
+const ExpenseCategory = require("../models/ExpenseCategory");
+const User = require("../models/User");
 
 const asyncHandler = require("express-async-handler"); //instead of using try catch
 
@@ -219,6 +222,74 @@ const createNewExpense = asyncHandler(async (req, res) => {
     return res.status(400).json({ message: "Invalid data received" });
   }
   // If created
+  //create the notification
+  const savedExpenseCategory = await ExpenseCategory
+    .findById(expenseCategory)
+    .exec();
+  const notificationContent = `A new expense of ${expense?.expenseAmount} (TND)
+ in  ${
+   savedExpenseCategory?.expenseCategoryLabel
+ }on ${expense?.expenseDate?.toLocaleString("en-GB", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  })} was recorded`;
+
+  const notificationExcerpt = `New expense of ${
+    expense?.expenseAmount
+  } (TND) in  ${
+    savedExpenseCategory?.expenseCategoryLabel
+  } on ${expense?.expenseDate?.toLocaleString("en-GB", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  })}`;
+
+//get the id of active managers, director, admin
+const targetRoles = ["Director", "Manager", "Admin"]; // Roles to filter by
+
+
+  // Find users with matching roles and populate employeeId
+  const usersWithRoles = await User.find({
+    userRoles: { $in: targetRoles }, 
+  })
+    .populate({
+      path: "employeeId",
+      select: "employeeIsActive", // Only include employeeIsActive in the populated field
+    })
+    .lean();
+
+  // Filter users where employeeIsActive is true
+  const targetUsers = usersWithRoles
+    .filter((user) => user?.employeeId?.employeeIsActive)
+    .map((user) => user._id); // Extract user._id for active employees
+
+  //console.log("Target Users:", targetUsers);
+  
+
+
+
+  const newNotification = {
+    notificationYear: expenseYear,
+    notificationToUsers: targetUsers, //the user id who will receive 
+    notificationType: "Expense",
+    notificationExpense: expense._id,
+    notificationTitle: "New Expense",
+    notificationContent: notificationContent,
+    notificationExcerpt: notificationExcerpt,
+    notificationDate: new Date(),
+    notificationIsToBeSent: false,
+    notificationIsRead: false,
+  };
+  //console.log(newNotification,'newNotification')
+  const savedNotification = await Notification.create(newNotification);
+
   //console.log(expense?.expenseItems,'2')
   return res.status(201).json({
     message: `Expense created successfully `,
