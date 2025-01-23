@@ -57,7 +57,7 @@ const getAllNotifications = asyncHandler(async (req, res) => {
       }
 
       // Filter notifications for non-admin/manager/director users, if a parent is connected, he will get the notification
-      if (isAdmin === "true") {
+      if (isAdmin === true) {
         const lastnotifications = notifications?.slice(0, 8);
         return res.json(lastnotifications);
       }
@@ -103,7 +103,7 @@ const getAllNotifications = asyncHandler(async (req, res) => {
     //console.log(isAdmin);
     //filter notifications for concerned user
     //console.log(typeof isAdmin, isAdmin);
-    if (isAdmin === "true") {
+    if (isAdmin === true) {
       //console.log("nowwwwwwwwwwwwwwwwwwwwwww here");
       return res.json(notifications);
     }
@@ -318,7 +318,7 @@ const deleteNotification = async (req, res) => {
 
     // Array to track deletion statuses
     const deletionResults = [];
-    if (isAdmin === "true") {
+    if (isAdmin === true) {
       // If the user is an admin, completely delete the notifications
       const deleteResult = await Notification.deleteMany({ _id: { $in: ids } });
       return res.status(200).json({

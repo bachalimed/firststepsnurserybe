@@ -1,0 +1,6 @@
+// Initial settings for text notifications
+export const textNotificationSettings = {
+    isTextNotificationActivated: false, // Whether text notifications are activated
+    messageTemplate: "Garderie First Steps: Payment de [ddd.mm] TND pour [StudentName]. 110 [garde-sept], 30 [repas-sept], 111 [admission]"
+  };
+  //(max 145characters)

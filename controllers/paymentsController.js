@@ -2,6 +2,7 @@
 const Payment = require("../models/Payment");
 const Invoice = require("../models/Invoice");
 const Family = require("../models/Family");
+const Student = require("../models/Student");
 const Notification = require("../models/Notification");
 const User = require("../models/User");
 
@@ -403,7 +404,7 @@ const createNewPayment = asyncHandler(async (req, res) => {
         minute: "2-digit",
         hour12: false,
       })}`;
-
+// text notification example: Garderie First Steps:  payment total de [All] TND pour [ first name]. 110 (garde-sept), (30)repas-sept, (111)admission (max 145characters)
       const targetRoles = ["Director", "Manager", "Admin"]; // Roles to filter by
 
       // Find users with matching roles and populate employeeId
@@ -452,8 +453,7 @@ const createNewPayment = asyncHandler(async (req, res) => {
 // @route PATCH 'desk/payment
 // @access Private
 const updatePayment = asyncHandler(async (req, res) => {
-  ////////////update teh students while updating and creating and deleting.
-  // set all other related sessions to ending date where you have a student from that payment in any other, the latter will have an ending date
+  ///no update of payments, delete payment and genertae anew one
   const {
     id,
     isChangeFlag,
@@ -469,107 +469,8 @@ const updatePayment = asyncHandler(async (req, res) => {
     operator,
   } = req?.body;
 
-  // Confirm data
-  if (
-    !paymentLabel ||
-    isChangeFlag === undefined || // Checks if isChangeFlag is undefined
-    !paymentYear ||
-    !students ||
-    students.length === 0 ||
-    !paymentColor ||
-    !paymentType ||
-    //!paymentTo ||
-    !paymentFrom ||
-    !paymentAnimator ||
-    !paymentLocation ||
-    !operator
-  ) {
-    return res.status(400).json({ message: "Required data is missing" });
-  }
-  //check for duplcate
-  // Check for duplicate, no need because we can have same attributes but different students
-  //  const duplicatePayment = await Payment.findOne({ paymentLabel,}).lean().exec();
-
-  //  // Allow updates to the original service
-  //  if (duplicatePayment?._id.toString() !== id) {
-  //    return res.status(409).json({ message: "Duplicate payment found with the same Label" });
-  //  }
-
-  // Does the payment exist to update?
-  const paymentToUpdate = await Payment.findById(id).exec(); //we did not lean becausse we need the save method attached to the response
-
-  if (!paymentToUpdate) {
-    return res.status(400).json({ message: "Payment to update not found" });
-  }
-  if (isChangeFlag) {
-    //if there was a change we set paymentTo and create a new payment with new data
-    paymentToUpdate.paymentTo = paymentFrom; //the starting dat aof new payment is ending date of old payment
-
-    //console.log(paymentToUpdate,'paymentToUpdate')
-    const updatedPayment = await paymentToUpdate.save(); //save old payment
-    const newPaymentObject = {
-      paymentLabel,
-      paymentYear,
-      students,
-      paymentColor,
-      paymentType,
-      paymentFrom,
-      //paymentTo,
-      paymentAnimator,
-      paymentLocation,
-      operator,
-      creator: operator,
-    }; //construct new payment to be stored
-
-    // Create and store new payment
-    const newPayment = await Payment.create(newPaymentObject);
-
-    if (newPayment) {
-      // Update students with new payment ID
-      await Student.updateMany(
-        { _id: { $in: students } },
-        { $set: { studentPayment: newPayment._id } }
-      );
-
-      res.status(201).json({
-        message: `Payment updated successfully`,
-      });
-    } else {
-      return res.status(400).json({ message: "Invalid data received" });
-    }
-  }
-  if (isChangeFlag !== undefined && !isChangeFlag) {
-    //no students were changed so we only update the curretn payment
-    //if there was a change we set paymentTo and create a new payment with new data
-    // paymentToUpdate.paymentTo = paymentTo //it will only allow updating properties that are already existant in the model
-    paymentToUpdate.paymentLabel = paymentLabel;
-    paymentToUpdate.paymentYear = paymentYear;
-    //paymentToUpdate.students, //because no student swere added or removed
-    paymentToUpdate.paymentColor = paymentColor;
-    paymentToUpdate.paymentType = paymentType;
-    paymentToUpdate.paymentFrom = paymentFrom;
-    //paymentTo,
-    paymentToUpdate.paymentAnimator = paymentAnimator;
-    paymentToUpdate.paymentLocation = paymentLocation;
-    paymentToUpdate.operator = operator;
-
-    // update payment
-    const updatedPayment = await paymentToUpdate.save(); //save old payment
-
-    if (updatedPayment) {
-      // Update students with the updated payment's ID
-      await Student.updateMany(
-        { _id: { $in: students } },
-        { $set: { studentPayment: updatedPayment._id } }
-      );
-
-      res.status(201).json({
-        message: `Payment updated successfully`,
-      });
-    } else {
-      return res.status(400).json({ message: "Invalid data received" });
-    }
-  }
+ 
+ 
 });
 
 //--------------------------------------------------------------------------------------1

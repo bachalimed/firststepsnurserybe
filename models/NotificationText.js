@@ -5,72 +5,72 @@ function capitalizeFirstLetter(str) {
   return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
-const notificationUsersSchema = new mongoose.Schema({}, { _id: false });
+const notificationTextUsersSchema = new mongoose.Schema({}, { _id: false });
 
-const NotificationSchema = new mongoose.Schema(
+const NotificationTextSchema = new mongoose.Schema(
   {
-    notificationType: {
+    notificationTextType: {
       //Receipt, payment reminder, information
       type: String,
       set: capitalizeFirstLetter,
     },
-    notificationPayment: {
+    notificationTextPayment: {
       //related to payment
       type: mongoose.Schema.Types.ObjectId,
       ref: "Payment",
     },
-    notificationIsToBeSent: { type: Boolean, index: true }, //if the system setitings sending option is avaialble or not will be recorded on the notification
+    notificationTextIsToBeSent: { type: Boolean, index: true }, //if the system setitings sending option is avaialble or not will be recorded on the notificationText
 
-    notificationLeave: {
+    notificationTextLeave: {
       //related to Leave
       type: mongoose.Schema.Types.ObjectId,
       ref: "Leave",
     },
-    notificationAdmission: {
+    notificationTextAdmission: {
       //related to admission
       type: mongoose.Schema.Types.ObjectId,
       ref: "Admission",
     },
-    notificationExpense: {
+    notificationTextExpense: {
       //related to admission
       type: mongoose.Schema.Types.ObjectId,
       ref: "Expense",
     },
-    notificationTitle: {
-      //the content of the notification
+    notificationTextTitle: {
+      //the content of the notificationText
       type: String,
       required: true,
       set: capitalizeFirstLetter,
     },
-    notificationContent: {
-      //the content of the notification
+    notificationTextContent: {
+      //the content of the notificationText
       type: String,
       required: true,
       set: capitalizeFirstLetter,
     },
-    notificationExcerpt: {
-      //the short content of the notification to be shown in the notification
+    notificationTextExcerpt: {
+      //the short content of the notificationText to be shown in the notificationText
       type: String,
       required: true,
       set: capitalizeFirstLetter,
     },
-    notificationYear: {
+    notificationTextYear: {
       type: String,
       required: true,
     },
-    notificationDate: {
+    notificationTextDate: {
       type: Date,
       required: true,
     },
 
-    notificationToParents: [
+    notificationTextToParents: [
       {
         type: mongoose.Schema.Types.ObjectId,
         index: true,
         ref: "User",
       },
     ],
-    notificationToUsers: [
+    notificationTextToUsers: [
       {
         type: mongoose.Schema.Types.ObjectId,
         required: true,
@@ -78,12 +78,12 @@ const NotificationSchema = new mongoose.Schema(
         ref: "User",
       },
     ],
-    notificationText: {
+    notificationTextText: {
       type: mongoose.Schema.Types.ObjectId,
       index: true,
-      ref: "TextNotifications",
+      ref: "TextNotificationTexts",
     },
-    notificationIsRead: { type: Boolean, index: true },
+    notificationTextIsRead: { type: Boolean, index: true },
   },
 
   {
@@ -92,7 +92,7 @@ const NotificationSchema = new mongoose.Schema(
 );
 
 module.exports = mongoose.model(
-  "Notification",
-  NotificationSchema,
-  "notifications"
+  "NotificationText",
+  NotificationTextSchema,
+  "notificationTexts"
 );

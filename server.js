@@ -65,6 +65,7 @@ app.use('/settings/academicsSet/classrooms/', require('./routes/classroomRoutes'
 app.use('/settings/financesSet/payees/', require('./routes/payeeRoutes'))
 app.use('/settings/financesSet/expenseCategories/', require('./routes/expenseCategoryRoutes'))
 app.use('/notifications/notifications/', require('./routes/notificationRoutes'))
+app.use('/admin/crmManagement/textSettings/', require('./routes/textSettingRoutes'))
 
 
 
