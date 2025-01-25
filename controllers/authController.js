@@ -346,12 +346,13 @@ const refresh = async (req, res) => {
 // @access Public - just to clear cookie if exists
 const logout = async (req, res) => {
   try {
+    console.log('logout started')
     const { cookies } = req;
     //if no cookie is there
     if (!cookies?.jwt) return res.sendStatus(204); //No content
     const refreshToken = cookies.jwt;
     // Is refreshToken in db?
-    //const foundUser = await User.findOne({ refreshToken }).exec();//////////////////
+    
     const foundUser = await User.findOne({ refreshToken }).exec();
 
     if (!foundUser) {
@@ -363,7 +364,7 @@ const logout = async (req, res) => {
       });
       return res.sendStatus(204);
     }
-    //console.log(foundUser,'foundUser')
+   // console.log(foundUser,'foundUser')
     // Delete refreshToken in db
     foundUser.refreshToken = foundUser.refreshToken.filter(
       (rt) => rt !== refreshToken

@@ -285,12 +285,12 @@ const targetRoles = ["Director", "Manager", "Admin"]; // Roles to filter by
     notificationExcerpt: notificationExcerpt,
     notificationDate: new Date(),
     notificationIsToBeSent: false,
-    notificationIsRead: false,
+    notificationIsRead: [],
   };
   //console.log(newNotification,'newNotification')
   const savedNotification = await Notification.create(newNotification);
 
-  //console.log(expense?.expenseItems,'2')
+ 
   return res.status(201).json({
     message: `Expense created successfully `,
   });

@@ -1,6 +1,6 @@
 const Leave = require("../models/Leave");
 const User = require("../models/User");
-
+const Notification = require("../models/Notification");
 
 const asyncHandler = require("express-async-handler"); //instead of using try catch
 
@@ -78,25 +78,29 @@ const getAllLeaves = asyncHandler(async (req, res) => {
     try {
       // Fetch the leave by ID
       const leave = await Leave.findById(id).lean();
-  
+
       if (!leave) {
         return res.status(404).json({ message: "Leave not found" });
       }
-  
+
       // Fetch the user details for the leaveEmployee
-      const user = await User.findById(leave.leaveEmployee, "userFullName").lean();
-  
+      const user = await User.findById(
+        leave.leaveEmployee,
+        "userFullName"
+      ).lean();
+
       // Attach the employee's name to the leave object
       leave.leaveEmployeeName = user?.userFullName || null;
-  
+
       // Return the leave as an array to maintain consistency with client-side handling
       return res.json([leave]);
     } catch (error) {
       console.error("Error fetching leave details:", error);
-      return res.status(500).json({ message: "An error occurred while fetching leave details" });
+      return res
+        .status(500)
+        .json({ message: "An error occurred while fetching leave details" });
     }
   }
-  
 
   if (selectedYear !== "1000" && criteria === "leavesTotalStats") {
     try {
@@ -270,6 +274,86 @@ const createNewLeave = asyncHandler(async (req, res) => {
         .status(400)
         .json({ message: "Invalid data received for leave creation" });
     }
+    // If created
+    //create the notification
+    //find the employee name
+    const employee = await User.findById(leaveEmployee).exec();
+    const notificationContent = `A new ${leaveIsPaidLeave ? "paid" : "unpaid"}${
+      leaveIsSickLeave ? "sick" : ""
+    }leave for ${employee?.userFullName?.userFirstName} ${" "}${
+      employee?.userFullName?.userMiddleName
+    } ${" "}${employee?.userFullName?.userLastName} ${" "}
+   from  ${" "}${leaveStartDate?.toLocaleString("en-GB", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    })}${" "} to ${" "}${leaveEndDate?.toLocaleString("en-GB", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    })} was recorded`;
+
+    const notificationExcerpt =  `A new ${leaveIsPaidLeave ? "paid" : "unpaid"}${
+      leaveIsSickLeave ? "sick" : ""
+    }leave for ${employee?.userFullName?.userFirstName} ${" "}${
+      employee?.userFullName?.userMiddleName
+    } ${" "}${employee?.userFullName?.userLastName} ${" "}
+   from  ${" "}${leaveStartDate?.toLocaleString("en-GB", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    })}${" "} to ${" "}${leaveEndDate?.toLocaleString("en-GB", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    })} was recorded`;
+
+    //get the id of active managers, director, admin
+    const targetRoles = ["Director", "Manager", "Admin"]; // Roles to filter by
+
+    // Find users with matching roles and populate employeeId
+    const usersWithRoles = await User.find({
+      userRoles: { $in: targetRoles },
+    })
+      .populate({
+        path: "employeeId",
+        select: "employeeIsActive", // Only include employeeIsActive in the populated field
+      })
+      .lean();
+
+    // Filter users where employeeIsActive is true
+    const targetUsers = usersWithRoles
+      .filter((user) => user?.employeeId?.employeeIsActive)
+      .map((user) => user._id); // Extract user._id for active employees
+
+    //console.log("Target Users:", targetUsers);
+
+    const newNotification = {
+      notificationYear: leaveYear,
+      notificationToUsers: targetUsers, //the user id who will receive
+      notificationType: "Leave",
+      notificationLeave: createdLeaves[0]._id,
+      notificationTitle: "New Leave",
+      notificationContent: notificationContent,
+      notificationExcerpt: notificationExcerpt,
+      notificationDate: new Date(),
+      notificationIsToBeSent: false,
+      notificationIsRead: [],
+    };
+    //console.log(newNotification,'newNotification')
+    const savedNotification = await Notification.create(newNotification);
 
     return res.status(201).json({ message: "Leave created successfully" });
   } catch (error) {

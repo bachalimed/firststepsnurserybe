@@ -41,10 +41,11 @@ const getAllNotifications = asyncHandler(async (req, res) => {
       const currentDate = new Date();
 
       //console.log("Fetching notifications before:", currentDate.toISOString());
-
+      const endOfDay = new Date();
+      endOfDay.setHours(23, 59, 59, 999); // Set to the end of the current day
       // Find notifications with a date and time less than the current date
       const notifications = await Notification.find({
-        notificationDate: { $lt: currentDate }, // Compare against the current date and time
+        notificationDate: { $lt: endOfDay }, // Compare against the current date and time
       })
         .sort({ notificationDate: -1 }) // Most recent notifications first
         .select(
@@ -61,9 +62,7 @@ const getAllNotifications = asyncHandler(async (req, res) => {
         const lastnotifications = notifications?.slice(0, 8);
         return res.json(lastnotifications);
       }
-      console.log("nowwwwwwwwwwwwwwwwwwwwwww here");
-
-  
+      //console.log("nowwwwwwwwwwwwwwwwwwwwwww here");
 
       const dedicatedNotifications = notifications.filter((notif) =>
         notif.notificationToUsers.some((id) =>
@@ -217,33 +216,32 @@ const createNewNotification = asyncHandler(async (req, res) => {
 // @route PATCH 'desk/notification
 // @access Private
 const updateNotification = asyncHandler(async (req, res) => {
-  ////////////update teh students while updating and creating and deleting.
-  // set all other related sessions to ending date where you have a student from that notification in any other, the latter will have an ending date
+  //this will manage the changing of the isread attribute when we click the notificaiton ont eh header
+
   const {
     id,
-    notificationYear,
-
-    notificationType,
-    notificationPayment,
-    notificationLeave,
-    notificationAdmission,
-    notificationTitle,
-    notificationContent,
-    notificationExcerpt,
-    notificationDate,
-    notificationIsToBeSent,
+    // notificationDate,
+    //notificationExcerpt,
     notificationIsRead,
+    //notificationTitle,
+    //notificationType,
+    //notificationPayment,
+    //notificationLeave,
+    // notificationAdmission,
+    //notificationExpense,
+    //notificationIsToBeSent,
+    //notificationYear,
+    // notificationContent,
+    //notificationToUsers,
   } = req?.body;
 
   // Confirm data
   if (
     !id ||
-    !notificationYear ||
-    !notificationType ||
-    !notificationTitle ||
-    !notificationContent ||
-    !notificationDate ||
-    !notificationIsToBeSent
+    // !notificationDate ||
+    // !notificationType ||
+    // !notificationTitle ||
+    !notificationIsRead
   ) {
     return res.status(400).json({ message: "Required data is missing" });
   }
@@ -256,34 +254,34 @@ const updateNotification = asyncHandler(async (req, res) => {
       .status(400)
       .json({ message: "Notification to update not found" });
   }
-  const targetRoles = ["Director", "Manager", "Admin"]; // Roles to filter by
+  //const targetRoles = ["Director", "Manager", "Admin"]; // Roles to filter by
 
-  // Find users with matching roles and populate employeeId
-  const usersWithRoles = await User.find({
-    userRoles: { $in: targetRoles },
-  })
-    .populate({
-      path: "employeeId",
-      select: "employeeIsActive", // Only include employeeIsActive in the populated field
-    })
-    .lean();
+  // // Find users with matching roles and populate employeeId
+  // const usersWithRoles = await User.find({
+  //   userRoles: { $in: targetRoles },
+  // })
+  //   .populate({
+  //     path: "employeeId",
+  //     select: "employeeIsActive", // Only include employeeIsActive in the populated field
+  //   })
+  //   .lean();
 
-  // Filter users where employeeIsActive is true
-  const targetUsers = usersWithRoles
-    .filter((user) => user?.employeeId?.employeeIsActive)
-    .map((user) => user._id); // Extract user._id for active employees
+  // // Filter users where employeeIsActive is true
+  // const targetUsers = usersWithRoles
+  //   .filter((user) => user?.employeeId?.employeeIsActive)
+  //   .map((user) => user._id); // Extract user._id for active employees
 
-  notificationToUpdate.notificationYear = notificationYear;
-  notificationToUpdate.notificationToUsers = targetUsers;
-  notificationToUpdate.notificationType = notificationType;
-  notificationToUpdate.notificationPayment = notificationPayment;
-  notificationToUpdate.notificationLeave = notificationLeave;
-  notificationToUpdate.notificationAdmission = notificationAdmission;
-  notificationToUpdate.notificationTitle = notificationTitle;
-  notificationToUpdate.notificationContent = notificationContent;
-  notificationToUpdate.notificationExcerpt = notificationExcerpt;
-  notificationToUpdate.notificationDate = notificationDate;
-  notificationToUpdate.notificationIsToBeSent = notificationIsToBeSent;
+  //notificationToUpdate.notificationYear = notificationYear;
+  // notificationToUpdate.notificationToUsers = targetUsers;
+  //notificationToUpdate.notificationType = notificationType;
+  // notificationToUpdate.notificationPayment = notificationPayment;
+  // notificationToUpdate.notificationLeave = notificationLeave;
+  // notificationToUpdate.notificationAdmission = notificationAdmission;
+  // notificationToUpdate.notificationTitle = notificationTitle;
+  //notificationToUpdate.notificationContent = notificationContent;
+  //notificationToUpdate.notificationExcerpt = notificationExcerpt;
+  // notificationToUpdate.notificationDate = notificationDate;
+  //notificationToUpdate.notificationIsToBeSent = notificationIsToBeSent;
   notificationToUpdate.notificationIsRead = notificationIsRead;
 
   //console.log(notificationToUpdate,'notificationToUpdate')
@@ -371,7 +369,6 @@ const deleteNotification = async (req, res) => {
 
     return res.status(200).json({
       message: `Deleted Notification(s)`,
-      
     });
   } catch (error) {
     console.error("Error deleting notifications:", error);

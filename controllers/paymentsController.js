@@ -254,9 +254,36 @@ const getAllPayments = asyncHandler(async (req, res) => {
         id: "Unknown family Id",
       };
     });
+    // Sort the payments by student's name and payment date
+    const sortedPayments = payments.sort((a, b) => {
+      // Concatenate the student's full name for both payments
+      const nameA = `${a.paymentStudent?.studentName?.firstName || ""} ${
+        a.paymentStudent?.studentName?.middleName || ""
+      } ${a.paymentStudent?.studentName?.lastName || ""}`
+        .trim()
+        .toLowerCase();
+      const nameB = `${b.paymentStudent?.studentName?.firstName || ""} ${
+        b.paymentStudent?.studentName?.middleName || ""
+      } ${b.paymentStudent?.studentName?.lastName || ""}`
+        .trim()
+        .toLowerCase();
+
+      // Compare names first
+      const nameComparison = nameA.localeCompare(nameB);
+
+      if (nameComparison !== 0) {
+        return nameComparison; // If names are different, return the comparison result
+      }
+
+      // If names are the same, compare payment dates
+      const paymentDateA = new Date(a.paymentDate);
+      const paymentDateB = new Date(b.paymentDate);
+
+      return paymentDateA - paymentDateB; // Ascending order by payment date
+    });
 
     // Return the payment inside an array
-    return res.json(payments); //we need it inside  an array to avoid response data error
+    return res.json(sortedPayments); //we need it inside  an array to avoid response data error
   }
 
   // If no ID is provided, fetch all payments
@@ -404,7 +431,7 @@ const createNewPayment = asyncHandler(async (req, res) => {
         minute: "2-digit",
         hour12: false,
       })}`;
-// text notification example: Garderie First Steps:  payment total de [All] TND pour [ first name]. 110 (garde-sept), (30)repas-sept, (111)admission (max 145characters)
+      // text notification example: Garderie First Steps:  payment total de [All] TND pour [ first name]. 110 (garde-sept), (30)repas-sept, (111)admission (max 145characters)
       const targetRoles = ["Director", "Manager", "Admin"]; // Roles to filter by
 
       // Find users with matching roles and populate employeeId
@@ -437,7 +464,7 @@ const createNewPayment = asyncHandler(async (req, res) => {
         notificationExcerpt: notificationExcerpt,
         notificationDate: new Date(),
         notificationIsToBeSent: true,
-        notificationIsRead: false,
+        notificationIsRead: [],
       };
       const savedNotification = await Notification.create(newNotification);
 
@@ -468,9 +495,6 @@ const updatePayment = asyncHandler(async (req, res) => {
     paymentLocation,
     operator,
   } = req?.body;
-
- 
- 
 });
 
 //--------------------------------------------------------------------------------------1

@@ -226,6 +226,20 @@ const getAllAdmissions = asyncHandler(async (req, res) => {
       message: "No admissions found for the selected academic year",
     });
   }
+ // Sort students by studentName.firstName in ascending order
+ const sortedAdmissions = admissions.sort((a, b) => {
+  const firstNameA = a.student.studentName.firstName.toLowerCase();
+  const firstNameB = b.student.studentName.firstName.toLowerCase();
+
+  if (firstNameA < firstNameB) return -1; // a comes first
+  if (firstNameA > firstNameB) return 1; // b comes first
+  return 0; // they are equal
+});
+
+return res.json(sortedAdmissions);
+
+
+
   return res.json(admissions);
   // else {
   //   // Fetch all admissions if no query parameters
@@ -388,7 +402,7 @@ const targetRoles = ["Director", "Manager", "Admin"]; // Roles to filter by
         notificationExcerpt: notificationExcerpt,
         notificationDate: new Date(),
         notificationIsToBeSent: false,
-        notificationIsRead: false,
+        notificationIsRead: [],
       };
       //console.log(newNotification,'newNotification')
       const savedNotification = await Notification.create(newNotification);

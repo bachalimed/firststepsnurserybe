@@ -83,7 +83,14 @@ const NotificationSchema = new mongoose.Schema(
       index: true,
       ref: "TextNotifications",
     },
-    notificationIsRead: { type: Boolean, index: true },
+    notificationIsRead: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        
+        index: true,
+        ref: "User",
+      },
+    ],
   },
 
   {

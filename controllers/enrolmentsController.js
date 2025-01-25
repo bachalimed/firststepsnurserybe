@@ -207,7 +207,24 @@ const getAllEnrolments = asyncHandler(async (req, res) => {
         message: "No enrolments found for the selected academic year",
       });
     }
-    return res.json(filteredEnrolments);
+    // Sort the filtered enrolments by student names
+const sortedEnrolments = filteredEnrolments.sort((a, b) => {
+  const nameA = `${a.student?.studentName?.firstName || ""} ${
+    a.student?.studentName?.middleName || ""
+  } ${a.student?.studentName?.lastName || ""}`
+    .trim()
+    .toLowerCase();
+  const nameB = `${b.student?.studentName?.firstName || ""} ${
+    b.student?.studentName?.middleName || ""
+  } ${b.student?.studentName?.lastName || ""}`
+    .trim()
+    .toLowerCase();
+
+  return nameA.localeCompare(nameB); // Alphabetical order
+});
+
+// Return the sorted enrolments
+return res.json(sortedEnrolments);
   }
   if (selectedYear !== "1000" && criteria === "UnpaidInvoices") {
 
