@@ -39,7 +39,7 @@ const payslipSchema = new mongoose.Schema({
   },
   payslipIsApproved: { type: Boolean, required: true },
   payslipPaymentDate: { type: Date },
-  payslipLeaveDays: [{ type: mongoose.Schema.Types.ObjectId, ref: "Leave" }],
+  payslipLeaves: [{ type: mongoose.Schema.Types.ObjectId, ref: "Leave" }],
   //payslipSalaryComponents: [payslipSalaryComponentsSchema],
   payslipTotalAmount:{type: String, required: true},
   payslipSalaryComponents: {

@@ -18,7 +18,7 @@ const getPayslipsByYear = async (selectedYear) => {
         select: "employeeCurrentEmployment", // Only select the necessary field
       })
       .populate({
-        path: "payslipLeaveDays", // Populate the employee field
+        path: "payslipLeaves", // Populate the employee field
         select:
           "-leaveOperator -leaveCreator -leaveEmployee -leaveYear -leaveMonth", // Only select the necessary fields
       })
@@ -220,7 +220,7 @@ const createNewPayslip = asyncHandler(async (req, res) => {
     payslipEmployeeName,
     payslipIsApproved,
     payslipPaymentDate,
-    payslipLeaveDays,
+    payslipLeaves,
     payslipSalaryComponents,
     payslipTotalAmount,
     employeeJoinDate,
@@ -262,7 +262,7 @@ const createNewPayslip = asyncHandler(async (req, res) => {
     payslipEmployeeName: payslipEmployeeName,
     payslipIsApproved: payslipIsApproved,
     payslipPaymentDate: payslipPaymentDate,
-    payslipLeaveDays: payslipLeaveDays,
+    payslipLeaves: payslipLeaves,
     payslipSalaryComponents: payslipSalaryComponents,
     payslipTotalAmount: payslipTotalAmount,
     payslipCreator: payslipCreator,
@@ -304,7 +304,7 @@ const updatePayslip = asyncHandler(async (req, res) => {
     payslipEmployeeName,
     payslipIsApproved,
     payslipPaymentDate,
-    payslipLeaveDays,
+    payslipLeaves,
     payslipSalaryComponents,
     payslipTotalAmount,
     payslipOperator,
@@ -319,7 +319,7 @@ const updatePayslip = asyncHandler(async (req, res) => {
   //   payslipEmployeeName,
   //   payslipIsApproved,
   //   payslipPaymentDate,
-  //   payslipLeaveDays,
+  //   payslipLeaves,
   //   payslipSalaryComponents,
   //   payslipTotalAmount,
   //   payslipOperator
@@ -331,7 +331,7 @@ const updatePayslip = asyncHandler(async (req, res) => {
     !payslipMonth ||
     !payslipEmployee ||
     !payslipEmployeeName ||
-    !payslipLeaveDays ||
+    !payslipLeaves ||
     !payslipWorkdays ||
     !payslipSalaryComponents ||
     !payslipTotalAmount
@@ -409,7 +409,7 @@ const updatePayslip = asyncHandler(async (req, res) => {
   payslipToUpdate.payslipMonth = payslipMonth;
   payslipToUpdate.payslipEmployee = payslipEmployee;
   payslipToUpdate.payslipEmployeeName = payslipEmployeeName;
-  payslipToUpdate.payslipLeaveDays = payslipLeaveDays;
+  payslipToUpdate.payslipLeaves = payslipLeaves;
   payslipToUpdate.payslipWorkdays = payslipWorkdays;
   payslipToUpdate.payslipIsApproved = payslipIsApproved;
   payslipToUpdate.payslipSalaryComponents = payslipSalaryComponents;
